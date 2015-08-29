@@ -212,8 +212,8 @@ int main()
 	 * Load up a shader from the given files.
 	 *******************************************************//**/
 	Shader shader;
-	shader.loadFromFile( GL_VERTEX_SHADER, "vertex.x.glsl" );
-	shader.loadFromFile( GL_FRAGMENT_SHADER, "fragment.x.glsl" );
+	shader.loadFromFile( GL_VERTEX_SHADER, "vertex_phong.glsl" );
+	shader.loadFromFile( GL_FRAGMENT_SHADER, "fragment_phong.glsl" );
 	shader.createAndLinkProgram();
 	shader.use();
 		shader.addUniform( "mvM" );
