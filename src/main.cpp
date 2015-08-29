@@ -205,7 +205,7 @@ int main()
 	glDepthFunc( GL_LEQUAL );
 
 	vogl::Geometry geo;
-	uint name = geo.addBuffer( "teapot.obj" );
+	uint name = geo.addBuffer( "box.obj" );
 	geo.bindTexure( "box.png", name );
 
 	/************************************************************
