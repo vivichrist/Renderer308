@@ -1,8 +1,5 @@
 #define GLM_FORCE_RADIANS
 
-#define WIDTH 800
-#define HEIGHT 600
-
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
@@ -16,6 +13,7 @@
 #include "Shader.hpp"
 
 using namespace glm;
+using namespace vogl;
 
 bool g_hasMouse = false;
 vogl::Camera *g_cam = nullptr;
@@ -108,9 +106,11 @@ void scroll_callback( GLFWwindow * window, double x, double y )
 
 void resize_callback( GLFWwindow * window, int newWidth, int newHeight )
 {
-	g_width = newWidth;
-	g_height = newHeight > 0 ? newHeight : 1;
-	glViewport( 0, 0, newWidth, newHeight );
+  g_width = newWidth;
+  g_height = newHeight;
+  g_height = g_height > 0 ? g_height : 1;
+  g_cam->setAspectRatio( g_width, g_height );
+  glViewport( 0, 0, g_width, g_height );
 }
 
 /******************************************************************************
@@ -204,9 +204,20 @@ int main()
 	glEnable( GL_DEPTH_TEST );
 	glDepthFunc( GL_LEQUAL );
 
-	vogl::Geometry geo;
-	uint name = geo.addBuffer( "box.obj" );
-	geo.bindTexure( "box.png", name );
+	float boxPositions[] = {
+	      0, 0, 0
+	      , -3, 0, 0
+	      , -3, -3, 0
+	      , 0, -3, 0
+	      , -3, 3, 0
+	      , 3, -3, 0
+	      , 0, 3, 0
+	      , 3, 3, 0
+	      , 3, 0, 0
+  };
+  Geometry *geo = Geometry::getInstance();
+  uint name = geo->addBuffer( "box.obj", boxPositions, boxPositions, 9 );
+  geo->bindTexure( "box.png", name );
 
 	/************************************************************
 	 * Load up a shader from the given files.
@@ -224,7 +235,7 @@ int main()
 	// print debuging info
 	shader.printActiveUniforms();
 	// Camera to get model view and projection matices from. Amongst other things
-	g_cam = new vogl::Camera( vec3( 0.0f, 0.0f, 10.0f ), g_width, g_height );
+	g_cam = new Camera( vec3( 0.0f, 0.0f, 10.0f ), g_width, g_height );
 
 	float black[] =	{ 0, 0, 0 };
 	glClearBufferfv( GL_COLOR, 0, black );
@@ -232,6 +243,7 @@ int main()
 	///////////////////////////////////////////////////////////////////////////
 	//                           Main Rendering Loop                         //
 	///////////////////////////////////////////////////////////////////////////
+	glViewport( 0, 0, g_width, g_height );
 	while ( !glfwWindowShouldClose( window ) )
 	{
 		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
@@ -244,7 +256,7 @@ int main()
 			glUniformMatrix3fv( shader( "normM" ), 1, GL_FALSE,
 					value_ptr( g_cam->getNormalMatrix() ) );
 			glUniform3fv( shader( "lightP" ), 1, &lightP[0] );
-			geo.draw( name, 1 );
+			geo->draw( name, 9 );
 		shader.unUse();
 		// make sure the camera rotations, position and matrices are updated
 		g_cam->update();

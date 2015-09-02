@@ -19,11 +19,13 @@ namespace vogl
   class Texture
   {
     public:
-      Texture();
+	  static Texture *getInstance();
       GLuint addPNGTexture( const std::string&, int&, int& );
       GLuint getPNGName( const std::string& );
       virtual ~Texture();
     private:
+      Texture();
+      static Texture *instance;
       std::map< std::string, GLuint > names;
   };
 

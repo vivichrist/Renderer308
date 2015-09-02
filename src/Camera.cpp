@@ -48,6 +48,13 @@ void Camera::setupProjection( const float fovy, const float aspectRatio
 	view_changed = true;
 }
 
+void Camera::setAspectRatio( const float width, const float height )
+{
+  aspect_ratio = (float) width / (float) height;
+  proj = glm::perspective( fov, aspect_ratio, z_near, z_far );
+  view_changed = true;
+}
+
 /**
  * move camera
  */

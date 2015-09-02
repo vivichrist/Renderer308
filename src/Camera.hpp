@@ -30,6 +30,7 @@ public:
 	virtual void setRotation( const float, const float, const float );
 	void setupProjection( const float, const float, const float near = 0.1f
 						, const float far = 1000.0f );
+	void setAspectRatio( const float, const float );
 	void setPosition( const glm::vec3& v );
 	void setFOV( const float fov );
 	// camera

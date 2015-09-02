@@ -19,11 +19,11 @@ void main()
 	FBColor = max( diff, 0.05 ) * texture( image, vUV );
 
 	// Specular Light
-	vec3 halfway = normalize(vLightDir - normalize(vView));
+	vec3 halfN = normalize(vLightDir - normalize(vView));
 
-	float spec = max(0.0, dot(normalize(vNormal), halfway));
+	float spec = max(0.0, dot(normalize(vNormal), halfN));
 
-	// If the diffuse light is zero, don’t even bother with the pow function
+	// If the diffuse light is zero, donât even bother with the pow function
 	if ( diff > 0 )
 	{
 		float fSpec = pow(spec, 128.0);

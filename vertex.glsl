@@ -1,4 +1,4 @@
-// Vertex shader for simple Phongs Lighting model
+// Vertex shader for simple Phong Lighting model
 #version 330
 #pragma optimize(off)
 #pragma debug(on)
