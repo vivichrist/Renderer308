@@ -4,7 +4,6 @@
 uniform mat4 mvM;
 uniform mat4 projM;
 uniform mat3 normM; // Matrix to transform normals.
-uniform vec3 lightP;
 
 layout (location = 0) in vec3 position;
 layout (location = 1) in vec3 normal;
@@ -15,7 +14,7 @@ layout (location = 4) in vec3 aux;
 smooth out vec2 vUV;
 smooth out vec3 vNormal;
 smooth out vec3 vView;
-smooth out vec3 vLightDir;
+smooth out vec3 vLightDir[MAX_LIGHTS];
 
 void main(void)
 {
@@ -26,10 +25,11 @@ void main(void)
 	vec4 pos4 = mvM * vec4( position + place, 1 );
 	vView = pos4.xyz / pos4.w;
 	// Get light position in eye coordinates
-	vec4 lgt4 = mvM * vec4( lightP, 1 );
-    vec3 lpos = lgt4.xyz / lgt4.w;
-
-	vLightDir = normalize(lpos - vView);
+	for ( int i = 0; i < MAX_LIGHTS; ++i )
+	{
+		vec4 lgt4 = mvM * allLights[i].position;
+		vLightDir[i] = (lgt4.xyz / lgt4.w) - vView;
+	}
 	// transform the geometry!
 	gl_Position = projM * pos4;
 }
