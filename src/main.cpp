@@ -203,6 +203,8 @@ int main()
 	// tell GL to only draw onto a pixel if the shape is closer to the viewer
 	glEnable( GL_DEPTH_TEST );
 	glDepthFunc( GL_LEQUAL );
+	glEnable(GL_CULL_FACE);
+	glCullFace( GL_BACK );
 
 	float boxPositions[] = {
 	      0, 0, 0

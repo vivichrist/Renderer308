@@ -3,26 +3,33 @@
 #pragma optimize(off)
 #pragma debug(on)
 
-uniform mat4 ModelView;
-uniform mat4 Projection;
-uniform mat3 NormalMatrix;
-// Matrix to transform normals. This is the transpose of the
-// inverse of the upper leftmost 3x3 of the modelview matrix.
+uniform mat4 mvM;
+uniform mat4 projM;
+uniform mat3 normM; // Matrix to transform normals.
+uniform vec3 lightP;
 
-layout (location = 0) in vec3 Position;
-layout (location = 1) in vec2 TextCoord;
-layout (location = 2) in vec3 Normal;
+layout (location = 0) in vec3 position;
+layout (location = 1) in vec3 normal;
+layout (location = 2) in vec2 texCoord;
 
-smooth out vec3 PositionInterp;
-smooth out vec3 NormalInterp;
-smooth out vec3 ColorInterp;
-// smooth out vec2 TextCoordInterp;
+smooth out vec2 vUV;
+smooth out vec3 vNormal;
+smooth out vec3 vView;
+smooth out vec3 vLightDir;
 
-void main()
+void main(void)
 {
-    PositionInterp = (Projection * (ModelView * vec4(Position, 1.0))).xyz;
-    ColorInterp = vec3( 1,0,0 ); // Red
-    // Normals transform
-    NormalInterp = normalize(NormalMatrix * Normal);
-    // TextCoordInterp = TextCoord;
+    // Get surface normal in eye coordinates
+    vNormal = normalize(normM * normal);
+    vUV = texCoord;
+    // Get vertex position in eye coordinates
+    vec4 pos4 = mvM * vec4( position, 1 );
+    vView = pos4.xyz / pos4.w;
+    // Get light position in eye coordinates
+    vec4 lgt4 = mvM * vec4( lightP, 1 );
+    vec3 lpos = lgt4.xyz / lgt4.w;
+    
+    vLightDir = normalize(lpos - vView);
+    // transform the geometry!
+    gl_Position = projM * pos4;
 }
