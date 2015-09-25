@@ -172,8 +172,7 @@ uint Geometry::addSmoothSurfaceBuffer( const string& load, const float *pos
 
 void Geometry::bindTexure( const std::string& load, GLuint id )
 {
-	int h = 512, w = 512;
-	GLuint texture = Texture::getInstance()->addPNGTexture( load, h, w );
+	GLuint texture = Texture::getInstance()->addTexture( load );
 	if ( m_elemBuffOb.find( id ) != m_elemBuffOb.end() )
 	{
 		m_elemBuffOb[id].texture = texture;
@@ -282,7 +281,7 @@ uint Geometry::addBuffer( const string& load, const float *pos, const float *col
 /******************************************************************************
  * Draw the contents of a buffer(s) on the video card
  * @param id opengl reference to the vertex array object
- * @param insts howmany instances we will draw
+ * @param insts how many instances we will draw
  * TODO: create buffers for instances
  */
 void Geometry::draw( uint id, GLsizei insts )

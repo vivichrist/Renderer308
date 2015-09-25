@@ -32,7 +32,7 @@ namespace vogl
 			  , float ambient );
       void addSpotLight( glm::vec3 position, glm::vec3 color
     		  , float attConstant, float attLinear, float attQuadratic
-			  , float ambient, glm::vec4 coneDir, float coneAngle );
+			  , float ambient, glm::vec3 coneDir, float coneAngle );
       void getLightMatrices( glm::mat4[], uint& );
       virtual ~Lights();
   };
