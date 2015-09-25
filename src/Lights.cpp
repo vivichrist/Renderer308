@@ -29,13 +29,13 @@ void Lights::addPointLight( vec3 position, vec3 color,
 	mat4 light( vec4( position, 1.0f )
 				, vec4( color, 1.0f )
 				, vec4( attConstant, attLinear, attQuadratic, ambient )
-				, vec4( 0.0f, -1.0f, 0.0f, 180.0f ) ),
+				, vec4( 0.0f, -1.0f, 0.0f, 180.0f ) );
 	lights.push_back( light );
 }
 
 void Lights::addSpotLight( glm::vec3 position, glm::vec3 color,
 		float attConstant, float attLinear, float attQuadratic, float ambient,
-		glm::vec4 coneDir, float coneAngle )
+		glm::vec3 coneDir, float coneAngle )
 {
 	mat4 light( vec4( position, 1.0f )
 				, vec4( color, 1.0f )

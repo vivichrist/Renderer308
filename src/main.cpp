@@ -218,15 +218,15 @@ int main()
 	      , 3, 0, 0
   };
   Geometry *geo = Geometry::getInstance();
-  uint name = geo->addBuffer( "box.obj", boxPositions, boxPositions, 9 );
-  geo->bindTexure( "box.png", name );
+  uint name = geo->addBuffer( "res/assets/sphere.obj", boxPositions, boxPositions, 9 );
+  geo->bindTexure( "res/textures/wood.jpg", name );
 
 	/************************************************************
 	 * Load up a shader from the given files.
 	 *******************************************************//**/
 	Shader shader;
-	shader.loadFromFile( GL_VERTEX_SHADER, "vertex_phong.glsl" );
-	shader.loadFromFile( GL_FRAGMENT_SHADER, "fragment_phong.glsl" );
+	shader.loadFromFile( GL_VERTEX_SHADER, "vertex.glsl" );
+	shader.loadFromFile( GL_FRAGMENT_SHADER, "fragment.glsl" );
 	shader.createAndLinkProgram();
 	shader.use();
 		shader.addUniform( "mvM" );
