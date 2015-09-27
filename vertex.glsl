@@ -11,6 +11,8 @@ uniform vec3 lightP;
 layout (location = 0) in vec3 position;
 layout (location = 1) in vec3 normal;
 layout (location = 2) in vec2 texCoord;
+layout (location = 3) in vec3 instpos;
+layout (location = 4) in vec3 instcolor;
 
 smooth out vec2 vUV;
 smooth out vec3 vNormal;
@@ -23,7 +25,7 @@ void main(void)
     vNormal = normalize(normM * normal);
     vUV = texCoord;
     // Get vertex position in eye coordinates
-    vec4 pos4 = mvM * vec4( position, 1 );
+    vec4 pos4 = mvM * vec4( position + instpos, 1 );
     vView = pos4.xyz / pos4.w;
     // Get light position in eye coordinates
     vec4 lgt4 = mvM * vec4( lightP, 1 );

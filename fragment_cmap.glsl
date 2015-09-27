@@ -5,18 +5,17 @@
 out vec4 FBColor;
 
 in VertexData {
-	smooth vec2 vUV;
-	smooth vec3 vNormal;
-	smooth vec3 vView;
-} fin;
+	smooth in vec2 vUV;
+	smooth in vec3 vNormal;
+	smooth in vec3 vView;
+} finout;
 
-uniform mat4 mvM;
 uniform vec4 material; // intensities, shininess is w
 uniform sampler2D image;
 
 uniform struct Light {
 	vec4 pos;
-	vec4 spec; // specular intensities
+	vec4 spec; // color of specular highlights
 	vec4 att; // attenuation coefficients, ambient coefficient is w;
 	vec4 coneDir; // cone direction, cone angle is w;
 } allLights[MAX_LIGHTS];
@@ -35,7 +34,7 @@ vec3 lighting( Light l, vec3 diffuse, vec3 normal, vec3 pos, vec3 eye )
     } 
     else
     {   // point light
-        vec4 lgt4 = mvM * l.pos;
+        vec4 lgt4 = finout.mvM * l.pos;
         lightDir = (lgt4.xyz / lgt4.w) - pos;
         float dist = length(lightDir);
         lightDir = normalize(lightDir);
@@ -55,6 +54,7 @@ vec3 lighting( Light l, vec3 diffuse, vec3 normal, vec3 pos, vec3 eye )
     // diffuse
     float dI = max(0.0, dot(normal, lightDir));
     vec3 diff = dI * mat;
+    
     // backfacing from the light?
 	if ( dI <= 0.0 ) return ambient + att * diff;
 
@@ -68,8 +68,8 @@ vec3 lighting( Light l, vec3 diffuse, vec3 normal, vec3 pos, vec3 eye )
 
 void main()
 {
-    vec3 diffColor = texture( image, fin.vUV );
+    vec3 diffColor = texture( image, vUV );
     for ( int i = 0; i<numLights; ++i )
-        FBColor.rgb += lighting( allLights[i], diffColor, fin.vNormal
-                                            , gl_Position, fin.vView );
+        FBColor.rgb += lighting( allLights[i], diffColor, finout.vNormal
+                                            , gl_Position, finout.vView );
 }

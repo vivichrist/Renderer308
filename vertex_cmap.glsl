@@ -1,9 +1,8 @@
-// Vertex shader for simple Phongs Lighting model
+// Vertex shader for simple Phong shading with multiple Lights model
 #version 330
 
-uniform mat4 mvM;
 uniform mat4 projM;
-uniform mat3 normM; // Matrix to transform normals.
+uniform mat4 mvM[6];
 
 layout (location = 0) in vec3 position;
 layout (location = 1) in vec3 normal;
@@ -19,12 +18,8 @@ out VertexData {
 
 void main(void)
 {
-	// Get surface normal in eye coordinates
-	vout.vNormal = normalize(normM * normal);
+	vout.vNormal = normal;
 	vout.vUV = texCoord;
-	// Get vertex position in eye coordinates
-	vec4 pos4 = mvM * vec4( position + instpos, 1 );
-	vout.vView = pos4.xyz / pos4.w;
 	// transform the geometry!
-	gl_Position = projM * pos4;
+	gl_Position = vec4( position, 1 );
 }
