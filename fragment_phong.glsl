@@ -5,10 +5,10 @@
 out vec4 FBColor;
 
 in VertexData {
-	smooth in vec2 vUV;
-	smooth in vec3 vNormal;
-	smooth in vec3 vView;
-} finout;
+	smooth vec2 vUV;
+	smooth vec3 vNormal;
+	smooth vec3 vView;
+} fin;
 
 uniform mat4 mvM;
 uniform vec4 material; // intensities, shininess is w
@@ -68,8 +68,8 @@ vec3 lighting( Light l, vec3 diffuse, vec3 normal, vec3 pos, vec3 eye )
 
 void main()
 {
-    vec3 diffColor = texture( image, vUV );
+    vec3 diffColor = texture( image, fin.vUV );
     for ( int i = 0; i<numLights; ++i )
-        FBColor.rgb += lighting( allLights[i], diffColor, finout.vNormal
-                                            , gl_Position, finout.vView );
+        FBColor.rgb += lighting( allLights[i], diffColor, fin.vNormal
+                                            , gl_Position, fin.vView );
 }
