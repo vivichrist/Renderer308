@@ -10,6 +10,7 @@
 #include <exception>
 #include "Camera.hpp"
 #include "Geometry.hpp"
+#include "Lights.hpp"
 #include "Shader.hpp"
 
 using namespace glm;
@@ -220,28 +221,37 @@ int main()
   Geometry *geo = Geometry::getInstance();
   uint name = geo->addBuffer( "res/assets/sphere.obj", boxPositions, boxPositions, 9 );
   geo->bindTexure( "res/textures/wood.jpg", name );
-
+  Lights *lights = Lights::getInstance();
+  lights->addPointLight( vec3( 5.0f, 5.0f, 100.0f ), vec3( 1.0f, 1.0f, 1.0f )
+                        , 1.0f, 0.0f, 0.0f, 0.05f );
+//  lights->addSpotLight( vec3( 0.0f, 10.0f, 0.0f ), vec3( 1.0f, 1.0f, 1.0f )
+//                      , 1.0f, 0.0f, 0.0f, 0.05f, vec3( 0.0f, -1.0f, 0.0f ), 15.0f );
+  float ls[160];
+  GLint num;
+  lights->getLights( ls, num );
 	/************************************************************
 	 * Load up a shader from the given files.
 	 *******************************************************//**/
 	Shader shader;
-	shader.loadFromFile( GL_VERTEX_SHADER, "vertex.glsl" );
-	shader.loadFromFile( GL_FRAGMENT_SHADER, "fragment.glsl" );
+	shader.loadFromFile( GL_VERTEX_SHADER, "vertex_phong.glsl" );
+	shader.loadFromFile( GL_FRAGMENT_SHADER, "fragment_phong.glsl" );
 	shader.createAndLinkProgram();
 	shader.use();
 		shader.addUniform( "mvM" );
 		shader.addUniform( "projM" );
 		shader.addUniform( "normM" );
-		shader.addUniform( "lightP" );
+		shader.addUniform( "material" );
+		shader.addUniform( "numLights" );
+		shader.addUniform( "allLights[0]" );
 	shader.unUse();
-	// print debuging info
+	// print debugging info
 	shader.printActiveUniforms();
 	// Camera to get model view and projection matices from. Amongst other things
 	g_cam = new Camera( vec3( 0.0f, 0.0f, 10.0f ), g_width, g_height );
 
 	float black[] =	{ 0, 0, 0 };
+	vec4 material( 1.0f, 1.0f, 1.0f, 128.0f );
 	glClearBufferfv( GL_COLOR, 0, black );
-	float lightP[] = { 5.0f, 5.0f, 100.0f };
 	///////////////////////////////////////////////////////////////////////////
 	//                           Main Rendering Loop                         //
 	///////////////////////////////////////////////////////////////////////////
@@ -257,7 +267,12 @@ int main()
 					value_ptr( g_cam->getProjectionMatrix() ) );
 			glUniformMatrix3fv( shader( "normM" ), 1, GL_FALSE,
 					value_ptr( g_cam->getNormalMatrix() ) );
-			glUniform3fv( shader( "lightP" ), 1, &lightP[0] );
+			glUniform4fv( shader( "material" ), 1, value_ptr( material ) );
+			checkGLErrors( 272 );
+			glUniform1i( shader( "numLights" ), num );
+			checkGLErrors( 274 );
+			glUniformMatrix4fv( shader( "allLights[0]" ), num, GL_FALSE, ls );
+			checkGLErrors( 276 );
 			geo->draw( name, 9 );
 		shader.unUse();
 		// make sure the camera rotations, position and matrices are updated

@@ -14,62 +14,60 @@ uniform mat4 mvM;
 uniform vec4 material; // intensities, shininess is w
 uniform sampler2D image;
 
-uniform struct Light {
-	vec4 pos;
-	vec4 spec; // specular intensities
-	vec4 att; // attenuation coefficients, ambient coefficient is w;
-	vec4 coneDir; // cone direction, cone angle is w;
-} allLights[MAX_LIGHTS];
-
 uniform int numLights;
+	// 0,1,2,3 light position
+	// 0,1,2,3 specular intensities
+	// 0,1,2 attenuation coefficients, ambient coefficient is w;
+	// 0,1,2 cone direction, 3 cone angle
+uniform mat4 allLights[MAX_LIGHTS];
 
-vec3 lighting( Light l, vec3 diffuse, vec3 normal, vec3 pos, vec3 eye )
-{
-    vec3 lightDir; // vector from surface to the light
-    float att = 1.0; // attenuation
-
-    if ( l.pos.w == 0.0 ) // directional light
-    {
-        lightDir = normalize(l.pos.xyz);
-        att = 1.0; // no attenuation for directional lights
-    } 
-    else
-    {   // point light
-        vec4 lgt4 = mvM * l.pos;
-        lightDir = (lgt4.xyz / lgt4.w) - pos;
-        float dist = length(lightDir);
-        lightDir = normalize(lightDir);
-        // spotlight cone
-        float inside = degrees(acos(dot(-eye, normalize(l.coneDir.xyz))));
-        if ( inside > l.coneDir.w )
-        {
-            att = 0.0;
-        }
-        else att = 1.0/(l.att.x + (l.att.y*dist) + (l.att.z*dist*dist));
-    }
-    vec3 mat = diffuse.rgb * material.xyz; // matte colour
-    
-    // ambient
-    vec3 ambient = l.att.w * mat;
-
-    // diffuse
-    float dI = max(0.0, dot(normal, lightDir));
-    vec3 diff = dI * mat;
-    // backfacing from the light?
-	if ( dI <= 0.0 ) return ambient + att * diff;
-
-    //specular
-    float sI = pow(max(0.0, dot(normalize(normal), halfN))), material.w);
-    vec3 spec = sI * l.spec * material.xyz;
-
-    //output color (no gamma correction)
-    return ambient + att * ( diff + spec );
-}
 
 void main()
 {
-    vec3 diffColor = texture( image, fin.vUV );
-    for ( int i = 0; i<numLights; ++i )
-        FBColor.rgb += lighting( allLights[i], diffColor, fin.vNormal
-                                            , gl_Position, fin.vView );
+  FBColor = 0;
+  float diff = 0;
+  float spec = 0;
+  vec3 specIntense = 0;
+  for ( int i = 0; i<numLights; ++i )
+  {
+    vec3 lightDir = vec3();
+    mat4 light = allLights[i];
+    if ( light[0].w == 1.0 )
+    { // point light
+      vec4 lgt4 = mvM * light[0];
+      lightDir = normalize((lgt4.xyz / lgt4.w) - vView);
+
+      // Dot product gives us diffuse intensity
+      diff = max(0.0, dot(normalize(vNormal), lightDir));
+
+      if ( light[3].w != 0.0 )
+      { // spotlight
+        // TODO: ... check angle between light direction and spotlight direction.
+        // attenuate from some angle
+      }
+    else
+    { // directional light
+        lightDir = normalize( -light[0] )
+        // Dot product gives us diffuse intensity
+        diff = max(0.0, dot(normalize(vNormal), lightDir));
+    }
+    if ( diff > 0 )
+    {
+      // Halfway Normal
+      vec3 halfway = normalize( lightDir - normalize(vView) );
+      // specular
+      spec += max( 0.0, dot( normalize(vNormal), halfway ) );
+      specIntense = max( specIntense, light[1].xyz );
+    }
+    // If the diffuse light is zero, don’t even bother with the pow function
+    }
+  }
+
+  if ( diff > 0 )
+  {
+    specular = pow( spec, material.w ) * specIntense;
+  }
+  // Multiply intensity by diffuse color, force alpha to 1.0 and add in ambient light
+  vec3 diffuse = texture( image, vUV );
+  FBColor = max( material.w, diff ) * diffuse + spec * specular;
 }

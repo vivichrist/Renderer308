@@ -299,7 +299,7 @@ void Geometry::draw( uint id, GLsizei insts )
     else
       glDrawElementsInstanced( GL_TRIANGLES, e.eNumElements, e.eBuffType,
           (GLvoid *) 0, insts );
-    checkGLError( 246 );
+    checkGLError( 302 );
   }
   else if ( m_buffOb.find( id ) != m_buffOb.end() )
   {
@@ -310,7 +310,7 @@ void Geometry::draw( uint id, GLsizei insts )
       glDrawArrays( GL_TRIANGLES, 0, b.numElements );
     else
       glDrawArraysInstanced( GL_TRIANGLES, 0, b.numElements, insts );
-    checkGLError( 255 );
+    checkGLError( 313 );
   }
   else
   {

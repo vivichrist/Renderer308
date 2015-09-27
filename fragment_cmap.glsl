@@ -8,7 +8,7 @@ in VertexData {
 	smooth in vec2 vUV;
 	smooth in vec3 vNormal;
 	smooth in vec3 vView;
-} finout;
+} fin;
 
 uniform vec4 material; // intensities, shininess is w
 uniform sampler2D image;
@@ -31,7 +31,7 @@ vec3 lighting( Light l, vec3 diffuse, vec3 normal, vec3 pos, vec3 eye )
     {
         lightDir = normalize(l.pos.xyz);
         att = 1.0; // no attenuation for directional lights
-    } 
+    }
     else
     {   // point light
         vec4 lgt4 = finout.mvM * l.pos;
@@ -47,14 +47,14 @@ vec3 lighting( Light l, vec3 diffuse, vec3 normal, vec3 pos, vec3 eye )
         else att = 1.0/(l.att.x + (l.att.y*dist) + (l.att.z*dist*dist));
     }
     vec3 mat = diffuse.rgb * material.xyz; // matte colour
-    
+
     // ambient
     vec3 ambient = l.att.w * mat;
 
     // diffuse
     float dI = max(0.0, dot(normal, lightDir));
     vec3 diff = dI * mat;
-    
+
     // backfacing from the light?
 	if ( dI <= 0.0 ) return ambient + att * diff;
 
@@ -70,6 +70,6 @@ void main()
 {
     vec3 diffColor = texture( image, vUV );
     for ( int i = 0; i<numLights; ++i )
-        FBColor.rgb += lighting( allLights[i], diffColor, finout.vNormal
-                                            , gl_Position, finout.vView );
+        FBColor.rgb += lighting( allLights[i], diffColor, fin.vNormal
+                                            , gl_Position, fin.vView );
 }

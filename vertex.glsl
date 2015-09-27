@@ -23,15 +23,19 @@ void main(void)
 {
     // Get surface normal in eye coordinates
     vNormal = normalize(normM * normal);
+
     vUV = texCoord;
+
     // Get vertex position in eye coordinates
     vec4 pos4 = mvM * vec4( position + instpos, 1 );
     vView = pos4.xyz / pos4.w;
+
     // Get light position in eye coordinates
     vec4 lgt4 = mvM * vec4( lightP, 1 );
     vec3 lpos = lgt4.xyz / lgt4.w;
-    
+
     vLightDir = normalize(lpos - vView);
+
     // transform the geometry!
     gl_Position = projM * pos4;
 }
