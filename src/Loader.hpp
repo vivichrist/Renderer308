@@ -5,9 +5,8 @@
  *  Created on: 18/08/2015
  *      Author: vivichrist
  *****************************************************************************/
-
-#ifndef LOADER_HPP_
-#define LOADER_HPP_
+#pragma once
+#define GLM_FORCE_RADIANS
 
 #include <cmath>
 #include <iostream> // input/output streams
@@ -63,5 +62,3 @@ public:
 };
 
 } /**< namespace vogl */
-
-#endif /* LOADER_HPP_ */

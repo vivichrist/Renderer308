@@ -5,8 +5,7 @@
  *      Author: vivichrist
  */
 
-#ifndef CAMERA_HPP_
-#define CAMERA_HPP_
+#pragma once
 
 #define GLM_FORCE_RADIANS
 
@@ -82,4 +81,3 @@ private:
 };
 
 } // end vogl namespace
-#endif /* CAMERA_HPP_ */

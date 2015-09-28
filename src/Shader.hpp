@@ -5,8 +5,7 @@
  *      Author: vivichrist
  */
 
-#ifndef SHADER_HPP_
-#define SHADER_HPP_
+#pragma once
 
 #define GLM_FORCE_RADIANS
 
@@ -51,5 +50,3 @@ private:
 	std::map<std::string, GLuint> attributeList;
 	std::map<std::string, GLuint> uniformLocationList;
 };
-
-#endif /* SHADER_HPP_ */

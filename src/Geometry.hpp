@@ -6,9 +6,8 @@
  *      Author: vivichrist
  *****************************************************************************/
 
-#ifndef GEOMETRY_HPP_
-#define GEOMETRY_HPP_
-
+#pragma once
+#define GLM_FORCE_RADIANS
 #include <map>
 #include <vector>
 #include <iostream>
@@ -70,5 +69,3 @@ private:
 };
 
 } /**< namespace vogl */
-
-#endif /* GEOMETRY_HPP_ */
