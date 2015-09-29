@@ -11,63 +11,72 @@ in VertexData {
 } fin;
 
 uniform mat4 mvM;
+uniform mat3 normM;
 uniform vec4 material; // intensities, shininess is w
 uniform sampler2D image;
 
 uniform int numLights;
 	// 0,1,2,3 light position
 	// 0,1,2,3 specular intensities
-	// 0,1,2 attenuation coefficients, ambient coefficient is w;
-	// 0,1,2 cone direction, 3 cone angle
+	// 0,1,2 attenuation coefficients, 3 is ambient coefficient
+	// 0,1,2 cone direction, 3 is cone angle
 uniform mat4 allLights[MAX_LIGHTS];
 
 
 void main()
 {
-  FBColor = 0;
-  float diff = 0;
-  float spec = 0;
-  vec3 specIntense = 0;
+  FBColor = vec4(0);
+  float diff = 0; // accumulated diffuse intensity
+  float spec = 0; // accumulated specular intensity
+  vec3 specIntense = vec3(0);
   for ( int i = 0; i<numLights; ++i )
   {
-    vec3 lightDir = vec3();
-    mat4 light = allLights[i];
-    if ( light[0].w == 1.0 )
-    { // point light
-      vec4 lgt4 = mvM * light[0];
-      lightDir = normalize((lgt4.xyz / lgt4.w) - vView);
-
-      // Dot product gives us diffuse intensity
-      diff = max(0.0, dot(normalize(vNormal), lightDir));
-
-      if ( light[3].w != 0.0 )
+    float d = 0; // current diffuse intensity
+	float s = 0; // current specular intensity
+    float att = 0; // attenuation
+    vec3 lightDir = vec3(0); // direction to light from fragment
+    mat4 light = allLights[i]; // chosen light
+    
+    if ( light[0].w == 1.0 ) // point light
+    {
+      vec4 lgt4 = mvM * light[0]; // light position in eye coordinates
+      lightDir = (lgt4.xyz / lgt4.w) - fin.vView;
+      float dist = length( lightDir );
+      lightDir = normalize(lightDir);
+      // check angle between light direction and spotlight direction.
+      if ( light[3].w == 0.0 || degrees( acos( dot( normM * light[3].xyz, -lightDir ))) < light[3].w )
       { // spotlight
-        // TODO: ... check angle between light direction and spotlight direction.
-        // attenuate from some angle
+          // Dot product gives us diffuse intensity
+          d = max(0.0, dot(normalize(fin.vNormal), lightDir));
+          att = 1.0/( light[2].x + light[2].y*dist + light[2].z*dist*dist );
       }
+    }
     else
     { // directional light
-        lightDir = normalize( -light[0] )
+        lightDir = -normalize( normM * light[0].xyz );
         // Dot product gives us diffuse intensity
-        diff = max(0.0, dot(normalize(vNormal), lightDir));
+        d = max(0.0, dot(normalize(fin.vNormal), lightDir));
+        att = 1.0;
     }
-    if ( diff > 0 )
+    if ( d > 0.0 )
     {
       // Halfway Normal
-      vec3 halfway = normalize( lightDir - normalize(vView) );
+      vec3 halfway = normalize( lightDir - normalize(fin.vView) );
       // specular
-      spec += max( 0.0, dot( normalize(vNormal), halfway ) );
-      specIntense = max( specIntense, light[1].xyz );
+      s = max( 0.0, dot( normalize(fin.vNormal), halfway ) );
+      specIntense = max( specIntense, light[1].xyz * d * att );
+      spec = max( spec, s );
     }
-    // If the diffuse light is zero, don’t even bother with the pow function
-    }
-  }
+    diff = max( diff, att * d );
+  }// end for each light
 
+  vec3 specular = vec3(0);
+  vec4 diffuse = texture( image, fin.vUV );
+  // If the diffuse light is zero, don’t even bother with the pow function
   if ( diff > 0 )
   {
-    specular = pow( spec, material.w ) * specIntense;
+    specular = pow( spec, material.w ) * (specIntense + diffuse.xyz);
   }
   // Multiply intensity by diffuse color, force alpha to 1.0 and add in ambient light
-  vec3 diffuse = texture( image, vUV );
-  FBColor = max( material.w, diff ) * diffuse + spec * specular;
+  FBColor = max( 0.02, diff ) * diffuse + spec * vec4(specular, 1.0);
 }

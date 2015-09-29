@@ -188,10 +188,27 @@ void Geometry::bindTexure( const std::string& load, GLuint id )
 	}
 }
 
+uint Geometry::addBuffer( const std::string& load, const glm::vec3& pos )
+{
+	float p[] = {pos.x, pos.y, pos.z};
+	addBuffer( load, p, p, 1 );
+}
+
+uint Geometry::addBuffer( const std::string& load, const glm::vec3& pos,
+		const glm::vec3& col )
+{
+	float p[] = {pos.x, pos.y, pos.z};
+	float c[] = {col.x, col.y, col.z};
+	addBuffer( load, p, c, 1 );
+}
+
 /******************************************************************************
- * Fill a buffer with Vertices, Texture Coorinates and Vertex Normals ready for
+ * Fill a buffer with Vertices, Texture Coordinates and Vertex Normals ready for
  * rendering.
- * @param triangles straight from the loader
+ * @param load name of file to load triangles etc.
+ * @param pos positions of a number of instances
+ * @param col colour of a number of instances
+ * @param n number of instances
  * @return the VAO name
  */
 uint Geometry::addBuffer( const string& load, const float *pos, const float *col, uint n )

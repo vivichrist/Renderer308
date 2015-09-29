@@ -29,7 +29,7 @@ void key_callback( GLFWwindow * window, int key, int scancode, int action,
 		int mods )
 {
 	if ( key == GLFW_KEY_ESCAPE && action == GLFW_PRESS )
-	{// exit captured mouse or exit program
+	{ // exit captured mouse or exit program
 		if ( g_hasMouse )
 		{
 			g_hasMouse = false;
@@ -43,28 +43,28 @@ void key_callback( GLFWwindow * window, int key, int scancode, int action,
 	}
 	// directions of camera movement
 	else if ( key == GLFW_KEY_W )
-	{// move forward
+	{ // move forward
 		if ( action == GLFW_PRESS )
 			g_cam->walkOn( true );
 		else if ( action == GLFW_RELEASE )
 			g_cam->walkOff( true );
 	}
 	else if ( key == GLFW_KEY_S )
-	{// move backward
+	{ // move backward
 		if ( action == GLFW_PRESS )
 			g_cam->walkOn( false );
 		else if ( action == GLFW_RELEASE )
 			g_cam->walkOff( false );
 	}
 	else if ( key == GLFW_KEY_A )
-	{// move left
+	{ // move left
 		if ( action == GLFW_PRESS )
 			g_cam->strafeOn( false );
 		else if ( action == GLFW_RELEASE )
 			g_cam->strafeOff( false );
 	}
 	else if ( key == GLFW_KEY_D )
-	{// move right
+	{ // move right
 		if ( action == GLFW_PRESS )
 			g_cam->strafeOn( true );
 		else if ( action == GLFW_RELEASE )
@@ -102,16 +102,16 @@ void mousemotion_callback( GLFWwindow * window, double x, double y )
 
 void scroll_callback( GLFWwindow * window, double x, double y )
 {
-  // TODO: this could be useful later...
+	// TODO: this could be useful later...
 }
 
 void resize_callback( GLFWwindow * window, int newWidth, int newHeight )
 {
-  g_width = newWidth;
-  g_height = newHeight;
-  g_height = g_height > 0 ? g_height : 1;
-  g_cam->setAspectRatio( g_width, g_height );
-  glViewport( 0, 0, g_width, g_height );
+	g_width = newWidth;
+	g_height = newHeight;
+	g_height = g_height > 0 ? g_height : 1;
+	g_cam->setAspectRatio( g_width, g_height );
+	glViewport( 0, 0, g_width, g_height );
 }
 
 /******************************************************************************
@@ -123,9 +123,8 @@ void resize_callback( GLFWwindow * window, int newWidth, int newHeight )
 int checkGLErrors( int where )
 {
 	int errCount = 0;
-	for ( GLenum currError = glGetError();
-				 currError != GL_NO_ERROR;
-				 currError = glGetError() )
+	for ( GLenum currError = glGetError(); currError != GL_NO_ERROR; currError =
+			glGetError() )
 	{
 		cout << "Error: " << currError << " line " << where << " In Main\n";
 		++errCount;
@@ -204,31 +203,33 @@ int main()
 	// tell GL to only draw onto a pixel if the shape is closer to the viewer
 	glEnable( GL_DEPTH_TEST );
 	glDepthFunc( GL_LEQUAL );
-	glEnable(GL_CULL_FACE);
+	glEnable( GL_CULL_FACE );
 	glCullFace( GL_BACK );
 
-	float boxPositions[] = {
-	      0, 0, 0
-	      , -3, 0, 0
-	      , -3, -3, 0
-	      , 0, -3, 0
-	      , -3, 3, 0
-	      , 3, -3, 0
-	      , 0, 3, 0
-	      , 3, 3, 0
-	      , 3, 0, 0
-  };
-  Geometry *geo = Geometry::getInstance();
-  uint name = geo->addBuffer( "res/assets/sphere.obj", boxPositions, boxPositions, 9 );
-  geo->bindTexure( "res/textures/wood.jpg", name );
-  Lights *lights = Lights::getInstance();
-  lights->addPointLight( vec3( 5.0f, 5.0f, 100.0f ), vec3( 1.0f, 1.0f, 1.0f )
-                        , 1.0f, 0.0f, 0.0f, 0.05f );
+	float boxPositions[] =
+	{ 0, 0, 0, -3, 0, 0, -3, -3, 0, 0, -3, 0, -3, 3, 0, 3, -3, 0, 0, 3, 0, 3, 3,
+			0, 3, 0, 0 };
+	Geometry *geo = Geometry::getInstance();
+	uint sphere = geo->addBuffer( "res/assets/sphere.obj", boxPositions,
+			boxPositions, 9 );
+	uint bunny = geo->addBuffer( "res/assets/bunny.obj", vec3( 3, 3, 5 ) );
+	uint box = geo->addBuffer( "res/assets/box.obj", vec3( 3, 3, -5 ) );
+	uint torus = geo->addBuffer( "res/assets/torus.obj", vec3( 3, -3, 5 ) );
+	uint teapot = geo->addBuffer( "res/assets/teapot.obj", vec3( 3, 3, 5 ) );
+	uint table = geo->addBuffer( "res/assets/table.obj", vec3( 3, 3, 5 ) );
+	geo->bindTexure( "res/textures/wood.jpg", sphere );
+	geo->bindTexure( "res/textures/brick.jpg", box );
+	Lights *lights = Lights::getInstance();
+	lights->addPointLight( vec3( 3.0f, 3.0f, 3.0f ), vec3( 1.0f, 1.0f, 1.0f ),
+			1.0f, 0.0f, 0.01f, 0.05f );
+	lights->addSpotLight( vec3( 0.0f, 0.0f, 5.0f ), vec3( 1.0f, 1.0f, 1.0f ),
+			1.0f, 0.0f, 0.01f, 0.05f, vec3( 0.0f, 0.0f, -1.0f ), 30.0f );
+//  lights->addDirectionalLight( vec3( 0.0f, -1.0f, 0.0f ), vec3( 1.0f, 1.0f, 1.0f ) );
 //  lights->addSpotLight( vec3( 0.0f, 10.0f, 0.0f ), vec3( 1.0f, 1.0f, 1.0f )
-//                      , 1.0f, 0.0f, 0.0f, 0.05f, vec3( 0.0f, -1.0f, 0.0f ), 15.0f );
-  float ls[160];
-  GLint num;
-  lights->getLights( ls, num );
+//                      , 1.0f, 0.0f, 0.0f, 0.05f, vec3( 0.0f, -1.0f, 0.0f ), 10.0f );
+	float ls[160];
+	GLint num;
+	lights->getLights( ls, num );
 	/************************************************************
 	 * Load up a shader from the given files.
 	 *******************************************************//**/
@@ -249,8 +250,9 @@ int main()
 	// Camera to get model view and projection matices from. Amongst other things
 	g_cam = new Camera( vec3( 0.0f, 0.0f, 10.0f ), g_width, g_height );
 
-	float black[] =	{ 0, 0, 0 };
-	vec4 material( 1.0f, 1.0f, 1.0f, 128.0f );
+	float black[] =
+	{ 0, 0, 0 };
+	vec4 material( 1.0f, 1.0f, 1.0f, 256.0f );
 	glClearBufferfv( GL_COLOR, 0, black );
 	///////////////////////////////////////////////////////////////////////////
 	//                           Main Rendering Loop                         //
@@ -273,7 +275,7 @@ int main()
 			checkGLErrors( 274 );
 			glUniformMatrix4fv( shader( "allLights[0]" ), num, GL_FALSE, ls );
 			checkGLErrors( 276 );
-			geo->draw( name, 9 );
+			geo->draw( sphere, 9 );
 		shader.unUse();
 		// make sure the camera rotations, position and matrices are updated
 		g_cam->update();
