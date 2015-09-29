@@ -28,9 +28,9 @@ Texture *Texture::getInstance()
 	return instance;
 }
 
-GLuint Texture::getPNGName( const std::string& allocator )
+GLuint Texture::getPNGName( const string& name )
 {
-  return 0;
+  return names[name];
 }
 
 GLuint Texture::addTexture( const string& filename )
@@ -51,6 +51,25 @@ GLuint Texture::addTexture( const string& filename )
 
 	names[filename] = texture;
 	return texture;
+}
+
+GLuint Texture::addTexture( const uvec3& colour )
+{
+
+  //Now generate the OpenGL texture object
+  GLuint texture;
+  char pixel[] = { colour.r, colour.g, colour.b };
+  glGenTextures( 1, &texture );
+  glBindTexture( GL_TEXTURE_2D, texture );
+  glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB, 1, 1, 0, GL_RGB_INTEGER
+      , GL_UNSIGNED_INT, (GLvoid*) colour );
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+  names[ to_string( texture ) ] = texture;
+  return texture;
 }
 
 //initialize FBO the hard way

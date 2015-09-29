@@ -12,7 +12,6 @@ in VertexData {
 
 uniform mat4 mvM;
 uniform mat3 normM;
-uniform vec4 material; // intensities, shininess is w
 uniform sampler2D image;
 
 uniform int numLights;
@@ -22,6 +21,8 @@ uniform int numLights;
 	// 0,1,2 cone direction, 3 is cone angle
 uniform mat4 allLights[MAX_LIGHTS];
 
+uniform vec3 matAmb;
+uniform vec4 matSpec; // specular intensities, shininess is w
 
 void main()
 {
@@ -36,7 +37,7 @@ void main()
     float att = 0; // attenuation
     vec3 lightDir = vec3(0); // direction to light from fragment
     mat4 light = allLights[i]; // chosen light
-    
+
     if ( light[0].w == 1.0 ) // point light
     {
       vec4 lgt4 = mvM * light[0]; // light position in eye coordinates
@@ -75,8 +76,9 @@ void main()
   // If the diffuse light is zero, don’t even bother with the pow function
   if ( diff > 0 )
   {
-    specular = pow( spec, material.w ) * (specIntense + diffuse.xyz);
+    specular = pow( spec, matSpec.w * 128.0 ) * (specIntense * diffuse.xyz );
   }
   // Multiply intensity by diffuse color, force alpha to 1.0 and add in ambient light
-  FBColor = max( 0.02, diff ) * diffuse + spec * vec4(specular, 1.0);
+  FBColor = max( vec4( matAmb, 1 ), diff * diffuse )
+  			+ vec4(spec * specular * matSpec.xyz, 1.0);
 }

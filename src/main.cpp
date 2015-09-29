@@ -206,24 +206,27 @@ int main()
 	glEnable( GL_CULL_FACE );
 	glCullFace( GL_BACK );
 
-	float boxPositions[] =
-	{ 0, 0, 0, -3, 0, 0, -3, -3, 0, 0, -3, 0, -3, 3, 0, 3, -3, 0, 0, 3, 0, 3, 3,
-			0, 3, 0, 0 };
 	Geometry *geo = Geometry::getInstance();
-	uint sphere = geo->addBuffer( "res/assets/sphere.obj", boxPositions,
-			boxPositions, 9 );
-	uint bunny = geo->addBuffer( "res/assets/bunny.obj", vec3( 3, 3, 5 ) );
-	uint box = geo->addBuffer( "res/assets/box.obj", vec3( 3, 3, -5 ) );
-	uint torus = geo->addBuffer( "res/assets/torus.obj", vec3( 3, -3, 5 ) );
-	uint teapot = geo->addBuffer( "res/assets/teapot.obj", vec3( 3, 3, 5 ) );
-	uint table = geo->addBuffer( "res/assets/table.obj", vec3( 3, 3, 5 ) );
-	geo->bindTexure( "res/textures/wood.jpg", sphere );
+	uint sphere = geo->addBuffer( "res/assets/sphere.obj"
+	                            , vec3( -3.0f, 0.0f, 3.0f )
+	                            , vec3( 0.714f, 0.4284f, 0.18144f ) );
+	uint bunny = geo->addBuffer( "res/assets/bunny.obj"
+	                            , vec3(), vec3( 0.50754f, 0.50754f, 0.50754f ) );
+	uint box = geo->addBuffer( "res/assets/box.obj", vec3( 3, 0, 3 ) );
+	uint torus = geo->addBuffer( "res/assets/torus.obj"
+	                            , vec3( 3.0f, 0.0f, -3.0f )
+	                            , vec3( 0.5f, 0.0f, 0.0f ) );
+	uint teapot = geo->addBuffer( "res/assets/teapot.obj"
+	                            , vec3( -3.0f, 0.0f, -3.0f )
+	                            , vec3( 0.427451f, 0.470588f, 0.541176f ) );
+	uint table = geo->addBuffer( "res/assets/table.obj", vec3( 0, 0, -1 ) );
+	geo->bindTexure( "res/textures/wood.jpg", table );
 	geo->bindTexure( "res/textures/brick.jpg", box );
 	Lights *lights = Lights::getInstance();
 	lights->addPointLight( vec3( 3.0f, 3.0f, 3.0f ), vec3( 1.0f, 1.0f, 1.0f ),
-			1.0f, 0.0f, 0.01f, 0.05f );
-	lights->addSpotLight( vec3( 0.0f, 0.0f, 5.0f ), vec3( 1.0f, 1.0f, 1.0f ),
-			1.0f, 0.0f, 0.01f, 0.05f, vec3( 0.0f, 0.0f, -1.0f ), 30.0f );
+			1.0f, 0.0f, 0.0f, 0.05f );
+	lights->addSpotLight( vec3( 0.0f, 3.0f, 0.0f ), vec3( 1.0f, 1.0f, 1.0f ),
+			1.0f, 0.0f, 0.01f, 0.05f, vec3( 0.0f, -1.0f, 0.0f ), 30.0f );
 //  lights->addDirectionalLight( vec3( 0.0f, -1.0f, 0.0f ), vec3( 1.0f, 1.0f, 1.0f ) );
 //  lights->addSpotLight( vec3( 0.0f, 10.0f, 0.0f ), vec3( 1.0f, 1.0f, 1.0f )
 //                      , 1.0f, 0.0f, 0.0f, 0.05f, vec3( 0.0f, -1.0f, 0.0f ), 10.0f );
@@ -252,12 +255,24 @@ int main()
 
 	float black[] =
 	{ 0, 0, 0 };
-	vec4 material( 1.0f, 1.0f, 1.0f, 256.0f );
-	glClearBufferfv( GL_COLOR, 0, black );
+	float redplast[] = { 0.0f, 0.0f, 0.0f // ambient
+	                   , 0.7f, 0.6f, 0.6f // specular
+	                   , 0.25f }; // shininess
+	float bronze[] = { 0.2125f, 0.1275f, 0.054f
+	                , 0.393548f, 0.271906f, 0.166721f
+	                , 0.2f };
+	float china[] = { 0.19225f, 0.19225f, 0.19225f
+	                , 0.508273f, 0.508273f, 0.508273f
+	                , 0.2f };
+	float bMetal[] = { 0.105882f, 0.058824f, 0.113725f
+	                , 0.333333f, 0.333333f, 0.521569f
+	                , 9.84615f };
 	///////////////////////////////////////////////////////////////////////////
 	//                           Main Rendering Loop                         //
 	///////////////////////////////////////////////////////////////////////////
+	glClearBufferfv( GL_COLOR, 0, black );
 	glViewport( 0, 0, g_width, g_height );
+
 	while ( !glfwWindowShouldClose( window ) )
 	{
 		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
@@ -269,13 +284,22 @@ int main()
 					value_ptr( g_cam->getProjectionMatrix() ) );
 			glUniformMatrix3fv( shader( "normM" ), 1, GL_FALSE,
 					value_ptr( g_cam->getNormalMatrix() ) );
-			glUniform4fv( shader( "material" ), 1, value_ptr( material ) );
+			glUniform1fv( shader( "matAmb" ), 3, &bronze[0] );
+			glUniform1fv( shader( "matSpec" ), 4, &bronze[3] );
 			checkGLErrors( 272 );
 			glUniform1i( shader( "numLights" ), num );
 			checkGLErrors( 274 );
 			glUniformMatrix4fv( shader( "allLights[0]" ), num, GL_FALSE, ls );
 			checkGLErrors( 276 );
-			geo->draw( sphere, 9 );
+			geo->draw( sphere, 1 );
+			geo->draw( box, 1 );
+
+			glUniform1fv( shader( "material[0]" ), 7, &china[0] );
+			geo->draw( bunny, 1 );
+			glUniform1fv( shader( "material[0]" ), 7, &redplast[0] );
+			geo->draw( torus, 1 );
+			glUniform1fv( shader( "material[0]" ), 7, &bMetal[0] );
+			geo->draw( teapot, 1 );
 		shader.unUse();
 		// make sure the camera rotations, position and matrices are updated
 		g_cam->update();

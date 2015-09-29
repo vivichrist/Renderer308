@@ -76,7 +76,7 @@ uint Geometry::addSmoothSurfaceBuffer( const string& load, const float *pos
 	triangles.getNormals( vn );
 	vector<triangle> tris;
 	triangles.getTriIndices( tris );
-	ushort max = v.size();
+	uint max = v.size();
 	if ( !max )
 	{
 		cout << "No Vertices To Load!";
@@ -84,7 +84,7 @@ uint Geometry::addSmoothSurfaceBuffer( const string& load, const float *pos
 	}
 	map<int, Varying*> mbuff;
 	vector<Varying> buff(max);
-	vector<GLushort> indices;
+	vector<GLuint> indices;
 	for ( triangle t: tris )
 	{ // load in the location data each possibly empty except points
 		for ( uint j = 0; j<3; ++j )
@@ -139,7 +139,7 @@ uint Geometry::addSmoothSurfaceBuffer( const string& load, const float *pos
   glEnableVertexAttribArray( TexCoordsLoc );
   checkGLError( 134 );
   // instancing attributes
-  if ( n > 1 ) // bypass if there are none
+  if ( n > 0 ) // bypass if there are none
   {
     uint fs = 2 * 3 * n, k = 3 * n;
     float poscol[ fs ];
@@ -191,7 +191,8 @@ void Geometry::bindTexure( const std::string& load, GLuint id )
 uint Geometry::addBuffer( const std::string& load, const glm::vec3& pos )
 {
 	float p[] = {pos.x, pos.y, pos.z};
-	addBuffer( load, p, p, 1 );
+	checkGLError( 194 );
+	return addBuffer( load, p, p, 1 );
 }
 
 uint Geometry::addBuffer( const std::string& load, const glm::vec3& pos,
@@ -199,7 +200,23 @@ uint Geometry::addBuffer( const std::string& load, const glm::vec3& pos,
 {
 	float p[] = {pos.x, pos.y, pos.z};
 	float c[] = {col.x, col.y, col.z};
-	addBuffer( load, p, c, 1 );
+	GLuint texture = Texture::getInstance()->addTexture( col );
+	GLuint id = addBuffer( load, p, c, 1 );
+	checkGLError( 204 );
+	if ( m_elemBuffOb.find( id ) != m_elemBuffOb.end() )
+  {
+    m_elemBuffOb[id].texture = texture;
+  }
+  else if ( m_buffOb.find( id ) != m_buffOb.end() )
+  {
+    m_buffOb[id].texture = texture;
+  }
+  else
+  {
+    std::cout << "No Such VBObject (name:" << id << ")\n";
+    throw;
+  }
+	return id;
 }
 
 /******************************************************************************
@@ -216,6 +233,7 @@ uint Geometry::addBuffer( const string& load, const float *pos, const float *col
 	vogl::Loader triangles;
 	triangles.readOBJ( load );
 
+
 	vector<vec3> v;
 	triangles.getPoints( v );
 	vector<vec2> vt;
@@ -224,7 +242,8 @@ uint Geometry::addBuffer( const string& load, const float *pos, const float *col
 	triangles.getNormals( vn );
 	vector<triangle> tris;
 	triangles.getTriIndices( tris );
-	ushort max = tris.size() * 3;
+	uint max = tris.size() * 3;
+	checkGLError( 245 );
 	if ( !max )
 	{
 		cout << "No Vertices To Load!";
@@ -261,10 +280,11 @@ uint Geometry::addBuffer( const string& load, const float *pos, const float *col
   glBindVertexArray( b.vao );
   glGenBuffers( 1, &b.vbo );
   glBindBuffer( b.type, b.vbo );
+  checkGLError( 280 );
   uint isize = sizeof(float) * 3 * n;
   glBufferData( b.type, b.bytesSize + (isize * 2), (GLvoid *) 0, GL_STATIC_DRAW );
   glBufferSubData( b.type, 0, b.bytesSize, &buff[0] );
-  checkGLError( 208 );
+  checkGLError( 284 );
   glVertexAttribPointer( VertLoc, 3, b.buffType, GL_FALSE
       , sizeof(Varying), (GLvoid *) 0 );
   glEnableVertexAttribArray( VertLoc );
@@ -275,7 +295,7 @@ uint Geometry::addBuffer( const string& load, const float *pos, const float *col
       , sizeof(Varying), (GLvoid *) (sizeof(float) * 6) );
   glEnableVertexAttribArray( TexCoordsLoc );
   // instancing attributes
-  if ( n > 1 ) // bypass if there are none
+  if ( n > 0 ) // bypass if there are none
   {
     uint fs = 2 * 3 * n, k = 3 * n;
     float poscol[ fs ];

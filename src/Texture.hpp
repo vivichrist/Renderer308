@@ -17,7 +17,6 @@
 #include <string>
 #include <map>
 #include <vector>
-#include <png.h>
 #include <cstdio>
 #include <stb_image.h>
 #include "Shader.hpp"
@@ -112,6 +111,7 @@ namespace vogl
     public:
       static Texture *getInstance();
       GLuint addTexture( const std::string& );
+      GLuint addTexture( const glm::uvec3& );
       GLuint getPNGName( const std::string& );
       void makeEnviromentMap( const std::string&, uint );
       GLuint setupEnvMap( const std::string&, uint );

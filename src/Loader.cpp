@@ -162,15 +162,15 @@ void Loader::readOBJ( const string &filename )
 
 void Loader::createNormals()
 {
-	ushort idx = 0, max = 0;
-	map< ushort, set< ushort > > relation;
+	uint idx = 0, max = 0;
+	map< uint, set< uint > > relation;
 	vec3 sum;
 	// store collected surface normals in this array
 	vec3 faceNormals[m_triangles.size()] = { vec3( 0 ) };
 	// find all surrounding surface normals
 	for ( auto &tri : m_triangles )
 	{
-		ushort v0 = tri.v[0].p, v1 = tri.v[1].p, v2 = tri.v[2].p;
+		uint v0 = tri.v[0].p, v1 = tri.v[1].p, v2 = tri.v[2].p;
 		vec3 norm = cross( m_points[v1] - m_points[v0],
 				m_points[v2] - m_points[v0] );
 		tri.v[0].n = v0; // point and normal indices match
@@ -182,11 +182,11 @@ void Loader::createNormals()
 		relation[v2].insert( idx );
 		++idx;
 	}
-	max = (ushort) relation.size(); // 1 less than m_points
+	max = (uint) relation.size(); // 1 less than m_points
 	for ( idx = 1; idx <= max; ++idx )
 	{ // vertex normal creation
 		sum = vec3();
-		for ( ushort norm : relation[idx] ) // relation indexed from 1
+		for ( uint norm : relation[idx] ) // relation indexed from 1
 			sum += faceNormals[norm]; // sum of face normals indexed from 0
 		m_normals.push_back( normalize( sum ) );
 	}
@@ -212,7 +212,7 @@ void Loader::getTriIndices( vector<triangle> &ind )
 	ind = vector<triangle>( m_triangles );
 }
 
-void Loader::getLinesInd( std::vector< GLushort >& ind )
+void Loader::getLinesInd( std::vector< GLuint >& ind )
 {
 	for ( edge e : m_lines )
 	{

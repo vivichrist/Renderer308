@@ -44,7 +44,7 @@
 									<listOptionValue builtIn="false" value="m"/>
 									<listOptionValue builtIn="false" value="Xxf86vm"/>
 									<listOptionValue builtIn="false" value="pthread"/>
-									<listOptionValue builtIn="false" value="png12"/>
+									<listOptionValue builtIn="false" value="png16"/>
 								</option>
 								<option id="gnu.cpp.link.option.paths.1374180631" name="Library search path (-L)" superClass="gnu.cpp.link.option.paths" valueType="libPaths">
 									<listOptionValue builtIn="false" value="/usr/pkg/lib"/>
