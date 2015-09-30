@@ -11,6 +11,8 @@
 namespace vogl
 {
 
+const glm::vec3 Camera::UP( 0.0f, 1.0f, 0.0f );
+
 /**
  * Constructs a camera that faces the usual default direction of -Z.
  * @param feild of view (fov), @param yaw, @param pitch and @param roll
@@ -64,6 +66,23 @@ void Camera::setPosition( const glm::vec3& newPosition )
 	movement_changed = true;
 }
 
+void Camera::setPosLookCenter( const glm::vec3& newPosition )
+{
+	position = newPosition;
+	look = glm::normalize( glm::vec3() - newPosition );
+	right = glm::normalize( glm::cross( look, this->UP ) );
+	up = UP;
+	movement_changed = true;
+}
+
+void Camera::setLookCenter()
+{
+	look = glm::normalize( glm::vec3() - position );
+	right = glm::normalize( glm::cross( look, UP ) );
+	up = UP;
+	movement_changed = true;
+}
+
 void Camera::setFOV( const float nfov )
 {
 	if ( nfov < 0.0f or nfov > M_PI )
@@ -87,6 +106,42 @@ void Camera::setRotation( const float yaw, const float pitch, const float roll )
 	if (pitch) this->pitch = pitch;
 	if (roll) this->roll = roll;
 	rotation_changed = true;
+}
+
+void Camera::rotateOrigX( const float x )
+{
+	if ( x )
+	{
+		position = glm::rotate( position, x, right );
+		look = glm::normalize( glm::vec3() - position );
+		up = glm::rotate( up, x, right );
+		right = glm::normalize( glm::cross( look, up ) );
+		view_changed = true;
+	}
+}
+
+void Camera::rotateOrigY( const float y )
+{
+	if ( y )
+	{
+		position = glm::rotate( position, y, UP );
+		look = glm::normalize( glm::vec3() - position );
+		up = glm::rotate( up, y, UP );
+		right = glm::normalize( glm::cross( look, up ) );
+		view_changed = true;
+	}
+}
+
+void Camera::rotateOrigZ( const float z )
+{
+	if ( z )
+	{
+		glm::vec3 v( look.x, 0, look.z );
+		position = glm::rotate( position, z, v );
+		look = glm::normalize( glm::vec3() - position );
+		right = glm::normalize( glm::cross( look, up ) );
+		view_changed = true;
+	}
 }
 
 void Camera::rotateX( const float pitch )
@@ -346,6 +401,18 @@ void Camera::update()
 	view = glm::lookAt( position, position + look, up );
 	view_changed = false;
 	calcFrustumPlanes();
+}
+
+void Camera::zoomIn()
+{
+	translation += look * 0.5f;
+	movement_changed = true;
+}
+
+void Camera::zoomOut()
+{
+	translation += look * -0.5f;
+	movement_changed = true;
 }
 
 void Camera::walkOn( const bool north )

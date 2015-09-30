@@ -188,15 +188,15 @@ void Geometry::bindTexure( const std::string& load, GLuint id )
 	}
 }
 
-uint Geometry::addBuffer( const std::string& load, const glm::vec3& pos )
+uint Geometry::addBuffer( const string& load, const vec3& pos )
 {
 	float p[] = {pos.x, pos.y, pos.z};
 	checkGLError( 194 );
 	return addBuffer( load, p, p, 1 );
 }
 
-uint Geometry::addBuffer( const std::string& load, const glm::vec3& pos,
-		const glm::vec3& col )
+uint Geometry::addBuffer( const string& load, const vec3& pos,
+		const vec3& col )
 {
 	float p[] = {pos.x, pos.y, pos.z};
 	float c[] = {col.x, col.y, col.z};

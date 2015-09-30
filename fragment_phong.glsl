@@ -15,19 +15,19 @@ uniform mat3 normM;
 uniform sampler2D image;
 
 uniform int numLights;
-	// 0,1,2,3 light position
-	// 0,1,2,3 specular intensities
-	// 0,1,2 attenuation coefficients, 3 is ambient coefficient
-	// 0,1,2 cone direction, 3 is cone angle
+	// [0] 0,1,2 light position, 3 if 0 is direction
+	// [1] 0,1,2,3 colour intensities
+	// [2] 0,1,2 attenuation coefficients
+	// [3] 0,1,2 cone direction, 3 is cone angle
 uniform mat4 allLights[MAX_LIGHTS];
 
-uniform vec3 matAmb;
+uniform vec3 matAmb; // ambient intensities
 uniform vec4 matSpec; // specular intensities, shininess is w
 
 void main()
 {
   FBColor = vec4(0);
-  float diff = 0; // accumulated diffuse intensity
+  vec3 diff = vec3(0); // accumulated diffuse intensity
   float spec = 0; // accumulated specular intensity
   vec3 specIntense = vec3(0);
   for ( int i = 0; i<numLights; ++i )
@@ -48,8 +48,8 @@ void main()
       if ( light[3].w == 0.0 || degrees( acos( dot( normM * light[3].xyz, -lightDir ))) < light[3].w )
       { // spotlight
           // Dot product gives us diffuse intensity
-          d = max(0.0, dot(normalize(fin.vNormal), lightDir));
           att = 1.0/( light[2].x + light[2].y*dist + light[2].z*dist*dist );
+          d = max(0.0, dot(normalize(fin.vNormal), lightDir));// * att;
       }
     }
     else
@@ -59,26 +59,27 @@ void main()
         d = max(0.0, dot(normalize(fin.vNormal), lightDir));
         att = 1.0;
     }
+    vec3 lightsrength = d * light[1].xyz;
     if ( d > 0.0 )
     {
       // Halfway Normal
       vec3 halfway = normalize( lightDir - normalize(fin.vView) );
       // specular
       s = max( 0.0, dot( normalize(fin.vNormal), halfway ) );
-      specIntense = max( specIntense, light[1].xyz * d * att );
+      specIntense = max( specIntense, lightsrength );
       spec = max( spec, s );
     }
-    diff = max( diff, att * d );
+    diff = max( diff, lightsrength );
   }// end for each light
 
   vec3 specular = vec3(0);
   vec4 diffuse = texture( image, fin.vUV );
   // If the diffuse light is zero, don’t even bother with the pow function
-  if ( diff > 0 )
+  if ( diff.x > 0 )
   {
-    specular = pow( spec, matSpec.w * 128.0 ) * (specIntense * diffuse.xyz );
+    specular = pow( spec, matSpec.w * 512.0 ) * (specIntense * diffuse.xyz );
   }
   // Multiply intensity by diffuse color, force alpha to 1.0 and add in ambient light
-  FBColor = max( vec4( matAmb, 1 ), diff * diffuse )
+  FBColor = max( vec4( matAmb, 1 ), vec4( diff, 1 ) * diffuse )
   			+ vec4(spec * specular * matSpec.xyz, 1.0);
 }

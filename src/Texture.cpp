@@ -53,20 +53,19 @@ GLuint Texture::addTexture( const string& filename )
 	return texture;
 }
 
-GLuint Texture::addTexture( const uvec3& colour )
+GLuint Texture::addTexture( const vec3& colour )
 {
 
   //Now generate the OpenGL texture object
   GLuint texture;
-  char pixel[] = { colour.r, colour.g, colour.b };
   glGenTextures( 1, &texture );
   glBindTexture( GL_TEXTURE_2D, texture );
-  glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB, 1, 1, 0, GL_RGB_INTEGER
-      , GL_UNSIGNED_INT, (GLvoid*) colour );
+  glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB32F, 1, 1, 0, GL_RGB
+      , GL_FLOAT, (GLvoid*) value_ptr( colour ) );
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-  glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
   names[ to_string( texture ) ] = texture;
   return texture;
