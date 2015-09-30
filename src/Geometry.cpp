@@ -188,6 +188,13 @@ void Geometry::bindTexure( const std::string& load, GLuint id )
 	}
 }
 
+uint Geometry::addBuffer( const string& load )
+{
+  float p[] = {0, 0, 0};
+  checkGLError( 194 );
+  return addBuffer( load, p, p, 1 );
+}
+
 uint Geometry::addBuffer( const string& load, const vec3& pos )
 {
 	float p[] = {pos.x, pos.y, pos.z};
@@ -202,7 +209,7 @@ uint Geometry::addBuffer( const string& load, const vec3& pos,
 	float c[] = {col.x, col.y, col.z};
 	GLuint texture = Texture::getInstance()->addTexture( col );
 	GLuint id = addBuffer( load, p, c, 1 );
-	checkGLError( 204 );
+	checkGLError( 205 );
 	if ( m_elemBuffOb.find( id ) != m_elemBuffOb.end() )
   {
     m_elemBuffOb[id].texture = texture;

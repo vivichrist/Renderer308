@@ -54,6 +54,7 @@ class Geometry
 public:
 	static Geometry *getInstance();
 	uint addSmoothSurfaceBuffer( const std::string&, const float*, const float*, uint );
+	uint addBuffer( const std::string& load );
 	uint addBuffer( const std::string& load, const glm::vec3& pos );
 	uint addBuffer( const std::string& load, const glm::vec3& pos, const glm::vec3& col );
 	uint addBuffer( const std::string&, const float*, const float*, uint );

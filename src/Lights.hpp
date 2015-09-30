@@ -9,6 +9,7 @@
 #include <vector>
 #include <GL/glew.h>
 #include <glm/glm.hpp>
+#include <glm/gtx/rotate_vector.hpp>
 
 struct Light {
   glm::vec4 pos; // is also the direction of directional light
@@ -24,13 +25,17 @@ namespace vogl
   {
     public:
       static Lights *getInstance();
-      void addDirectionalLight( glm::vec3 direction, glm::vec3 color );
-      void addPointLight( glm::vec3 position, glm::vec3 color
+      uint addDirectionalLight( glm::vec3 direction, glm::vec3 color );
+      uint addPointLight( glm::vec3 position, glm::vec3 color
     		  , float attConstant, float attLinear, float attQuadratic
-			  , float ambient );
-      void addSpotLight( glm::vec3 position, glm::vec3 color
+    		  , float ambient );
+      uint addSpotLight( glm::vec3 position, glm::vec3 color
     		  , float attConstant, float attLinear, float attQuadratic
-			  , float ambient, glm::vec3 coneDir, float coneAngle );
+    		  , float ambient, glm::vec3 coneDir, float coneAngle );
+      glm::vec4 getPosition( const uint index );
+      void moveLight( const glm::vec3& transpose, const uint index );
+      void directLightX( const float rot, const uint index );
+      void directLightZ( const float rot, const uint index );
       void getLights( Light[], GLint& );
       void getLights( float[160] , GLint& );
       virtual ~Lights();

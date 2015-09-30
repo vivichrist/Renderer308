@@ -80,6 +80,6 @@ void main()
     specular = pow( spec, matSpec.w * 512.0 ) * (specIntense * diffuse.xyz );
   }
   // Multiply intensity by diffuse color, force alpha to 1.0 and add in ambient light
-  FBColor = max( vec4( matAmb, 1 ), vec4( diff, 1 ) * diffuse )
+  FBColor = max( vec4( 0.5 * matAmb, 1 ), vec4( diff, 1 ) * diffuse )
   			+ vec4(spec * specular * matSpec.xyz, 1.0);
 }

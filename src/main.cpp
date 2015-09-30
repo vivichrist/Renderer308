@@ -16,8 +16,18 @@
 using namespace glm;
 using namespace vogl;
 
-bool g_hasMouse = false, g_cam_mode = false;
-vogl::Camera *g_cam = nullptr;
+bool g_hasMouse = false
+   , g_cam_mode = false
+   , g_cam_select = false;
+
+Camera *g_cam = nullptr;
+Lights *g_lights = Lights::getInstance();
+uint g_spotlight, g_spotgeom;
+vec3 g_spotlight_pos;
+vec2 g_spotlight_rot;
+float g_light_array[160];
+GLint g_num_of_lights;
+
 int g_width = 800, g_height = 600;
 
 void error_callback( int error, const char * description )
@@ -25,8 +35,8 @@ void error_callback( int error, const char * description )
 	fputs( description, stderr );
 }
 
-void key_callback( GLFWwindow * window, int key, int scancode, int action,
-		int mods )
+void key_callback( GLFWwindow * window, int key, int scancode
+                          , int action,	int mods )
 {
 	if ( key == GLFW_KEY_ESCAPE && action == GLFW_PRESS )
 	{ // exit captured mouse or exit program
@@ -83,10 +93,42 @@ void key_callback( GLFWwindow * window, int key, int scancode, int action,
 				g_cam->strafeOff( true );
 		}
 	}
+	else if ( key == GLFW_KEY_L && action == GLFW_PRESS )
+	{
+	  g_cam_select = !g_cam_select;
+	}
+	else if ( g_cam_select )
+	{
+
+	  if ( key == GLFW_KEY_UP && action == GLFW_PRESS )
+	  {
+	    g_lights->moveLight( vec3( 0.0f, 0.0f, 0.1f ), g_spotlight );
+	    g_lights->getLights( g_light_array, g_num_of_lights );
+	    g_spotlight_pos = vec3( g_lights->getPosition( g_spotlight ) );
+	  }
+	  else if ( key == GLFW_KEY_DOWN && action == GLFW_PRESS )
+    {
+      g_lights->moveLight( vec3( 0.0f, 0.0f, -0.1f ), g_spotlight );
+      g_lights->getLights( g_light_array, g_num_of_lights );
+      g_spotlight_pos = vec3( g_lights->getPosition( g_spotlight ) );
+    }
+	  else if ( key == GLFW_KEY_RIGHT && action == GLFW_PRESS )
+    {
+      g_lights->moveLight( vec3( 0.1f, 0.0f, 0.0f ), g_spotlight );
+      g_lights->getLights( g_light_array, g_num_of_lights );
+      g_spotlight_pos = vec3( g_lights->getPosition( g_spotlight ) );
+    }
+	  else if ( key == GLFW_KEY_LEFT && action == GLFW_PRESS )
+    {
+      g_lights->moveLight( vec3( -0.1f, 0.0f, 0.0f ), g_spotlight );
+      g_lights->getLights( g_light_array, g_num_of_lights );
+      g_spotlight_pos = vec3( g_lights->getPosition( g_spotlight ) );
+    }
+	}
 }
 
-void mousebutton_callback( GLFWwindow * window, int button, int action,
-		int mods )
+void mousebutton_callback( GLFWwindow * window, int button
+                                  , int action, int mods )
 {
 	if ( button == GLFW_MOUSE_BUTTON_1 )
 	{
@@ -107,16 +149,33 @@ void mousemotion_callback( GLFWwindow * window, double x, double y )
 {
 	if ( g_hasMouse )
 	{ // apply rotations of the capured mouse cursor
-		if ( g_cam_mode )
+	  if ( g_cam_select )
+	  {
+	    float yr = ((g_height / 2) - y) * 0.002f;
+	    float xr = ((g_width / 2) - x) * 0.002f;
+	    if (x)
+	    {
+	      g_lights->directLightX( xr, g_spotlight );
+	      g_spotlight_rot.x += xr;
+	    }
+	    if (y)
+	    {
+	      g_lights->directLightZ( yr, g_spotlight );
+	      g_spotlight_rot.y += yr;
+	    }
+	    glfwSetCursorPos( window, g_width / 2, g_height / 2 );
+	    g_lights->getLights( g_light_array, g_num_of_lights );
+	  }
+	  else if ( g_cam_mode )
 		{
-			g_cam->rotateY( ((g_width / 2) - x) * 0.05f );
-			g_cam->rotateX( ((g_height / 2) - y) * 0.05f );
+			g_cam->rotateY( (float)((g_width / 2) - x) * 0.05f );
+			g_cam->rotateX( (float)((g_height / 2) - y) * 0.05f );
 			glfwSetCursorPos( window, g_width / 2, g_height / 2 );
 		}
 		else
 		{
-			g_cam->rotateOrigY( ((g_width / 2) - x) * 0.02f );
-			g_cam->rotateOrigX( ((g_height / 2) - y) * 0.02f );
+			g_cam->rotateOrigY( (float)((g_width / 2) - x) * 0.002f );
+			g_cam->rotateOrigX( (float)((g_height / 2) - y) * 0.002f );
 			glfwSetCursorPos( window, g_width / 2, g_height / 2 );
 		}
 	}
@@ -236,14 +295,15 @@ int main()
 	glDepthFunc( GL_LEQUAL );
 //	glEnable( GL_CULL_FACE );
 //	glCullFace( GL_BACK );
-
+	g_spotlight_pos = vec3( 0.0f, 5.0f, 0.0f );
 	Geometry *geo = Geometry::getInstance();
+	g_spotgeom = geo->addBuffer( "lamp.obj", g_spotlight_pos, vec3( 0.8f, 0.8f, 0.8f ) );
 	uint sphere = geo->addBuffer( "res/assets/sphere.obj"
 	                            , vec3( -5.0f, 0.9f, 5.0f )
 	                            , vec3( 0.714f, 0.4284f, 0.18144f ) );
 	uint bunny = geo->addBuffer( "res/assets/bunny.obj"
 	                            , vec3( 0.0f, -0.5f, 0.0f )
-								, vec3( 0.50754f, 0.50754f, 0.50754f ) );
+	                            , vec3( 0.50754f, 0.50754f, 0.50754f ) );
 	uint box = geo->addBuffer( "res/assets/box.obj", vec3( 5.0f, 1.5f, 5.0f ) );
 	uint torus = geo->addBuffer( "res/assets/torus.obj"
 	                            , vec3( 5.0f, 0.0f, -5.0f )
@@ -254,17 +314,20 @@ int main()
 	uint table = geo->addBuffer( "res/assets/table.obj", vec3( 0, -1, 0 ) );
 	geo->bindTexure( "res/textures/wood.jpg", table );
 	geo->bindTexure( "res/textures/brick.jpg", box );
-	Lights *lights = Lights::getInstance();
-	lights->addPointLight( vec3( 2.0f, 3.0f, 1.0f ), vec3( 0.5f, 0.5f, 0.5f ),
-			1.0f, 0.0f, 0.0f, 0.1f );
-	lights->addSpotLight( vec3( 0.0f, 5.0f, 0.0f ), vec3( 1.0f, 1.0f, 1.0f ),
-			1.0f, 0.0f, 0.0f, 0.1f, vec3( 0.0f, -1.0f, 0.0f ), 45.0f );
-	lights->addDirectionalLight( vec3( 0.0f, -1.0f, 0.0f ), vec3( 0.5f, 0.5f, 0.5f ) );
+
+	g_lights->addPointLight( vec3( 2.0f, 3.0f, 1.0f )
+	                       , vec3( 0.5f, 0.5f, 0.5f )
+	                       , 1.0f, 0.0f, 0.0f, 0.1f );
+	g_spotlight = g_lights->addSpotLight( g_spotlight_pos
+	                                    , vec3( 1.0f, 1.0f, 1.0f )
+	                                    ,	1.0f, 0.0f, 0.0f, 0.1f
+	                                    , vec3( 0.0f, -1.0f, 0.0f ), 45.0f );
+	g_lights->addDirectionalLight( vec3( 0.0f, -1.0f, 0.0f )
+	                             , vec3( 0.5f,  0.5f, 0.5f ) );
 //  lights->addSpotLight( vec3( 0.0f, 10.0f, 0.0f ), vec3( 1.0f, 1.0f, 1.0f )
 //                      , 1.0f, 0.0f, 0.0f, 0.05f, vec3( 0.0f, -1.0f, 0.0f ), 10.0f );
-	float ls[160];
 	GLint num;
-	lights->getLights( ls, num );
+	g_lights->getLights( g_light_array, num );
 	/************************************************************
 	 * Load up a shader from the given files.
 	 *******************************************************//**/
@@ -283,11 +346,20 @@ int main()
 	shader.unUse();
 	// print debugging info
 	shader.printActiveUniforms();
+
+	Shader widget;
+	widget.loadFromFile( GL_VERTEX_SHADER, "vertex.simple.glsl" );
+	widget.loadFromFile( GL_FRAGMENT_SHADER, "fragment.simple.glsl" );
+	widget.createAndLinkProgram();
+	widget.use();
+	  widget.addUniform( "objPos" );
+	  widget.addUniform( "objRot" );
+    widget.addUniform( "mvM" );
+    widget.addUniform( "projM" );
+	widget.unUse();
 	// Camera to get model view and projection matices from. Amongst other things
-	g_cam = new Camera( vec3( 0.0f, 2.0f, 15.0f ), g_width, g_height );
+	g_cam = new Camera( vec3( 0.0f, 2.0f, 25.0f ), g_width, g_height );
 	g_cam->setLookCenter();
-	float black[] =
-	{ 0, 0, 0 };
 	float redplast[] = { 0.0f, 0.0f, 0.0f // ambient
 	                   , 0.7f, 0.6f, 0.6f // specular
 	                   , 0.25f }; // shininess
@@ -306,6 +378,7 @@ int main()
 	///////////////////////////////////////////////////////////////////////////
 	//                           Main Rendering Loop                         //
 	///////////////////////////////////////////////////////////////////////////
+	float black[] =	{ 0, 0, 0 };
 	glClearBufferfv( GL_COLOR, 0, black );
 	glViewport( 0, 0, g_width, g_height );
 
@@ -321,10 +394,9 @@ int main()
 			glUniformMatrix3fv( shader( "normM" ), 1, GL_FALSE,
 					value_ptr( g_cam->getNormalMatrix() ) );
 			glUniform1i( shader( "numLights" ), num );
-			glUniformMatrix4fv( shader( "allLights[0]" ), num, GL_FALSE, ls );
+			glUniformMatrix4fv( shader( "allLights[0]" ), num, GL_FALSE, g_light_array );
 			glUniform3fv( shader( "matAmb" ), 1, &bronze[0] );
 			glUniform4fv( shader( "matSpec" ), 1, &bronze[3] );
-			checkGLErrors( 293 );
 			geo->draw( sphere, 1 );
 			glUniform3fv( shader( "matAmb" ), 1, &china[0] );
 			glUniform4fv( shader( "matSpec" ), 1, &china[3] );
@@ -340,6 +412,17 @@ int main()
 			geo->draw( box, 1 );
 			geo->draw( table, 1 );
 		shader.unUse();
+
+		widget.use();
+		  glUniform3fv( widget( "objPos" ), 1, value_ptr( g_spotlight_pos ) );
+		  glUniform2fv( widget( "objRot" ), 1, value_ptr( g_spotlight_rot ) );
+      glUniformMatrix4fv( widget( "mvM" ), 1, GL_FALSE,
+                value_ptr( g_cam->getViewMatrix() ) );
+      glUniformMatrix4fv( widget( "projM" ), 1, GL_FALSE,
+                value_ptr( g_cam->getProjectionMatrix() ) );
+      geo->draw( g_spotgeom, 1 );
+		widget.unUse();
+
 		// make sure the camera rotations, position and matrices are updated
 		g_cam->update();
 
@@ -347,7 +430,9 @@ int main()
 
 		glfwPollEvents();
 	}
+
 	delete (g_cam);
+	delete (g_lights);
 
 	glfwTerminate();
 
