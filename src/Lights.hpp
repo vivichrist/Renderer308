@@ -6,6 +6,9 @@
  */
 
 #pragma once
+
+#define GLM_FORCE_RADIANS
+
 #include <vector>
 #include <GL/glew.h>
 #include <glm/glm.hpp>
@@ -33,9 +36,8 @@ namespace vogl
     		  , float attConstant, float attLinear, float attQuadratic
     		  , float ambient, glm::vec3 coneDir, float coneAngle );
       glm::vec4 getPosition( const uint index );
-      void moveLight( const glm::vec3& transpose, const uint index );
-      void directLightX( const float rot, const uint index );
-      void directLightZ( const float rot, const uint index );
+      void moveLight( const glm::vec3& translate, const uint index );
+      void directLight( const glm::mat3& M, const uint index );
       void getLights( Light[], GLint& );
       void getLights( float[160] , GLint& );
       virtual ~Lights();

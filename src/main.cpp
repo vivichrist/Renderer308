@@ -3,6 +3,7 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
+#include <glm/gtx/rotate_vector.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/transform.hpp>
 #include <iostream>
@@ -24,7 +25,7 @@ Camera *g_cam = nullptr;
 Lights *g_lights = Lights::getInstance();
 uint g_spotlight, g_spotgeom;
 vec3 g_spotlight_pos;
-vec2 g_spotlight_rot;
+mat4 g_spotlight_rot;
 float g_light_array[160];
 GLint g_num_of_lights;
 
@@ -99,31 +100,42 @@ void key_callback( GLFWwindow * window, int key, int scancode
 	}
 	else if ( g_cam_select )
 	{
-
-	  if ( key == GLFW_KEY_UP && action == GLFW_PRESS )
-	  {
-	    g_lights->moveLight( vec3( 0.0f, 0.0f, 0.1f ), g_spotlight );
-	    g_lights->getLights( g_light_array, g_num_of_lights );
-	    g_spotlight_pos = vec3( g_lights->getPosition( g_spotlight ) );
-	  }
-	  else if ( key == GLFW_KEY_DOWN && action == GLFW_PRESS )
-    {
-      g_lights->moveLight( vec3( 0.0f, 0.0f, -0.1f ), g_spotlight );
-      g_lights->getLights( g_light_array, g_num_of_lights );
-      g_spotlight_pos = vec3( g_lights->getPosition( g_spotlight ) );
-    }
-	  else if ( key == GLFW_KEY_RIGHT && action == GLFW_PRESS )
-    {
-      g_lights->moveLight( vec3( 0.1f, 0.0f, 0.0f ), g_spotlight );
-      g_lights->getLights( g_light_array, g_num_of_lights );
-      g_spotlight_pos = vec3( g_lights->getPosition( g_spotlight ) );
-    }
-	  else if ( key == GLFW_KEY_LEFT && action == GLFW_PRESS )
-    {
-      g_lights->moveLight( vec3( -0.1f, 0.0f, 0.0f ), g_spotlight );
-      g_lights->getLights( g_light_array, g_num_of_lights );
-      g_spotlight_pos = vec3( g_lights->getPosition( g_spotlight ) );
-    }
+		if ( key == GLFW_KEY_PAGE_UP && action == GLFW_PRESS )
+		{
+			g_lights->moveLight( vec3( 0.0f, 0.5f, 0.0f ), g_spotlight );
+			g_lights->getLights( g_light_array, g_num_of_lights );
+			g_spotlight_pos = vec3( g_lights->getPosition( g_spotlight ) );
+		}
+		else if ( key == GLFW_KEY_PAGE_DOWN && action == GLFW_PRESS )
+		{
+			g_lights->moveLight( vec3( 0.0f, -0.5f, 0.0f ), g_spotlight );
+			g_lights->getLights( g_light_array, g_num_of_lights );
+			g_spotlight_pos = vec3( g_lights->getPosition( g_spotlight ) );
+		}
+		else if ( key == GLFW_KEY_UP && action == GLFW_PRESS )
+		{
+			g_lights->moveLight( vec3( 0.0f, 0.0f, 0.5f ), g_spotlight );
+			g_lights->getLights( g_light_array, g_num_of_lights );
+			g_spotlight_pos = vec3( g_lights->getPosition( g_spotlight ) );
+		}
+		else if ( key == GLFW_KEY_DOWN && action == GLFW_PRESS )
+		{
+			g_lights->moveLight( vec3( 0.0f, 0.0f, -0.5f ), g_spotlight );
+			g_lights->getLights( g_light_array, g_num_of_lights );
+			g_spotlight_pos = vec3( g_lights->getPosition( g_spotlight ) );
+		}
+		else if ( key == GLFW_KEY_RIGHT && action == GLFW_PRESS )
+		{
+			g_lights->moveLight( vec3( 0.5f, 0.0f, 0.0f ), g_spotlight );
+			g_lights->getLights( g_light_array, g_num_of_lights );
+			g_spotlight_pos = vec3( g_lights->getPosition( g_spotlight ) );
+		}
+		else if ( key == GLFW_KEY_LEFT && action == GLFW_PRESS )
+		{
+			g_lights->moveLight( vec3( -0.5f, 0.0f, 0.0f ), g_spotlight );
+			g_lights->getLights( g_light_array, g_num_of_lights );
+			g_spotlight_pos = vec3( g_lights->getPosition( g_spotlight ) );
+		}
 	}
 }
 
@@ -155,13 +167,13 @@ void mousemotion_callback( GLFWwindow * window, double x, double y )
 	    float xr = ((g_width / 2) - x) * 0.002f;
 	    if (x)
 	    {
-	      g_lights->directLightX( xr, g_spotlight );
-	      g_spotlight_rot.x += xr;
+	      g_spotlight_rot = rotate( g_spotlight_rot, xr, vec3(1,0,0) );
+	      g_lights->directLight( mat3(g_spotlight_rot), g_spotlight );
 	    }
 	    if (y)
 	    {
-	      g_lights->directLightZ( yr, g_spotlight );
-	      g_spotlight_rot.y += yr;
+	      g_spotlight_rot = rotate( g_spotlight_rot, yr, vec3(0,0,1) );
+	      g_lights->directLight( mat3(g_spotlight_rot), g_spotlight );
 	    }
 	    glfwSetCursorPos( window, g_width / 2, g_height / 2 );
 	    g_lights->getLights( g_light_array, g_num_of_lights );
@@ -295,7 +307,7 @@ int main()
 	glDepthFunc( GL_LEQUAL );
 //	glEnable( GL_CULL_FACE );
 //	glCullFace( GL_BACK );
-	g_spotlight_pos = vec3( 0.0f, 5.0f, 0.0f );
+	g_spotlight_pos = vec3( 0.0f, 7.0f, 0.0f );
 	Geometry *geo = Geometry::getInstance();
 	g_spotgeom = geo->addBuffer( "lamp.obj", g_spotlight_pos, vec3( 0.8f, 0.8f, 0.8f ) );
 	uint sphere = geo->addBuffer( "res/assets/sphere.obj"
@@ -304,26 +316,27 @@ int main()
 	uint bunny = geo->addBuffer( "res/assets/bunny.obj"
 	                            , vec3( 0.0f, -0.5f, 0.0f )
 	                            , vec3( 0.50754f, 0.50754f, 0.50754f ) );
-	uint box = geo->addBuffer( "res/assets/box.obj", vec3( 5.0f, 1.5f, 5.0f ) );
+	uint box = geo->addBuffer( "res/assets/box.obj", vec3( 5.0f, 1.5f, -5.0f ) );
 	uint torus = geo->addBuffer( "res/assets/torus.obj"
-	                            , vec3( 5.0f, 0.0f, -5.0f )
+	                            , vec3( 5.0f, 0.0f, 5.0f )
 	                            , vec3( 0.5f, 0.0f, 0.0f ) );
 	uint teapot = geo->addBuffer( "res/assets/teapot.obj"
 	                            , vec3( -5.0f, -0.5f, -5.0f )
 	                            , vec3( 0.427451f, 0.470588f, 0.541176f ) );
 	uint table = geo->addBuffer( "res/assets/table.obj", vec3( 0, -1, 0 ) );
+	geo->bindCMTexure( "res/textures/cubeMap.jpg", teapot );
 	geo->bindTexure( "res/textures/wood.jpg", table );
 	geo->bindTexure( "res/textures/brick.jpg", box );
 
 	g_lights->addPointLight( vec3( 2.0f, 3.0f, 1.0f )
-	                       , vec3( 0.5f, 0.5f, 0.5f )
+	                       , vec3( 0.7f, 0.7f, 0.7f )
 	                       , 1.0f, 0.0f, 0.0f, 0.1f );
 	g_spotlight = g_lights->addSpotLight( g_spotlight_pos
 	                                    , vec3( 1.0f, 1.0f, 1.0f )
 	                                    ,	1.0f, 0.0f, 0.0f, 0.1f
 	                                    , vec3( 0.0f, -1.0f, 0.0f ), 45.0f );
 	g_lights->addDirectionalLight( vec3( 0.0f, -1.0f, 0.0f )
-	                             , vec3( 0.5f,  0.5f, 0.5f ) );
+	                             , vec3( 0.6f,  0.6f, 0.6f ) );
 //  lights->addSpotLight( vec3( 0.0f, 10.0f, 0.0f ), vec3( 1.0f, 1.0f, 1.0f )
 //                      , 1.0f, 0.0f, 0.0f, 0.05f, vec3( 0.0f, -1.0f, 0.0f ), 10.0f );
 	GLint num;
@@ -346,33 +359,32 @@ int main()
 	shader.unUse();
 	// print debugging info
 	shader.printActiveUniforms();
-
+	// shader for drawing the lamp shade
 	Shader widget;
 	widget.loadFromFile( GL_VERTEX_SHADER, "vertex.simple.glsl" );
 	widget.loadFromFile( GL_FRAGMENT_SHADER, "fragment.simple.glsl" );
 	widget.createAndLinkProgram();
 	widget.use();
-	  widget.addUniform( "objPos" );
-	  widget.addUniform( "objRot" );
-    widget.addUniform( "mvM" );
-    widget.addUniform( "projM" );
+		widget.addUniform( "mvM" );
+		widget.addUniform( "projM" );
 	widget.unUse();
+
 	// Camera to get model view and projection matices from. Amongst other things
 	g_cam = new Camera( vec3( 0.0f, 2.0f, 25.0f ), g_width, g_height );
 	g_cam->setLookCenter();
-	float redplast[] = { 0.0f, 0.0f, 0.0f // ambient
+	float redplast[] = { 0.0f, 0.0f, 0.0f, 0.0f // ambient + reflect
 	                   , 0.7f, 0.6f, 0.6f // specular
 	                   , 0.25f }; // shininess
-	float bronze[] = { 0.2125f, 0.1275f, 0.054f
+	float bronze[] = { 0.2125f, 0.1275f, 0.054f, 0.0f
 	                , 0.393548f, 0.271906f, 0.166721f
 	                , 0.2f };
-	float china[] = { 0.19225f, 0.19225f, 0.19225f
+	float china[] = { 0.19225f, 0.19225f, 0.19225f, 0.0f
 	                , 0.508273f, 0.508273f, 0.508273f
 	                , 0.2f };
-	float bMetal[] = { 0.105882f, 0.058824f, 0.113725f
+	float bMetal[] = { 0.105882f, 0.058824f, 0.113725f, 0.5f
 	                , 0.333333f, 0.333333f, 0.521569f
-	                , 9.84615f };
-	float def[] 	= { 0.05f, 0.05f, 0.05f
+	                , 0.84615f };
+	float def[] 	= { 0.05f, 0.05f, 0.05f, 0.0f
 		                , 1.0f, 1.0f, 1.0f
 		                , 4.0f };
 	///////////////////////////////////////////////////////////////////////////
@@ -395,32 +407,31 @@ int main()
 					value_ptr( g_cam->getNormalMatrix() ) );
 			glUniform1i( shader( "numLights" ), num );
 			glUniformMatrix4fv( shader( "allLights[0]" ), num, GL_FALSE, g_light_array );
-			glUniform3fv( shader( "matAmb" ), 1, &bronze[0] );
-			glUniform4fv( shader( "matSpec" ), 1, &bronze[3] );
+			glUniform4fv( shader( "matAmb" ), 1, &bronze[0] );
+			glUniform4fv( shader( "matSpec" ), 1, &bronze[4] );
 			geo->draw( sphere, 1 );
-			glUniform3fv( shader( "matAmb" ), 1, &china[0] );
-			glUniform4fv( shader( "matSpec" ), 1, &china[3] );
+			glUniform4fv( shader( "matAmb" ), 1, &china[0] );
+			glUniform4fv( shader( "matSpec" ), 1, &china[4] );
 			geo->draw( bunny, 1 );
-			glUniform3fv( shader( "matAmb" ), 1, &redplast[0] );
-			glUniform4fv( shader( "matSpec" ), 1, &redplast[3] );
+			glUniform4fv( shader( "matAmb" ), 1, &redplast[0] );
+			glUniform4fv( shader( "matSpec" ), 1, &redplast[4] );
 			geo->draw( torus, 1 );
-			glUniform3fv( shader( "matAmb" ), 1, &bMetal[0] );
-			glUniform4fv( shader( "matSpec" ), 1, &bMetal[3] );
+			glUniform4fv( shader( "matAmb" ), 1, &bMetal[0] );
+			glUniform4fv( shader( "matSpec" ), 1, &bMetal[4] );
+			checkGLErrors( 425 );
 			geo->draw( teapot, 1 );
-			glUniform3fv( shader( "matAmb" ), 1, &def[0] );
-			glUniform4fv( shader( "matSpec" ), 1, &def[3] );
+			glUniform4fv( shader( "matAmb" ), 1, &def[0] );
+			glUniform4fv( shader( "matSpec" ), 1, &def[4] );
 			geo->draw( box, 1 );
 			geo->draw( table, 1 );
 		shader.unUse();
 
 		widget.use();
-		  glUniform3fv( widget( "objPos" ), 1, value_ptr( g_spotlight_pos ) );
-		  glUniform2fv( widget( "objRot" ), 1, value_ptr( g_spotlight_rot ) );
-      glUniformMatrix4fv( widget( "mvM" ), 1, GL_FALSE,
-                value_ptr( g_cam->getViewMatrix() ) );
-      glUniformMatrix4fv( widget( "projM" ), 1, GL_FALSE,
-                value_ptr( g_cam->getProjectionMatrix() ) );
-      geo->draw( g_spotgeom, 1 );
+		  glUniformMatrix4fv( widget( "mvM" ), 1, GL_FALSE, value_ptr(
+				  translate( g_cam->getViewMatrix(), g_spotlight_pos ) * g_spotlight_rot ) );
+		  glUniformMatrix4fv( widget( "projM" ), 1, GL_FALSE
+				  , value_ptr( g_cam->getProjectionMatrix() ) );
+		  geo->draw( g_spotgeom, 1 );
 		widget.unUse();
 
 		// make sure the camera rotations, position and matrices are updated

@@ -37,10 +37,11 @@ GLuint Texture::addTexture( const string& filename )
 {
 
 	//Now generate the OpenGL texture object
-  image tex( filename );
+	image tex( filename );
 	GLuint texture;
 
 	glGenTextures( 1, &texture );
+	glActiveTexture( GL_TEXTURE0 );
 	glBindTexture( GL_TEXTURE_2D, texture );
 	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, tex.w, tex.h, 0,
 			tex.glFormat(), GL_UNSIGNED_BYTE, (GLvoid*) tex.data.data() );
@@ -56,19 +57,67 @@ GLuint Texture::addTexture( const string& filename )
 GLuint Texture::addTexture( const vec3& colour )
 {
 
-  //Now generate the OpenGL texture object
-  GLuint texture;
-  glGenTextures( 1, &texture );
-  glBindTexture( GL_TEXTURE_2D, texture );
-  glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB32F, 1, 1, 0, GL_RGB
-      , GL_FLOAT, (GLvoid*) value_ptr( colour ) );
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	//Now generate the OpenGL texture object
+	GLuint texture;
+	glGenTextures( 1, &texture );
+	glActiveTexture( GL_TEXTURE0 );
+	glBindTexture( GL_TEXTURE_2D, texture );
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB32F, 1, 1, 0, GL_RGB, GL_FLOAT,
+			(GLvoid*) value_ptr( colour ) );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 
-  names[ to_string( texture ) ] = texture;
-  return texture;
+	names[to_string( texture )] = texture;
+	return texture;
+}
+
+GLuint Texture::addCMTexture( const string& filename )
+{
+	image tex( filename );
+	EMap e;
+	e.res = tex.w;
+	//Now generate the OpenGL texture object
+	glGenTextures( 1, &e.colorCMID );
+	glActiveTexture( GL_TEXTURE1 );
+	glBindTexture( GL_TEXTURE_CUBE_MAP, e.colorCMID );
+	//set texture parameters
+	uint dx = tex.w / 4, dy = tex.h / 3;
+
+	image img = tex.subImage( dx * 2, dy, dx, dy );
+	glTexImage2D(
+		GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0,
+		GL_RGB, dx, dy, 0, tex.glFormat(), GL_UNSIGNED_BYTE, (GLvoid*) img.data.data() );
+	img = tex.subImage( 0, dy, dx, dy );
+	glTexImage2D(
+		GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0,
+		GL_RGB, dx, dy, 0, tex.glFormat(), GL_UNSIGNED_BYTE, (GLvoid*) img.data.data() );
+	img = tex.subImage( dx, 0, dx, dy );
+	glTexImage2D(
+		GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0,
+		GL_RGB, dx, dy, 0, tex.glFormat(), GL_UNSIGNED_BYTE, (GLvoid*) img.data.data() );
+	img = tex.subImage( dx, dy * 2, dx, dy );
+	glTexImage2D(
+		GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0,
+		GL_RGB, dx, dy, 0, tex.glFormat(), GL_UNSIGNED_BYTE, (GLvoid*) img.data.data() );
+	img = tex.subImage( dx, dy, dx, dy );
+	glTexImage2D(
+		GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0,
+		GL_RGB, dx, dy, 0, tex.glFormat(), GL_UNSIGNED_BYTE, (GLvoid*) img.data.data() );
+	img = tex.subImage( dx * 3, dy, dx, dy );
+		glTexImage2D(
+		GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0,
+		GL_RGB, dx, dy, 0, tex.glFormat(), GL_UNSIGNED_BYTE, (GLvoid*) img.data.data() );
+	e.res = dx;
+	glTexParameterf( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+	glTexParameterf( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+	glTexParameterf( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+	glTexParameterf( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+	glTexParameterf( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE );
+	glBindTexture( GL_TEXTURE_CUBE_MAP, 0 );
+	envir[filename] = e;
+	return e.colorCMID;
 }
 
 //initialize FBO the hard way
@@ -229,37 +278,36 @@ void Texture::useEnvironmentMap( glm::vec3 position, string& name, uint width, u
 	glViewport( 0, 0, e.res, e.res );
 
 	Shader shader;
-  shader.loadFromFile( GL_VERTEX_SHADER, "vertex_cmap.glsl" );
-  shader.loadFromFile( GL_FRAGMENT_SHADER, "fragment_cmap.glsl" );
-  shader.createAndLinkProgram();
-  shader.use();
-    shader.addUniform( "mvM" );
-    shader.addUniform( "projM" );
-    shader.addUniform( "normM" );
-    shader.addUniform( "lightP" );
-  shader.unUse();
+	shader.loadFromFile( GL_VERTEX_SHADER, "vertex_cmap.glsl" );
+	shader.loadFromFile( GL_FRAGMENT_SHADER, "fragment_cmap.glsl" );
+	shader.createAndLinkProgram();
+	shader.use();
+		shader.addUniform( "mvM" );
+		shader.addUniform( "projM" );
+		shader.addUniform( "normM" );
+		shader.addUniform( "lightP" );
 
 	//bind the FBO
 	glBindFramebuffer( GL_DRAW_FRAMEBUFFER, e.fboID );
 
 	for ( int i = 0; i<6; ++i )
 	{
-    //set the GL_TEXTURE_CUBE_MAP_POSITIVE_X to the colour attachment of FBO
-    glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-    GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, e.colorCMID, 0 );
-    //clear the colour and depth buffers
-    glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-    //set the virtual viewrer at the reflective object center and render the scene
-    //using the cube map projection matrix and appropriate viewing settings
-    glUniformMatrix4fv( shader( "mvM" ), 1, GL_FALSE,
-        value_ptr( views[i] ) );
-    glUniformMatrix4fv( shader( "projM" ), 1, GL_FALSE,
-        value_ptr( Pcubemap ) );
-    glUniformMatrix3fv( shader( "normM" ), 1, GL_FALSE,
-        value_ptr( glm::inverse( glm::transpose( views[i] ) ) ) );
-    // glUniform3fv( shader( "lightP" ), 1, &lightP[0] );
-    // geo->draw( name, 9 );
-    // DrawScene( MV * position, Pcubemap );
+		//set the GL_TEXTURE_CUBE_MAP_POSITIVE_X to the colour attachment of FBO
+		glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+					GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, e.colorCMID, 0 );
+		//clear the colour and depth buffers
+		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+		//set the virtual viewrer at the reflective object center and render the scene
+		//using the cube map projection matrix and appropriate viewing settings
+		glUniformMatrix4fv( shader( "mvM" ), 1, GL_FALSE,
+			value_ptr( views[i] ) );
+		glUniformMatrix4fv( shader( "projM" ), 1, GL_FALSE,
+			value_ptr( Pcubemap ) );
+		glUniformMatrix3fv( shader( "normM" ), 1, GL_FALSE,
+			value_ptr( glm::inverse( glm::transpose( views[i] ) ) ) );
+		// glUniform3fv( shader( "lightP" ), 1, &lightP[0] );
+		// geo->draw( name, 9 );
+		// DrawScene( MV * position, Pcubemap );
 	}
 	shader.unUse();
 

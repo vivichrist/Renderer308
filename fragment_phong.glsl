@@ -5,6 +5,7 @@
 out vec4 FBColor;
 
 in VertexData {
+    smooth vec4 vPos;
 	smooth vec2 vUV;
 	smooth vec3 vNormal;
 	smooth vec3 vView;
@@ -13,6 +14,7 @@ in VertexData {
 uniform mat4 mvM;
 uniform mat3 normM;
 uniform sampler2D image;
+uniform samplerCube eMap;
 
 uniform int numLights;
 	// [0] 0,1,2 light position, 3 if 0 is direction
@@ -21,7 +23,7 @@ uniform int numLights;
 	// [3] 0,1,2 cone direction, 3 is cone angle
 uniform mat4 allLights[MAX_LIGHTS];
 
-uniform vec3 matAmb; // ambient intensities
+uniform vec4 matAmb; // ambient intensities, reflection is w
 uniform vec4 matSpec; // specular intensities, shininess is w
 
 void main()
@@ -59,7 +61,7 @@ void main()
         d = max(0.0, dot(normalize(fin.vNormal), lightDir));
         att = 1.0;
     }
-    vec3 lightsrength = d * light[1].xyz;
+    vec3 lightsrength = min( att, d ) * light[1].xyz;
     if ( d > 0.0 )
     {
       // Halfway Normal
@@ -73,13 +75,14 @@ void main()
   }// end for each light
 
   vec3 specular = vec3(0);
-  vec4 diffuse = texture( image, fin.vUV );
+  vec4 cm = matAmb.w * texture( eMap, fin.vPos.xyz );
+  vec4 diffuse = texture( image, fin.vUV * 5.0 ) + cm;
   // If the diffuse light is zero, don’t even bother with the pow function
-  if ( diff.x > 0 )
+  if ( diff.x > 0 && diff.y > 0 && diff.z > 0 )
   {
     specular = pow( spec, matSpec.w * 512.0 ) * (specIntense * diffuse.xyz );
   }
   // Multiply intensity by diffuse color, force alpha to 1.0 and add in ambient light
-  FBColor = max( vec4( 0.5 * matAmb, 1 ), vec4( diff, 1 ) * diffuse )
+  FBColor = max( 0.25 * vec4( matAmb.xyz, 1 ), vec4( diff, 1 ) * diffuse )
   			+ vec4(spec * specular * matSpec.xyz, 1.0);
 }

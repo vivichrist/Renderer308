@@ -66,22 +66,16 @@ vec4 Lights::getPosition( const uint index )
   return lights[index].pos;
 }
 
-void Lights::moveLight( const vec3& transpose, const uint index )
+void Lights::moveLight( const vec3& translate, const uint index )
 {
   Light &light = lights[index];
-  light.pos += vec4( transpose, 0 );
+  light.pos += vec4( translate, 0 );
 }
 
-void Lights::directLightX( const float rot, const uint index )
+void Lights::directLight( const mat3& rotM, const uint index )
 {
   Light &light = lights[index];
-  light.coneDir = glm::rotateX( light.coneDir, rot );
-}
-
-void Lights::directLightZ( const float rot, const uint index )
-{
-  Light &light = lights[index];
-  light.coneDir = glm::rotateZ( light.coneDir, rot );
+  light.coneDir = vec4( rotM * vec3( 0.0f, -1.0f, 0.0f ), light.coneDir.w );
 }
 
 void vogl::Lights::getLights( float out[160], GLint& num )

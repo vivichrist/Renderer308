@@ -188,6 +188,24 @@ void Geometry::bindTexure( const std::string& load, GLuint id )
 	}
 }
 
+void Geometry::bindCMTexure( const std::string& load, GLuint id )
+{
+	GLuint texture = Texture::getInstance()->addCMTexture( load );
+	if ( m_elemBuffOb.find( id ) != m_elemBuffOb.end() )
+	{
+		m_elemBuffOb[id].cubeMap = texture;
+	}
+	else if ( m_buffOb.find( id ) != m_buffOb.end() )
+	{
+		m_buffOb[id].cubeMap = texture;
+	}
+	else
+	{
+		std::cout << "No Such VBObject (name:" << id << ")\n";
+		throw;
+	}
+}
+
 uint Geometry::addBuffer( const string& load )
 {
   float p[] = {0, 0, 0};
@@ -211,18 +229,18 @@ uint Geometry::addBuffer( const string& load, const vec3& pos,
 	GLuint id = addBuffer( load, p, c, 1 );
 	checkGLError( 205 );
 	if ( m_elemBuffOb.find( id ) != m_elemBuffOb.end() )
-  {
-    m_elemBuffOb[id].texture = texture;
-  }
-  else if ( m_buffOb.find( id ) != m_buffOb.end() )
-  {
-    m_buffOb[id].texture = texture;
-  }
-  else
-  {
-    std::cout << "No Such VBObject (name:" << id << ")\n";
-    throw;
-  }
+	{
+		m_elemBuffOb[id].texture = texture;
+	}
+	else if ( m_buffOb.find( id ) != m_buffOb.end() )
+	{
+		m_buffOb[id].texture = texture;
+	}
+	else
+	{
+		std::cout << "No Such VBObject (name:" << id << ")\n";
+		throw;
+	}
 	return id;
 }
 
@@ -335,7 +353,13 @@ void Geometry::draw( uint id, GLsizei insts )
   if ( m_elemBuffOb.find( id ) != m_elemBuffOb.end() )
   {
     e = m_elemBuffOb[id];
+    glActiveTexture( GL_TEXTURE0 );
     glBindTexture( GL_TEXTURE_2D, e.texture );
+    if ( e.cubeMap )
+    {
+		glActiveTexture( GL_TEXTURE1 );
+		glBindTexture( GL_TEXTURE_CUBE_MAP, e.cubeMap );
+    }
     glBindVertexArray( e.vao );
     if ( insts == 1 )
       glDrawElements( GL_TRIANGLES, e.eNumElements, e.eBuffType,
@@ -348,13 +372,19 @@ void Geometry::draw( uint id, GLsizei insts )
   else if ( m_buffOb.find( id ) != m_buffOb.end() )
   {
     b = m_buffOb[id];
+    glActiveTexture( GL_TEXTURE0 );
     glBindTexture( GL_TEXTURE_2D, b.texture );
+    if ( b.cubeMap )
+    {
+    	glActiveTexture( GL_TEXTURE0 );
+		glBindTexture( GL_TEXTURE_CUBE_MAP, b.cubeMap );
+		checkGLError( 381 );
+    }
     glBindVertexArray( b.vao );
     if ( insts == 1 )
       glDrawArrays( GL_TRIANGLES, 0, b.numElements );
     else
       glDrawArraysInstanced( GL_TRIANGLES, 0, b.numElements, insts );
-    checkGLError( 313 );
   }
   else
   {
