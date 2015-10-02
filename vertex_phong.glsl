@@ -11,7 +11,7 @@ layout (location = 3) in vec3 instpos;
 layout (location = 4) in vec3 instcolor;
 
 out VertexData {
-    smooth out vec4 vPos;
+    smooth out vec3 vPos;
 	smooth out vec2 vUV;
 	smooth out vec3 vNormal;
 	smooth out vec3 vView;
@@ -29,6 +29,6 @@ void main(void)
 	vout.vView = pos4.xyz / pos4.w;
 
 	// transform the geometry!
-	vout.vPos = projM * pos4;
-	gl_Position = vout.vPos;
+	vout.vPos = normalize( position );
+	gl_Position = projM * pos4;
 }

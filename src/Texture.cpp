@@ -12,6 +12,18 @@
 using namespace std;
 using namespace glm;
 
+int checkGLError2( int where )
+{
+  int errCount = 0;
+  for(GLenum currError = glGetError(); currError != GL_NO_ERROR; currError = glGetError())
+  {
+  cout << "Error: " << currError << " line " << where <<  " In Texture\n";
+    ++errCount;
+  }
+
+  return errCount;
+}
+
 namespace vogl
 {
 
@@ -32,6 +44,7 @@ GLuint Texture::getPNGName( const string& name )
 {
   return names[name];
 }
+
 
 GLuint Texture::addTexture( const string& filename )
 {
@@ -69,53 +82,53 @@ GLuint Texture::addTexture( const vec3& colour )
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 
-	names[to_string( texture )] = texture;
+	names[ to_string( texture ) ] = texture;
 	return texture;
 }
 
 GLuint Texture::addCMTexture( const string& filename )
 {
 	image tex( filename );
+	checkGLError2( 92 );
 	EMap e;
 	e.res = tex.w;
 	//Now generate the OpenGL texture object
+	checkGLError2( 97 );
 	glGenTextures( 1, &e.colorCMID );
 	glActiveTexture( GL_TEXTURE1 );
+	checkGLError2( 100 );
 	glBindTexture( GL_TEXTURE_CUBE_MAP, e.colorCMID );
 	//set texture parameters
-	uint dx = tex.w / 4, dy = tex.h / 3;
-
-	image img = tex.subImage( dx * 2, dy, dx, dy );
-	glTexImage2D(
-		GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0,
-		GL_RGB, dx, dy, 0, tex.glFormat(), GL_UNSIGNED_BYTE, (GLvoid*) img.data.data() );
-	img = tex.subImage( 0, dy, dx, dy );
-	glTexImage2D(
-		GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0,
-		GL_RGB, dx, dy, 0, tex.glFormat(), GL_UNSIGNED_BYTE, (GLvoid*) img.data.data() );
-	img = tex.subImage( dx, 0, dx, dy );
-	glTexImage2D(
-		GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0,
-		GL_RGB, dx, dy, 0, tex.glFormat(), GL_UNSIGNED_BYTE, (GLvoid*) img.data.data() );
-	img = tex.subImage( dx, dy * 2, dx, dy );
-	glTexImage2D(
-		GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0,
-		GL_RGB, dx, dy, 0, tex.glFormat(), GL_UNSIGNED_BYTE, (GLvoid*) img.data.data() );
-	img = tex.subImage( dx, dy, dx, dy );
-	glTexImage2D(
-		GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0,
-		GL_RGB, dx, dy, 0, tex.glFormat(), GL_UNSIGNED_BYTE, (GLvoid*) img.data.data() );
-	img = tex.subImage( dx * 3, dy, dx, dy );
-		glTexImage2D(
-		GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0,
-		GL_RGB, dx, dy, 0, tex.glFormat(), GL_UNSIGNED_BYTE, (GLvoid*) img.data.data() );
-	e.res = dx;
 	glTexParameterf( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 	glTexParameterf( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 	glTexParameterf( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
 	glTexParameterf( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
 	glTexParameterf( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE );
-	glBindTexture( GL_TEXTURE_CUBE_MAP, 0 );
+	checkGLError2( 108 );
+	uint dx = tex.w / 4, dy = tex.h / 3;
+	image img = tex.subImage( dx * 2, dy, dx, dy );
+	glTexImage2D(	GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0,
+		GL_RGB, dx, dy, 0, tex.glFormat(), GL_UNSIGNED_BYTE, (GLvoid*) img.data.data() );
+	img = tex.subImage( 0, dy, dx, dy );
+	glTexImage2D(	GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0,
+		GL_RGB, dx, dy, 0, tex.glFormat(), GL_UNSIGNED_BYTE, (GLvoid*) img.data.data() );
+	img = tex.subImage( dx, 0, dx, dy );
+	glTexImage2D(	GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0,
+		GL_RGB, dx, dy, 0, tex.glFormat(), GL_UNSIGNED_BYTE, (GLvoid*) img.data.data() );
+	img = tex.subImage( dx, dy * 2, dx, dy );
+	glTexImage2D(	GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0,
+		GL_RGB, dx, dy, 0, tex.glFormat(), GL_UNSIGNED_BYTE, (GLvoid*) img.data.data() );
+	img = tex.subImage( dx, dy, dx, dy );
+	glTexImage2D(	GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0,
+		GL_RGB, dx, dy, 0, tex.glFormat(), GL_UNSIGNED_BYTE, (GLvoid*) img.data.data() );
+	img = tex.subImage( dx * 3, dy, dx, dy );
+	glTexImage2D(	GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0,
+		GL_RGB, dx, dy, 0, tex.glFormat(), GL_UNSIGNED_BYTE, (GLvoid*) img.data.data() );
+	checkGLError2( 128 );
+	e.res = dx;
+	glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+	checkGLError2( 131 );
+	// glBindTexture( GL_TEXTURE_CUBE_MAP, 0 );
 	envir[filename] = e;
 	return e.colorCMID;
 }

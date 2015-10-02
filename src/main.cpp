@@ -49,7 +49,6 @@ void key_callback( GLFWwindow * window, int key, int scancode
 		else
 		{
 			glfwSetWindowShouldClose( window, GL_TRUE );
-			delete (g_cam);
 		}
 	}
 	else if ( key == GLFW_KEY_V && action == GLFW_PRESS )
@@ -307,8 +306,42 @@ int main()
 	glDepthFunc( GL_LEQUAL );
 //	glEnable( GL_CULL_FACE );
 //	glCullFace( GL_BACK );
+	/************************************************************
+	 * Load up a shader from the given files.
+	 *******************************************************//**/
+	Shader shader;
+	shader.loadFromFile( GL_VERTEX_SHADER, "vertex_phong.glsl" );
+	shader.loadFromFile( GL_FRAGMENT_SHADER, "fragment_phong.glsl" );
+	shader.createAndLinkProgram();
+	shader.use();
+		shader.addUniform( "mvM" );
+		shader.addUniform( "projM" );
+		shader.addUniform( "normM" );
+		shader.addUniform( "matAmb" );
+		shader.addUniform( "matSpec" );
+		shader.addUniform( "numLights" );
+		shader.addUniform( "allLights[0]" );
+		shader.addUniform("image");
+		shader.addUniform("eMap");
+	shader.unUse();
+	// print debugging info
+	shader.printActiveUniforms();
+	// shader for drawing the lamp shade
+	Shader widget;
+	widget.loadFromFile( GL_VERTEX_SHADER, "vertex.simple.glsl" );
+	widget.loadFromFile( GL_FRAGMENT_SHADER, "fragment.simple.glsl" );
+	widget.createAndLinkProgram();
+	widget.use();
+		widget.addUniform( "mvM" );
+		widget.addUniform( "projM" );
+	widget.unUse();
+	/****************************************************************************
+	 * Setup Lighting
+	 ***************************************************************************/
 	g_spotlight_pos = vec3( 0.0f, 7.0f, 0.0f );
 	Geometry *geo = Geometry::getInstance();
+	uint texture1 = shader("eMap");
+	uint texture0 = shader("image");
 	g_spotgeom = geo->addBuffer( "lamp.obj", g_spotlight_pos, vec3( 0.8f, 0.8f, 0.8f ) );
 	uint sphere = geo->addBuffer( "res/assets/sphere.obj"
 	                            , vec3( -5.0f, 0.9f, 5.0f )
@@ -325,6 +358,7 @@ int main()
 	                            , vec3( 0.427451f, 0.470588f, 0.541176f ) );
 	uint table = geo->addBuffer( "res/assets/table.obj", vec3( 0, -1, 0 ) );
 	geo->bindCMTexure( "res/textures/cubeMap.jpg", teapot );
+	if ( checkGLErrors( 328 ) ) exit(1);
 	geo->bindTexure( "res/textures/wood.jpg", table );
 	geo->bindTexure( "res/textures/brick.jpg", box );
 
@@ -341,33 +375,6 @@ int main()
 //                      , 1.0f, 0.0f, 0.0f, 0.05f, vec3( 0.0f, -1.0f, 0.0f ), 10.0f );
 	GLint num;
 	g_lights->getLights( g_light_array, num );
-	/************************************************************
-	 * Load up a shader from the given files.
-	 *******************************************************//**/
-	Shader shader;
-	shader.loadFromFile( GL_VERTEX_SHADER, "vertex_phong.glsl" );
-	shader.loadFromFile( GL_FRAGMENT_SHADER, "fragment_phong.glsl" );
-	shader.createAndLinkProgram();
-	shader.use();
-		shader.addUniform( "mvM" );
-		shader.addUniform( "projM" );
-		shader.addUniform( "normM" );
-		shader.addUniform( "numLights" );
-		shader.addUniform( "allLights[0]" );
-		shader.addUniform( "matAmb" );
-		shader.addUniform( "matSpec" );
-	shader.unUse();
-	// print debugging info
-	shader.printActiveUniforms();
-	// shader for drawing the lamp shade
-	Shader widget;
-	widget.loadFromFile( GL_VERTEX_SHADER, "vertex.simple.glsl" );
-	widget.loadFromFile( GL_FRAGMENT_SHADER, "fragment.simple.glsl" );
-	widget.createAndLinkProgram();
-	widget.use();
-		widget.addUniform( "mvM" );
-		widget.addUniform( "projM" );
-	widget.unUse();
 
 	// Camera to get model view and projection matices from. Amongst other things
 	g_cam = new Camera( vec3( 0.0f, 2.0f, 25.0f ), g_width, g_height );
@@ -381,7 +388,7 @@ int main()
 	float china[] = { 0.19225f, 0.19225f, 0.19225f, 0.0f
 	                , 0.508273f, 0.508273f, 0.508273f
 	                , 0.2f };
-	float bMetal[] = { 0.105882f, 0.058824f, 0.113725f, 0.5f
+	float bMetal[] = { 0.105882f, 0.058824f, 0.113725f, 0.9f
 	                , 0.333333f, 0.333333f, 0.521569f
 	                , 0.84615f };
 	float def[] 	= { 0.05f, 0.05f, 0.05f, 0.0f
@@ -399,6 +406,8 @@ int main()
 		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 		// load values into the uniform slots of the shader and draw
 		shader.use();
+		  glUniform1i( texture0, 0 );
+		  glUniform1i( texture1, 1 );
 			glUniformMatrix4fv( shader( "mvM" ), 1, GL_FALSE,
 					value_ptr( g_cam->getViewMatrix() ) );
 			glUniformMatrix4fv( shader( "projM" ), 1, GL_FALSE,
@@ -407,14 +416,18 @@ int main()
 					value_ptr( g_cam->getNormalMatrix() ) );
 			glUniform1i( shader( "numLights" ), num );
 			glUniformMatrix4fv( shader( "allLights[0]" ), num, GL_FALSE, g_light_array );
+			checkGLErrors( 410 );
 			glUniform4fv( shader( "matAmb" ), 1, &bronze[0] );
 			glUniform4fv( shader( "matSpec" ), 1, &bronze[4] );
+			checkGLErrors( 413 );
 			geo->draw( sphere, 1 );
 			glUniform4fv( shader( "matAmb" ), 1, &china[0] );
 			glUniform4fv( shader( "matSpec" ), 1, &china[4] );
+			checkGLErrors( 417 );
 			geo->draw( bunny, 1 );
 			glUniform4fv( shader( "matAmb" ), 1, &redplast[0] );
 			glUniform4fv( shader( "matSpec" ), 1, &redplast[4] );
+			checkGLErrors( 421 );
 			geo->draw( torus, 1 );
 			glUniform4fv( shader( "matAmb" ), 1, &bMetal[0] );
 			glUniform4fv( shader( "matSpec" ), 1, &bMetal[4] );
@@ -423,7 +436,9 @@ int main()
 			glUniform4fv( shader( "matAmb" ), 1, &def[0] );
 			glUniform4fv( shader( "matSpec" ), 1, &def[4] );
 			geo->draw( box, 1 );
+			checkGLErrors( 430 );
 			geo->draw( table, 1 );
+			checkGLErrors( 432 );
 		shader.unUse();
 
 		widget.use();

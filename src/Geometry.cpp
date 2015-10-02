@@ -172,14 +172,14 @@ uint Geometry::addSmoothSurfaceBuffer( const string& load, const float *pos
 
 void Geometry::bindTexure( const std::string& load, GLuint id )
 {
-	GLuint texture = Texture::getInstance()->addTexture( load );
+	GLuint texID = Texture::getInstance()->addTexture( load );
 	if ( m_elemBuffOb.find( id ) != m_elemBuffOb.end() )
 	{
-		m_elemBuffOb[id].texture = texture;
+		m_elemBuffOb[id].texture = texID;
 	}
 	else if ( m_buffOb.find( id ) != m_buffOb.end() )
 	{
-		m_buffOb[id].texture = texture;
+		m_buffOb[id].texture = texID;
 	}
 	else
 	{
@@ -190,14 +190,14 @@ void Geometry::bindTexure( const std::string& load, GLuint id )
 
 void Geometry::bindCMTexure( const std::string& load, GLuint id )
 {
-	GLuint texture = Texture::getInstance()->addCMTexture( load );
+	GLuint cmapID = Texture::getInstance()->addCMTexture( load );
 	if ( m_elemBuffOb.find( id ) != m_elemBuffOb.end() )
 	{
-		m_elemBuffOb[id].cubeMap = texture;
+		m_elemBuffOb[id].cubeMap = cmapID;
 	}
 	else if ( m_buffOb.find( id ) != m_buffOb.end() )
 	{
-		m_buffOb[id].cubeMap = texture;
+		m_buffOb[id].cubeMap = cmapID;
 	}
 	else
 	{
@@ -353,12 +353,13 @@ void Geometry::draw( uint id, GLsizei insts )
   if ( m_elemBuffOb.find( id ) != m_elemBuffOb.end() )
   {
     e = m_elemBuffOb[id];
-    glActiveTexture( GL_TEXTURE0 );
+    // glActiveTexture( GL_TEXTURE0 );
     glBindTexture( GL_TEXTURE_2D, e.texture );
     if ( e.cubeMap )
     {
-		glActiveTexture( GL_TEXTURE1 );
-		glBindTexture( GL_TEXTURE_CUBE_MAP, e.cubeMap );
+      glEnable( GL_TEXTURE_CUBE_MAP );
+      // glActiveTexture( GL_TEXTURE1 );
+      glBindTexture( GL_TEXTURE_CUBE_MAP, e.cubeMap );
     }
     glBindVertexArray( e.vao );
     if ( insts == 1 )
@@ -372,14 +373,15 @@ void Geometry::draw( uint id, GLsizei insts )
   else if ( m_buffOb.find( id ) != m_buffOb.end() )
   {
     b = m_buffOb[id];
-    glActiveTexture( GL_TEXTURE0 );
     glBindTexture( GL_TEXTURE_2D, b.texture );
+   	if ( checkGLError( 377 ) ) cout << "object id: " << id << "\n";
     if ( b.cubeMap )
     {
-    	glActiveTexture( GL_TEXTURE0 );
-		glBindTexture( GL_TEXTURE_CUBE_MAP, b.cubeMap );
-		checkGLError( 381 );
+      if ( checkGLError( 381 ) ) cout << "b.cubeMap: " << b.cubeMap << " " << id << "\n";
+    	glBindTexture( GL_TEXTURE_CUBE_MAP, b.cubeMap );
+    	if ( checkGLError( 383 ) ) cout << "b.cubeMap: " << b.cubeMap << " " << id << "\n";
     }
+    checkGLError( 385 );
     glBindVertexArray( b.vao );
     if ( insts == 1 )
       glDrawArrays( GL_TRIANGLES, 0, b.numElements );

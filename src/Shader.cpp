@@ -122,6 +122,8 @@ void Shader::loadFromString( const GLenum whichShader, const std::string& source
 	glShaderSource( name, 1, &src, nullptr );
 	glCompileShader( name );
 	checkShader( name, source );
+	glBindSampler( 0, pgName );
+	glBindSampler( 1, pgName );
 }
 /******************************************************************************
  *
@@ -143,6 +145,8 @@ void Shader::loadFromFile( const GLenum whichShader, const std::string& filename
 	glShaderSource( name, 1, &shaderSource, nullptr );
 	glCompileShader( name );
 	checkShader( name, filename );
+	glBindSampler( 0, pgName );
+	glBindSampler( 1, pgName );
 }
 /******************************************************************************
  * If the default number of shaders are loaded. Compile and link the shader
