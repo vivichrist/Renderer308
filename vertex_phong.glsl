@@ -28,7 +28,10 @@ void main(void)
 	vec4 pos4 = mvM * vec4( position + instpos, 1 );
 	vout.vView = pos4.xyz / pos4.w;
 
+	// reflection calculation
+	mat3 invCam = transpose( mat3( mvM ) );
+	vout.vPos = normalize( invCam * reflect( vout.vView, vout.vNormal ) );
+
 	// transform the geometry!
-	vout.vPos = normalize( position );
 	gl_Position = projM * pos4;
 }

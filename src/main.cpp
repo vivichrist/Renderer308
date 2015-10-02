@@ -356,7 +356,7 @@ int main()
 	Geometry *geo = Geometry::getInstance();
 	uint texture1 = shader("eMap");
 	uint texture0 = shader("image");
-	g_spotgeom = geo->addBuffer( "lamp.obj", g_spotlight_pos, vec3( 0.8f, 0.8f, 0.8f ) );
+	g_spotgeom = geo->addBuffer( "lamp.obj", g_spotlight_pos, vec3( 0.7f, 0.7f, 0.7f ) );
 	uint sphere = geo->addBuffer( "res/assets/sphere.obj"
 	                            , vec3( -5.0f, 0.9f, 5.0f )
 	                            , vec3( 0.714f, 0.4284f, 0.18144f ) );
@@ -430,29 +430,22 @@ int main()
 					value_ptr( g_cam->getNormalMatrix() ) );
 			glUniform1i( shader( "numLights" ), num );
 			glUniformMatrix4fv( shader( "allLights[0]" ), num, GL_FALSE, g_light_array );
-			checkGLErrors( 410 );
 			glUniform4fv( shader( "matAmb" ), 1, &bronze[0] );
 			glUniform4fv( shader( "matSpec" ), 1, &bronze[4] );
-			checkGLErrors( 413 );
 			geo->draw( sphere, 1 );
 			glUniform4fv( shader( "matAmb" ), 1, &china[0] );
 			glUniform4fv( shader( "matSpec" ), 1, &china[4] );
-			checkGLErrors( 417 );
 			geo->draw( bunny, 1 );
 			glUniform4fv( shader( "matAmb" ), 1, &redplast[0] );
 			glUniform4fv( shader( "matSpec" ), 1, &redplast[4] );
-			checkGLErrors( 421 );
 			geo->draw( torus, 1 );
 			glUniform4fv( shader( "matAmb" ), 1, &bMetal[0] );
 			glUniform4fv( shader( "matSpec" ), 1, &bMetal[4] );
-			checkGLErrors( 425 );
 			geo->draw( teapot, 1 );
 			glUniform4fv( shader( "matAmb" ), 1, &def[0] );
 			glUniform4fv( shader( "matSpec" ), 1, &def[4] );
 			geo->draw( box, 1 );
-			checkGLErrors( 430 );
 			geo->draw( table, 1 );
-			checkGLErrors( 432 );
 		shader.unUse();
 
 		widget.use();

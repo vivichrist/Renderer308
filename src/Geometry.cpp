@@ -353,12 +353,9 @@ void Geometry::draw( uint id, GLsizei insts )
   if ( m_elemBuffOb.find( id ) != m_elemBuffOb.end() )
   {
     e = m_elemBuffOb[id];
-    // glActiveTexture( GL_TEXTURE0 );
     glBindTexture( GL_TEXTURE_2D, e.texture );
     if ( e.cubeMap )
     {
-      glEnable( GL_TEXTURE_CUBE_MAP );
-      // glActiveTexture( GL_TEXTURE1 );
       glBindTexture( GL_TEXTURE_CUBE_MAP, e.cubeMap );
     }
     glBindVertexArray( e.vao );
@@ -374,12 +371,9 @@ void Geometry::draw( uint id, GLsizei insts )
   {
     b = m_buffOb[id];
     glBindTexture( GL_TEXTURE_2D, b.texture );
-   	if ( checkGLError( 377 ) ) cout << "object id: " << id << "\n";
     if ( b.cubeMap )
     {
-      if ( checkGLError( 381 ) ) cout << "b.cubeMap: " << b.cubeMap << " " << id << "\n";
     	glBindTexture( GL_TEXTURE_CUBE_MAP, b.cubeMap );
-    	if ( checkGLError( 383 ) ) cout << "b.cubeMap: " << b.cubeMap << " " << id << "\n";
     }
     checkGLError( 385 );
     glBindVertexArray( b.vao );
@@ -402,7 +396,7 @@ void Geometry::draw( uint id[], GLsizei insts[] )
 
 void Geometry::drawAll()
 {
-  // TODO
+  // TODO:
 }
 
 } /**< namespace vogl */
