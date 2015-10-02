@@ -78,6 +78,12 @@ void Lights::directLight( const mat3& rotM, const uint index )
   light.coneDir = vec4( rotM * vec3( 0.0f, -1.0f, 0.0f ), light.coneDir.w );
 }
 
+void Lights::beamLight( const float angle, const uint index )
+{
+  Light &light = lights[index];
+  light.coneDir.w += angle;
+}
+
 void vogl::Lights::getLights( float out[160], GLint& num )
 {
 	num = 0;

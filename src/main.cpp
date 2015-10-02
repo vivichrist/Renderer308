@@ -99,7 +99,7 @@ void key_callback( GLFWwindow * window, int key, int scancode
 	}
 	else if ( g_cam_select )
 	{
-		if ( key == GLFW_KEY_PAGE_UP && action == GLFW_PRESS )
+	  if ( key == GLFW_KEY_PAGE_UP && action == GLFW_PRESS )
 		{
 			g_lights->moveLight( vec3( 0.0f, 0.5f, 0.0f ), g_spotlight );
 			g_lights->getLights( g_light_array, g_num_of_lights );
@@ -194,14 +194,28 @@ void mousemotion_callback( GLFWwindow * window, double x, double y )
 
 void scroll_callback( GLFWwindow * window, double x, double y )
 {
-	if ( y > 0 )
-	{ // zoom in
-		g_cam->zoomIn();
+  if ( y > 0 )
+	{
+    if ( g_cam_select )
+    {
+      g_lights->beamLight( 1.0, g_spotlight );
+      g_lights->getLights( g_light_array, g_num_of_lights );
+    }
+    else
+      // zoom in
+      g_cam->zoomIn();
 
 	}
 	else if ( y < 0 )
-	{ // zoom out
-		g_cam->zoomOut();
+	{
+	  if ( g_cam_select )
+	  {
+	    g_lights->beamLight( -1.0, g_spotlight );
+	    g_lights->getLights( g_light_array, g_num_of_lights );
+	  }
+	  else
+      // zoom out
+      g_cam->zoomOut();
 
 	}
 }

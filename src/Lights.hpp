@@ -38,6 +38,7 @@ namespace vogl
       glm::vec4 getPosition( const uint index );
       void moveLight( const glm::vec3& translate, const uint index );
       void directLight( const glm::mat3& M, const uint index );
+      void beamLight( const float angle, const uint index );
       void getLights( Light[], GLint& );
       void getLights( float[160] , GLint& );
       virtual ~Lights();
