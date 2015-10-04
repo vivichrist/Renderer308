@@ -60,6 +60,7 @@ public:
 	uint addBuffer( const std::string&, const float*, const float*, uint );
 	void bindTexure( const std::string&, GLuint );
 	void bindCMTexure( const std::string&, GLuint );
+	void bindCMTexure( GLuint, GLuint );
 	void draw( uint, GLsizei );
 	void draw( uint[], GLsizei[] );
 	void drawAll();

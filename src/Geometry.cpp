@@ -188,6 +188,23 @@ void Geometry::bindTexure( const std::string& load, GLuint id )
 	}
 }
 
+void Geometry::bindCMTexure( GLuint cmapID, GLuint id )
+{
+	if ( m_elemBuffOb.find( id ) != m_elemBuffOb.end() )
+	{
+		m_elemBuffOb[id].cubeMap = cmapID;
+	}
+	else if ( m_buffOb.find( id ) != m_buffOb.end() )
+	{
+		m_buffOb[id].cubeMap = cmapID;
+	}
+	else
+	{
+		std::cout << "No Such VBObject (name:" << id << ")\n";
+		throw;
+	}
+}
+
 void Geometry::bindCMTexure( const std::string& load, GLuint id )
 {
 	GLuint cmapID = Texture::getInstance()->addCMTexture( load );
@@ -358,6 +375,7 @@ void Geometry::draw( uint id, GLsizei insts )
     {
       glBindTexture( GL_TEXTURE_CUBE_MAP, e.cubeMap );
     }
+    checkGLError( 378 );
     glBindVertexArray( e.vao );
     if ( insts == 1 )
       glDrawElements( GL_TRIANGLES, e.eNumElements, e.eBuffType,
@@ -365,7 +383,6 @@ void Geometry::draw( uint id, GLsizei insts )
     else
       glDrawElementsInstanced( GL_TRIANGLES, e.eNumElements, e.eBuffType,
           (GLvoid *) 0, insts );
-    checkGLError( 302 );
   }
   else if ( m_buffOb.find( id ) != m_buffOb.end() )
   {
@@ -375,7 +392,7 @@ void Geometry::draw( uint id, GLsizei insts )
     {
     	glBindTexture( GL_TEXTURE_CUBE_MAP, b.cubeMap );
     }
-    checkGLError( 385 );
+    checkGLError( 395 );
     glBindVertexArray( b.vao );
     if ( insts == 1 )
       glDrawArrays( GL_TRIANGLES, 0, b.numElements );

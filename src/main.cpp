@@ -371,8 +371,8 @@ int main()
 	                            , vec3( -5.0f, -0.5f, -5.0f )
 	                            , vec3( 0.427451f, 0.470588f, 0.541176f ) );
 	uint table = geo->addBuffer( "res/assets/table.obj", vec3( 0, -1, 0 ) );
+	if ( checkGLErrors( 375 ) ) exit(1);
 	geo->bindCMTexure( "res/textures/cubeMap.jpg", teapot );
-	if ( checkGLErrors( 328 ) ) exit(1);
 	geo->bindTexure( "res/textures/wood.jpg", table );
 	geo->bindTexure( "res/textures/brick.jpg", box );
 
@@ -387,8 +387,7 @@ int main()
 	                             , vec3( 0.6f,  0.6f, 0.6f ) );
 //  lights->addSpotLight( vec3( 0.0f, 10.0f, 0.0f ), vec3( 1.0f, 1.0f, 1.0f )
 //                      , 1.0f, 0.0f, 0.0f, 0.05f, vec3( 0.0f, -1.0f, 0.0f ), 10.0f );
-	GLint num;
-	g_lights->getLights( g_light_array, num );
+	g_lights->getLights( g_light_array, g_num_of_lights );
 
 	// Camera to get model view and projection matices from. Amongst other things
 	g_cam = new Camera( vec3( 0.0f, 2.0f, 25.0f ), g_width, g_height );
@@ -415,27 +414,58 @@ int main()
 	glClearBufferfv( GL_COLOR, 0, black );
 	glViewport( 0, 0, g_width, g_height );
 
+//	Texture *txt = Texture::getInstance();
+//	txt->setupEnvMap( "reflect", 512 );
+//	uint reflect = txt->getEnvMap( "reflect" );
+//	geo->bindCMTexure( reflect, bunny );
+
+//	Shader *env;
 	while ( !glfwWindowShouldClose( window ) )
 	{
 		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 		// load values into the uniform slots of the shader and draw
+//		txt->useEnvironmentMap( env, vec3( 0.0f, 0.5f, 0.0f ), "reflect" );
+//			glUniform1i( (*env)( "numLights" ), g_num_of_lights );
+//			glUniformMatrix4fv( (*env)( "allLights[0]" ), g_num_of_lights
+//					, GL_FALSE, g_light_array );
+//			glUniform4fv( (*env)( "matAmb" ), 1, &bronze[0] );
+//			glUniform4fv( (*env)( "matSpec" ), 1, &bronze[4] );
+//			geo->draw( sphere, 1 );
+//			glUniform4fv( (*env)( "matAmb" ), 1, &china[0] );
+//			glUniform4fv( (*env)( "matSpec" ), 1, &china[4] );
+//			geo->draw( bunny, 1 );
+//			glUniform4fv( (*env)( "matAmb" ), 1, &redplast[0] );
+//			glUniform4fv( (*env)( "matSpec" ), 1, &redplast[4] );
+//			geo->draw( torus, 1 );
+//			glUniform4fv( (*env)( "matAmb" ), 1, &bMetal[0] );
+//			glUniform4fv( (*env)( "matSpec" ), 1, &bMetal[4] );
+//			geo->draw( teapot, 1 );
+//			glUniform4fv( (*env)( "matAmb" ), 1, &def[0] );
+//			glUniform4fv( (*env)( "matSpec" ), 1, &def[4] );
+//			geo->draw( box, 1 );
+//			geo->draw( table, 1 );
+//		txt->unUseEnvironmentMap( g_width, g_height, "reflect" );
+
 		shader.use();
-		  glUniform1i( texture0, 0 );
-		  glUniform1i( texture1, 1 );
+			glUniform1i( texture0, 0 );
+			glUniform1i( texture1, 1 );
 			glUniformMatrix4fv( shader( "mvM" ), 1, GL_FALSE,
 					value_ptr( g_cam->getViewMatrix() ) );
 			glUniformMatrix4fv( shader( "projM" ), 1, GL_FALSE,
 					value_ptr( g_cam->getProjectionMatrix() ) );
 			glUniformMatrix3fv( shader( "normM" ), 1, GL_FALSE,
 					value_ptr( g_cam->getNormalMatrix() ) );
-			glUniform1i( shader( "numLights" ), num );
-			glUniformMatrix4fv( shader( "allLights[0]" ), num, GL_FALSE, g_light_array );
+			glUniform1i( shader( "numLights" ), g_num_of_lights );
+			glUniformMatrix4fv( shader( "allLights[0]" ), g_num_of_lights
+					, GL_FALSE, g_light_array );
 			glUniform4fv( shader( "matAmb" ), 1, &bronze[0] );
 			glUniform4fv( shader( "matSpec" ), 1, &bronze[4] );
 			geo->draw( sphere, 1 );
 			glUniform4fv( shader( "matAmb" ), 1, &china[0] );
 			glUniform4fv( shader( "matSpec" ), 1, &china[4] );
+			glUniform1i( texture1, 2 );
 			geo->draw( bunny, 1 );
+			glUniform1i( texture1, 1 );
 			glUniform4fv( shader( "matAmb" ), 1, &redplast[0] );
 			glUniform4fv( shader( "matSpec" ), 1, &redplast[4] );
 			geo->draw( torus, 1 );
