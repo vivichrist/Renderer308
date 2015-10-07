@@ -391,8 +391,8 @@ void Geometry::draw( uint id, GLsizei insts )
     if ( b.cubeMap )
     {
     	glBindTexture( GL_TEXTURE_CUBE_MAP, b.cubeMap );
+    	checkGLError( 395 );
     }
-    checkGLError( 395 );
     glBindVertexArray( b.vao );
     if ( insts == 1 )
       glDrawArrays( GL_TRIANGLES, 0, b.numElements );
