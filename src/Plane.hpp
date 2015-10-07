@@ -5,8 +5,9 @@
  *      Author: vivichrist
  */
 
-#ifndef PLANE_HPP_
-#define PLANE_HPP_
+#pragma once
+
+#define GLM_FORCE_RADIANS
 
 #include <glm/glm.hpp>
 
@@ -36,5 +37,3 @@ private:
 };
 
 } // end vogl namespace
-
-#endif /* PLANE_HPP_ */

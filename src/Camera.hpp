@@ -5,8 +5,7 @@
  *      Author: vivichrist
  */
 
-#ifndef CAMERA_HPP_
-#define CAMERA_HPP_
+#pragma once
 
 #define GLM_FORCE_RADIANS
 
@@ -30,7 +29,10 @@ public:
 	virtual void setRotation( const float, const float, const float );
 	void setupProjection( const float, const float, const float near = 0.1f
 						, const float far = 1000.0f );
-	void setPosition( const glm::vec3& v );
+	void setAspectRatio( const float, const float );
+	void setPosition( const glm::vec3& );
+	void setPosLookCenter( const glm::vec3& );
+	void setLookCenter();
 	void setFOV( const float fov );
 	// camera
 	const glm::vec3 getPosition() const;
@@ -48,10 +50,15 @@ public:
 	void rotateX( const float );
 	void rotateY( const float );
 	void rotateZ( const float );
+	void rotateOrigX( const float );
+	void rotateOrigY( const float );
+	void rotateOrigZ( const float );
 	void rotateAroundX( const float );
 	void rotateAroundY( const float );
 	void rotateAroundZ( const float );
 	virtual void update();
+	void zoomIn();
+	void zoomOut();
 	void walkOn( const bool );
 	void strafeOn( const bool );
 	void verticalOn( const bool );
@@ -66,7 +73,7 @@ private:
 	float yaw, pitch, roll, fov, aspect_ratio, z_near, z_far;
 	bool rotation_changed, movement_changed, view_changed
 		, forward, backward, sleft, sright, lift, descent;
-	static glm::vec3 UP;
+	static const glm::vec3 UP;
 	static constexpr float PIx2 = M_PI * 2.0f;
 	glm::vec3 look;
 	glm::vec3 up;
@@ -81,4 +88,3 @@ private:
 };
 
 } // end vogl namespace
-#endif /* CAMERA_HPP_ */

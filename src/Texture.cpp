@@ -5,172 +5,386 @@
  *      Author: stewarvivi
  */
 
-#include <png.h>
-#include <cstdio>
 #include "Texture.hpp"
 
 #define TEXTURE_LOAD_ERROR 0
 
 using namespace std;
+using namespace glm;
+
+int checkGLError2( int where )
+{
+  int errCount = 0;
+  for(GLenum currError = glGetError(); currError != GL_NO_ERROR; currError = glGetError())
+  {
+  cout << "Error: " << currError << " line " << where <<  " In Texture\n";
+    ++errCount;
+  }
+//  1280 GL_INVALID_ENUM
+//  1281 GL_INVALID_VALUE
+//  1282 GL_INVALID_OPERATION
+//  1283 GL_STACK_OVERFLOW
+//  1284 GL_STACK_UNDERFLOW
+//  1285 GL_OUT_OF_MEMORY
+  return errCount;
+}
 
 namespace vogl
 {
 
-  Texture::Texture() {}
-  /******************************************************************************
-   * Add a texture straight to the graphics card and return a handle to that
-   * texture for use in shaders through sampler2D Uniforms. Can bind directly to
-   * geometry with the Geometry class.
-   * @param filename
-   * @param width
-   * @param height
-   * @return id
-   */
-  GLuint Texture::addPNGTexture( const string& filename, int &width, int &height )
-  {
-    //header for testing if it is a png
-    png_byte header[ 8 ];
+Texture *Texture::instance = nullptr;
 
-    //open file as binary
-    FILE *fp = fopen( filename.c_str(), "rb" );
-    if ( !fp )
-    {
-      return TEXTURE_LOAD_ERROR;
-    }
+Texture::Texture()
+{
+}
 
-    //read the header
-    fread( header, 1, 8, fp );
+Texture *Texture::getInstance()
+{
+	if ( instance == nullptr )
+		instance = new Texture();
+	return instance;
+}
 
-    //test if png
-    int is_png = !png_sig_cmp( header, 0, 8 );
-    if ( !is_png )
-    {
-      fclose( fp );
-      return TEXTURE_LOAD_ERROR;
-    }
+GLuint Texture::getPNGName( const string& name )
+{
+  return names[name];
+}
 
-    //create png struct
-    png_structp png_ptr = png_create_read_struct( PNG_LIBPNG_VER_STRING, NULL,
-    NULL, NULL );
-    if ( !png_ptr )
-    {
-      fclose( fp );
-      return (TEXTURE_LOAD_ERROR);
-    }
 
-    //create png info struct
-    png_infop info_ptr = png_create_info_struct( png_ptr );
-    if ( !info_ptr )
-    {
-      png_destroy_read_struct( &png_ptr, (png_infopp) NULL, (png_infopp) NULL );
-      fclose( fp );
-      return (TEXTURE_LOAD_ERROR);
-    }
+GLuint Texture::addTexture( const string& filename )
+{
 
-    //create png info struct
-    png_infop end_info = png_create_info_struct( png_ptr );
-    if ( !end_info )
-    {
-      png_destroy_read_struct( &png_ptr, &info_ptr, (png_infopp) NULL );
-      fclose( fp );
-      return (TEXTURE_LOAD_ERROR);
-    }
+	//Now generate the OpenGL texture object
+	image tex( filename );
+	GLuint texture;
 
-    //png error stuff, not sure libpng man suggests this.
-    if ( setjmp( png_jmpbuf(png_ptr) ) )
-    {
-      png_destroy_read_struct( &png_ptr, &info_ptr, &end_info );
-      fclose( fp );
-      return (TEXTURE_LOAD_ERROR);
-    }
+	glGenTextures( 1, &texture );
+	glActiveTexture( GL_TEXTURE0 );
+	glBindTexture( GL_TEXTURE_2D, texture );
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, tex.w, tex.h, 0,
+			tex.glFormat(), GL_UNSIGNED_BYTE, (GLvoid*) tex.data.data() );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+			GL_LINEAR_MIPMAP_LINEAR );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+	glGenerateMipmap( GL_TEXTURE_2D );
 
-    //init png reading
-    png_init_io( png_ptr, fp );
+	names[filename] = texture;
+	return texture;
+}
 
-    //let libpng know you already read the first 8 bytes
-    png_set_sig_bytes( png_ptr, 8 );
+GLuint Texture::addTexture( const vec3& colour )
+{
 
-    // read all the info up to the image data
-    png_read_info( png_ptr, info_ptr );
+	//Now generate the OpenGL texture object
+	GLuint texture;
+	glGenTextures( 1, &texture );
+	glActiveTexture( GL_TEXTURE0 );
+	glBindTexture( GL_TEXTURE_2D, texture );
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB32F, 1, 1, 0, GL_RGB, GL_FLOAT,
+			(GLvoid*) value_ptr( colour ) );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 
-    //variables to pass to get info
-    int bit_depth, color_type;
-    png_uint_32 twidth, theight;
+	names[ to_string( texture ) ] = texture;
+	return texture;
+}
 
-    // get info about png
-    png_get_IHDR( png_ptr, info_ptr, &twidth, &theight, &bit_depth, &color_type,
-    NULL, NULL, NULL );
+GLuint Texture::addCMTexture( const string& filename )
+{
+	image tex( filename );
+	checkGLError2( 92 );
+	EMap e;
+	e.res = tex.w;
+	//Now generate the OpenGL texture object
+	glGenTextures( 1, &e.colorCMID );
+	glActiveTexture( GL_TEXTURE1 );
+	glBindTexture( GL_TEXTURE_CUBE_MAP, e.colorCMID );
+	//set texture parameters
+	glTexParameterf( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+	glTexParameterf( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+	glTexParameterf( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+	glTexParameterf( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+	glTexParameterf( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE );
+	uint dx = tex.w / 4, dy = tex.h / 3;
+	image img = tex.subImage( dx * 2, dy, dx, dy );
+	glTexImage2D(	GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0,
+		GL_RGB, dx, dy, 0, tex.glFormat(), GL_UNSIGNED_BYTE, (GLvoid*) img.data.data() );
+	img = tex.subImage( 0, dy, dx, dy );
+	glTexImage2D(	GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0,
+		GL_RGB, dx, dy, 0, tex.glFormat(), GL_UNSIGNED_BYTE, (GLvoid*) img.data.data() );
+	img = tex.subImage( dx, 0, dx, dy );
+	glTexImage2D(	GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0,
+		GL_RGB, dx, dy, 0, tex.glFormat(), GL_UNSIGNED_BYTE, (GLvoid*) img.data.data() );
+	img = tex.subImage( dx, dy * 2, dx, dy );
+	glTexImage2D(	GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0,
+		GL_RGB, dx, dy, 0, tex.glFormat(), GL_UNSIGNED_BYTE, (GLvoid*) img.data.data() );
+	img = tex.subImage( dx, dy, dx, dy );
+	glTexImage2D(	GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0,
+		GL_RGB, dx, dy, 0, tex.glFormat(), GL_UNSIGNED_BYTE, (GLvoid*) img.data.data() );
+	img = tex.subImage( dx * 3, dy, dx, dy );
+	glTexImage2D(	GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0,
+		GL_RGB, dx, dy, 0, tex.glFormat(), GL_UNSIGNED_BYTE, (GLvoid*) img.data.data() );
+	checkGLError2( 128 );
+	e.res = dx;
+	glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+	checkGLError2( 131 );
+	// glBindTexture( GL_TEXTURE_CUBE_MAP, 0 );
+	envir[filename] = e;
+	return e.colorCMID;
+}
 
-    //update width and height based on png info
-    width = twidth;
-    height = theight;
+//initialize FBO the hard way
+void Texture::makeEnviromentMap( const string& filename, uint resolution )
+{
+	EMap e;
+	e.res = resolution;
+	//generate the dynamic cubemap texture and bind to texture unit 1
+	glGenTextures( 1, &e.colorCMID );
+	glActiveTexture( GL_TEXTURE1 );
+	glBindTexture( GL_TEXTURE_CUBE_MAP, e.colorCMID );
+	//set texture parameters
+	glTexParameterf( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+	glTexParameterf( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+	glTexParameterf( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+	glTexParameterf( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+	glTexParameterf( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE );
+	//for all 6 cubemap faces
+	for ( int face = 0; face < 6; face++ )
+	{
+		//allocate a different texture for each face and assign to the cubemap texture target
+		glTexImage2D( GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, 0, GL_RGBA,
+				resolution, resolution, 0, GL_RGBA, GL_FLOAT, NULL );
+	}
 
-    // Update the png info struct.
-    png_read_update_info( png_ptr, info_ptr );
+	//setup FBO
+	glGenFramebuffers( 1, &e.fboID );
+	glBindFramebuffer( GL_DRAW_FRAMEBUFFER, e.fboID );
 
-    // Row size in bytes.
-    int rowbytes = png_get_rowbytes( png_ptr, info_ptr );
+	//setup render buffer object (RBO)
+	glGenRenderbuffers( 1, &e.rbID );
+	glBindRenderbuffer( GL_RENDERBUFFER, e.rbID );
 
-    // Allocate the image_data as a big block, to be given to opengl
-    png_byte *image_data = new png_byte[ rowbytes * height ];
-    if ( !image_data )
-    {
-      //clean up memory and close stuff
-      png_destroy_read_struct( &png_ptr, &info_ptr, &end_info );
-      fclose( fp );
-      return TEXTURE_LOAD_ERROR;
-    }
+	//set the render buffer storage to have the same dimensions as the cubemap texture
+	//also set the render buffer as the depth attachment of the FBO
+	glRenderbufferStorage( GL_RENDERBUFFER, GL_DEPTH_COMPONENT, resolution,
+			resolution );
+	glFramebufferRenderbuffer( GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+	GL_RENDERBUFFER, e.fboID );
 
-    //row_pointers is for pointing to image_data for reading the png with libpng
-    png_bytep *row_pointers = new png_bytep[ height ];
-    if ( !row_pointers )
-    {
-      //clean up memory and close stuff
-      png_destroy_read_struct( &png_ptr, &info_ptr, &end_info );
-      delete[] image_data;
-      fclose( fp );
-      return TEXTURE_LOAD_ERROR;
-    }
-    // set the individual row_pointers to point at the correct offsets of image_data
-    for ( int i = 0; i < height; ++i )
-      row_pointers[ height - 1 - i ] = image_data + i * rowbytes;
+	//set the dynamic cubemap texture as the colour attachment of FBO
+	glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+	GL_TEXTURE_CUBE_MAP_POSITIVE_X, e.colorCMID, 0 );
 
-    //read the png into image_data through row_pointers
-    png_read_image( png_ptr, row_pointers );
+	//check the framebuffer completeness status
+	GLenum status = glCheckFramebufferStatus( GL_DRAW_FRAMEBUFFER );
+	if ( status != GL_FRAMEBUFFER_COMPLETE )
+	{
+		cerr << "Frame buffer object setup error." << endl;
+		exit( EXIT_FAILURE );
+	}
+	else
+	{
+		cerr << "FBO setup successfully." << endl;
+	}
+	//unbind FBO
+	glBindFramebuffer( GL_DRAW_FRAMEBUFFER, 0 );
+	//unbind renderbuffer
+	glBindRenderbuffer( GL_RENDERBUFFER, 0 );
 
-    //Now generate the OpenGL texture object
-    GLuint texture;
-    glGenTextures( 1, &texture );
-    glBindTexture( GL_TEXTURE_2D, texture );
-    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0,
-    GL_RGB, GL_UNSIGNED_BYTE, (GLvoid*) image_data );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+	cout << "Initialization successfull" << endl;
 
-    //clean up memory and close stuff
-    png_destroy_read_struct( &png_ptr, &info_ptr, &end_info );
-    delete[] image_data;
-    delete[] row_pointers;
-    fclose( fp );
+	envir[filename] = e;
+}
 
-    names[filename] = texture;
-    return texture;
-  }
-  /******************************************************************************
-   * Return the opengl handle to the uploaded texture.
-   * @param filename
-   * @return id
-   */
-  GLuint Texture::getPNGName( const std::string& filename )
-  {
-    return names[filename];
-  }
+GLuint Texture::getEnvMap( const string& name )
+{
+	EMap& e = envir[name];
+	return e.colorCMID;
+}
 
-  Texture::~Texture()
-  {
-    for ( auto n: names )
-    {
-      glDeleteTextures( 1, &n.second );
-    }
-  }
+// in geometry shader version
+GLuint Texture::setupEnvMap( const string& name, uint resolution )
+{
+	EMap e;
+	e.res = resolution;
+
+	// color cube map
+	glGenTextures( 1, &e.colorCMID );
+	glBindTexture( GL_TEXTURE_CUBE_MAP, e.colorCMID );
+	glTexParameterf( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER
+	      , GL_LINEAR_MIPMAP_LINEAR );
+	glTexParameterf( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+	glTexParameterf( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+	glTexParameterf( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+	glTexParameterf( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE );
+	for ( uint face = 0; face < 6; face++ )
+	{
+		glTexImage2D( GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, 0, GL_RGBA
+		    , e.res, e.res, 0, GL_RGBA, GL_FLOAT, nullptr );
+	}
+
+	// framebuffer object
+	glGenFramebuffers( 1, &e.fboID );
+	glBindFramebuffer( GL_DRAW_FRAMEBUFFER, e.fboID );
+	// setup render buffer object (RBO)
+	glGenRenderbuffers( 1, &e.rbID );
+	glBindRenderbuffer( GL_RENDERBUFFER, e.rbID );
+
+	//set the render buffer storage to have the same dimensions as the cubemap texture
+	//also set the render buffer as the depth attachment of the FBO
+	glRenderbufferStorage( GL_RENDERBUFFER, GL_DEPTH_COMPONENT, resolution,
+			resolution );
+	glFramebufferRenderbuffer( GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+			GL_RENDERBUFFER, e.fboID );
+
+	glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_TEXTURE_CUBE_MAP_POSITIVE_X
+			, GL_COLOR_ATTACHMENT0, e.colorCMID, 0 );
+	glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_TEXTURE_CUBE_MAP_NEGATIVE_X
+			, GL_COLOR_ATTACHMENT1, e.colorCMID, 0 );
+	glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_TEXTURE_CUBE_MAP_POSITIVE_Y
+			, GL_COLOR_ATTACHMENT2, e.colorCMID, 0 );
+	glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y
+			, GL_COLOR_ATTACHMENT3, e.colorCMID, 0 );
+	glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_TEXTURE_CUBE_MAP_POSITIVE_Z
+			, GL_COLOR_ATTACHMENT4, e.colorCMID, 0 );
+	glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z
+			, GL_COLOR_ATTACHMENT5, e.colorCMID, 0 );
+
+	e.shader.loadFromFile( GL_VERTEX_SHADER, "vertex_cmap.glsl" );
+	e.shader.loadFromFile( GL_GEOMETRY_SHADER, "geometry_cmap.glsl" );
+	e.shader.loadFromFile( GL_FRAGMENT_SHADER, "fragment_cmap.glsl" );
+	e.shader.createAndLinkProgram();
+	e.shader.use();
+		e.shader.addUniform( "mvM[0]" );
+		e.shader.addUniform( "projM" );
+		e.shader.addUniform( "normM[0]" );
+		e.shader.addUniform( "matAmb" );
+		e.shader.addUniform( "matSpec" );
+		e.shader.addUniform( "numLights" );
+		e.shader.addUniform( "allLights[0]" );
+		e.shader.addUniform( "image" );
+	e.shader.unUse();
+	checkGLError2( 259 );
+
+	e.shader.printActiveUniforms();
+
+	GLenum status = glCheckFramebufferStatus( GL_DRAW_FRAMEBUFFER );
+	if ( status != GL_FRAMEBUFFER_COMPLETE )
+	{
+		cerr << "Frame buffer object setup error." << endl;
+
+		exit( EXIT_FAILURE );
+	}
+	else
+	{
+		cerr << "FBO setup successfully." << endl;
+	}
+	//unbind FBO
+	glBindFramebuffer( GL_DRAW_FRAMEBUFFER, 0 );
+
+	envir[name] = e;
+	return e.colorCMID;
+}
+
+void Texture::createOmniView( const vec3& position, mat4 mv[6], mat3 norm[6] )
+{
+	mv[0] = lookAt( vec3( 0 ), vec3( 1, 0, 0 ), vec3( 0,-1, 0 ) );
+	mv[1] = lookAt( vec3( 0 ), vec3(-1, 0, 0 ), vec3( 0,-1, 0 ) );
+	mv[2] = lookAt( vec3( 0 ), vec3( 0, 1, 0 ), vec3( 1, 0, 0 ) );
+	mv[3] = lookAt( vec3( 0 ), vec3( 0,-1, 0 ), vec3( 1, 0, 0 ) );
+	mv[4] = lookAt( vec3( 0 ), vec3( 0, 0, 1 ), vec3( 0,-1, 0 ) );
+	mv[5] = lookAt( vec3( 0 ), vec3( 0, 0,-1 ), vec3( 0,-1, 0 ) );
+	for ( int i = 0; i<6; ++i )
+	{
+	  mv[i] = glm::translate( mv[i], position );
+	}
+	norm[0] = inverse( transpose( mat3( mv[0] ) ) );
+	norm[1] = inverse( transpose( mat3( mv[1] ) ) );
+	norm[2] = inverse( transpose( mat3( mv[2] ) ) );
+	norm[3] = inverse( transpose( mat3( mv[3] ) ) );
+	norm[4] = inverse( transpose( mat3( mv[4] ) ) );
+	norm[5] = inverse( transpose( mat3( mv[5] ) ) );
+}
+
+// render an environment map the hard way TODO: actually this doesn't work yet...
+void Texture::useEnvironmentMap( Shader*& shader, glm::vec3 position, const string& name )
+{
+	EMap& e = envir[name];
+
+	//set the virtual viewrer at the reflective object center and render the scene
+	mat4 views[6];
+	mat3 nm[6];
+	createOmniView( position, views, nm );
+
+	//set the camera transform, 90.0 degrees FOV
+	mat4 Pcubemap = perspective( (float) M_PI_2, 1.0f, 0.1f, 1000.0f );
+
+	e.shader.use();
+	//bind the FBO
+	glBindFramebuffer( GL_DRAW_FRAMEBUFFER, e.fboID );
+	GLenum args[] = { GL_COLOR_ATTACHMENT0
+					, GL_COLOR_ATTACHMENT1
+					, GL_COLOR_ATTACHMENT2
+					, GL_COLOR_ATTACHMENT3
+					, GL_COLOR_ATTACHMENT4
+					, GL_COLOR_ATTACHMENT5 };
+	glDrawBuffers(1, args );
+
+	//set the viewport to the size of the cube map texture
+	glViewport( 0, 0, e.res, e.res );
+
+
+	//clear the colour and depth buffers
+	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+
+	for ( uint i = 0; i<6; ++i )
+	{
+		glUniformMatrix4fv( e.shader( "mvM[0]" ) + i, 1, GL_FALSE,
+				value_ptr( views[i] ) );
+	}
+	checkGLError2( 330 );
+	for ( uint i = 0; i<6; ++i )
+	{
+		glUniformMatrix3fv( e.shader( "normM[0]" ) + i, 1, GL_FALSE,
+				value_ptr( nm[i] ) );
+	}
+	checkGLError2( 336 );
+	//using the cube map projection matrix and appropriate viewing settings
+	glUniformMatrix4fv( e.shader( "projM" ), 1, GL_FALSE,
+		value_ptr( Pcubemap ) );
+	checkGLError2( 340 );
+	shader = &(e.shader);
+}
+
+uint Texture::unUseEnvironmentMap( uint width, uint height, const string& name )
+{
+	EMap& e = envir[name];
+
+	//unbind the FBO
+	glBindFramebuffer( GL_DRAW_FRAMEBUFFER, 0 );
+	checkGLError2( 351 );
+	//reset the default viewport
+	glViewport( 0, 0, width, height );
+	checkGLError2( 354 );
+	e.shader.unUse();
+	return e.colorCMID;
+}
+
+Texture::~Texture()
+{
+	for ( auto n : names )
+	{
+		glDeleteTextures( 1, &n.second );
+	}
+	for ( auto e : envir )
+	{
+		glDeleteTextures( 1, &e.second.depthCMID );
+		glDeleteTextures( 1, &e.second.colorCMID );
+		glDeleteRenderbuffers( 1, &e.second.rbID );
+		glDeleteFramebuffers( 1, &e.second.fboID );
+	}
+}
 
 } /* namespace vogl */

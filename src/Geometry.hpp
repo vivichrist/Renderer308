@@ -6,9 +6,8 @@
  *      Author: vivichrist
  *****************************************************************************/
 
-#ifndef GEOMETRY_HPP_
-#define GEOMETRY_HPP_
-
+#pragma once
+#define GLM_FORCE_RADIANS
 #include <map>
 #include <vector>
 #include <iostream>
@@ -22,7 +21,8 @@ namespace vogl
 
 enum LOC
 {
-	VertLoc, NormalLoc, TexCoordsLoc, ColourLoc, PositionLoc
+	VertLoc, NormalLoc, TexCoordsLoc
+	, PositionLoc, ColourLoc // instance data
 };
 
 struct Varying
@@ -36,36 +36,41 @@ struct Buffer
 {
 
 	GLenum buffType, type;
-	GLuint vao = 0, bytesSize, vbo, texture = 0;
+	GLuint vao = 0, vbo, texture = 0, cubeMap = 0;
 	GLsizei numElements;
+	GLuint64 bytesSize;
 };
 
 struct EBuffer
 {
 	GLenum vBuffType, eBuffType, type;
-	GLuint vbo, ebo, vao = 0
-			, vBytesSize, eBytesSize, texture = 0;
+	GLuint vbo, ebo, vao = 0, texture = 0, cubeMap = 0;
 	GLsizei vNumElements, eNumElements;
+	GLuint64 vBytesSize, eBytesSize;
 };
 
 class Geometry
 {
 public:
-	Geometry();
-	uint addSmoothSurfaceBuffer( vogl::Loader& );
-	uint addBuffer( const std::string& );
+	static Geometry *getInstance();
+	uint addSmoothSurfaceBuffer( const std::string&, const float*, const float*, uint );
+	uint addBuffer( const std::string& load );
+	uint addBuffer( const std::string& load, const glm::vec3& pos );
+	uint addBuffer( const std::string& load, const glm::vec3& pos, const glm::vec3& col );
+	uint addBuffer( const std::string&, const float*, const float*, uint );
 	void bindTexure( const std::string&, GLuint );
+	void bindCMTexure( const std::string&, GLuint );
+	void bindCMTexure( GLuint, GLuint );
 	void draw( uint, GLsizei );
 	void draw( uint[], GLsizei[] );
 	void drawAll();
 	virtual ~Geometry();
 private:
-	vogl::Texture tex;
+	Geometry();
+	static Geometry *instance;
 	std::map< GLuint, Buffer > m_buffOb; // for vertices etc...
 	std::map< GLuint, EBuffer > m_elemBuffOb; // for indices etc...
 	/**< @class Geometry */
 };
 
 } /**< namespace vogl */
-
-#endif /* GEOMETRY_HPP_ */

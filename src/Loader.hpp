@@ -5,9 +5,8 @@
  *  Created on: 18/08/2015
  *      Author: vivichrist
  *****************************************************************************/
-
-#ifndef LOADER_HPP_
-#define LOADER_HPP_
+#pragma once
+#define GLM_FORCE_RADIANS
 
 #include <cmath>
 #include <iostream> // input/output streams
@@ -25,9 +24,9 @@ namespace vogl
 {
 
 struct vertex {
-	GLushort p = 0; // index for point in m_points
-	GLushort t = 0; // index for uv in m_uvs
-	GLushort n = 0; // index for normal in m_normals
+	GLuint p = 0; // index for point in m_points
+	GLuint t = 0; // index for uv in m_uvs
+	GLuint n = 0; // index for normal in m_normals
 };
 
 struct triangle {
@@ -35,8 +34,8 @@ struct triangle {
 };
 
 struct edge {
-	GLushort p1;
-	GLushort p2;//requires 2 points
+	GLuint p1;
+	GLuint p2;//requires 2 points
 };
 
 class Loader
@@ -57,11 +56,9 @@ public:
 	void getNormals( std::vector<glm::vec3>& );
 	void getUVs( std::vector<glm::vec2>& );
 	void getTriIndices( std::vector<triangle>& );
-	void getLinesInd( std::vector<GLushort>& );
+	void getLinesInd( std::vector<GLuint>& );
 	virtual ~Loader();
 	/**< @class Loader */
 };
 
 } /**< namespace vogl */
-
-#endif /* LOADER_HPP_ */
