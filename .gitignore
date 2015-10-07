@@ -1,6 +1,3 @@
-/Debug/src
-/Debug/ext
-/Debug/OpenGLTemplate
 /box.blend
 /box.blend1
 /box.mtl
@@ -8,4 +5,4 @@
 /sphere_shader.zip
 /.settings/
 /.project
-/.cproject
+/Debug/*
