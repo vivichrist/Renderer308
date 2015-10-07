@@ -1,4 +1,6 @@
-/Debug/
+/Debug/src
+/Debug/ext
+/Debug/OpenGLTemplate
 /box.blend
 /box.blend1
 /box.mtl
