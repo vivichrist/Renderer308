@@ -397,7 +397,7 @@ int main()
 	                   , 0.25f }; // shininess
 	float bronze[] = { 0.2125f, 0.1275f, 0.054f, 0.0f
 	                , 0.393548f, 0.271906f, 0.166721f, 0.2f };
-	float china[] = { 0.19225f, 0.19225f, 0.19225f, 0.0f
+	float china[] = { 0.19225f, 0.19225f, 0.19225f, 0.5f
 	                , 0.508273f, 0.508273f, 0.508273f, 0.2f };
 	float bMetal[] = { 0.105882f, 0.058824f, 0.113725f, 0.5f
 	                , 0.333333f, 0.333333f, 0.521569f, 0.84615f };
@@ -410,40 +410,37 @@ int main()
 	glClearBufferfv( GL_COLOR, 0, black );
 	glViewport( 0, 0, g_width, g_height );
 
-//	Texture *txt = Texture::getInstance();
-//	uint reflect = txt->setupEnvMap( "reflect", 512 );
-//	geo->bindCMTexure( reflect, bunny );
+	Texture *txt = Texture::getInstance();
+	uint reflect = txt->setupEnvMap( "reflect", 512 );
+	geo->bindCMTexure( reflect, bunny );
 
-	Shader *env;
+	Shader env;
 	while ( !glfwWindowShouldClose( window ) )
 	{
 		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 		// load values into the uniform slots of the shader and draw
-//		txt->useEnvironmentMap( env, vec3( 0.0f, 0.5f, 0.0f ), "reflect" );
-//			glUniform1i( (*env)( "image" ), 0 );
-//			checkGLErrors( 424 );
-//			glUniform1i( (*env)( "numLights" ), g_num_of_lights );
-//			checkGLErrors( 426 );
-//			glUniformMatrix4fv( (*env)( "allLights[0]" ), g_num_of_lights
-//					, GL_FALSE, g_light_array );
-//			checkGLErrors( 429 );
-//			glUniform4fv( (*env)( "matAmb" ), 1, &bronze[0] );
-//			glUniform4fv( (*env)( "matSpec" ), 1, &bronze[4] );
-//			geo->draw( sphere, 1 );
-////			glUniform4fv( (*env)( "matAmb" ), 1, &china[0] );
-////			glUniform4fv( (*env)( "matSpec" ), 1, &china[4] );
-////			geo->draw( bunny, 1 );
-//			glUniform4fv( (*env)( "matAmb" ), 1, &redplast[0] );
-//			glUniform4fv( (*env)( "matSpec" ), 1, &redplast[4] );
-//			geo->draw( torus, 1 );
-//			glUniform4fv( (*env)( "matAmb" ), 1, &bMetal[0] );
-//			glUniform4fv( (*env)( "matSpec" ), 1, &bMetal[4] );
-//			geo->draw( teapot, 1 );
-//			glUniform4fv( (*env)( "matAmb" ), 1, &def[0] );
-//			glUniform4fv( (*env)( "matSpec" ), 1, &def[4] );
-//			geo->draw( box, 1 );
-//			geo->draw( table, 1 );
-//		txt->unUseEnvironmentMap( g_width, g_height, "reflect" );
+		txt->useEnvironmentMap( env, vec3( 0.0f, 0.5f, 0.0f ), "reflect" );
+			glUniform1i( env( "image" ), 0 );
+			checkGLErrors( 424 );
+			glUniform1i( env( "numLights" ), g_num_of_lights );
+			checkGLErrors( 426 );
+			glUniformMatrix4fv( env( "allLights[0]" ), g_num_of_lights
+					, GL_FALSE, g_light_array );
+			checkGLErrors( 429 );
+			glUniform4fv( env( "matAmb" ), 1, &bronze[0] );
+			glUniform4fv( env( "matSpec" ), 1, &bronze[4] );
+			geo->draw( sphere, 1 );
+			glUniform4fv( env( "matAmb" ), 1, &redplast[0] );
+			glUniform4fv( env( "matSpec" ), 1, &redplast[4] );
+			geo->draw( torus, 1 );
+			glUniform4fv( env( "matAmb" ), 1, &bMetal[0] );
+			glUniform4fv( env( "matSpec" ), 1, &bMetal[4] );
+			geo->draw( teapot, 1 );
+			glUniform4fv( env( "matAmb" ), 1, &def[0] );
+			glUniform4fv( env( "matSpec" ), 1, &def[4] );
+			geo->draw( box, 1 );
+			geo->draw( table, 1 );
+		txt->unUseEnvironmentMap( g_width, g_height, "reflect" );
 
 		shader.use();
 			glUniform1i( texture0, 0 );

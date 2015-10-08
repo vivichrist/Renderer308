@@ -365,6 +365,7 @@ uint Geometry::addBuffer( const string& load, const float *pos, const float *col
  */
 void Geometry::draw( uint id, GLsizei insts )
 {
+
   EBuffer e;
   Buffer b;
   if ( m_elemBuffOb.find( id ) != m_elemBuffOb.end() )
@@ -404,6 +405,8 @@ void Geometry::draw( uint id, GLsizei insts )
     std::cout << "No Such Vertex Array Object (name:" << id << ")\n";
     throw;
   }
+  glBindTexture( GL_TEXTURE_2D, 0 );
+  glBindTexture( GL_TEXTURE_CUBE_MAP, 0 );
 }
 
 void Geometry::draw( uint id[], GLsizei insts[] )

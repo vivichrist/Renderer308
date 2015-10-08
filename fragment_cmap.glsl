@@ -1,8 +1,12 @@
 // fragment shader for simple Phong Lighting model
-#version 330
+#version 330 core
+#extension GL_EXT_geometry_shader4 : enable
+
 #define MAX_LIGHTS 10
 
 out vec4 FBColor;
+
+// flat in int gl_Layer;
 
 in VertexData {
     smooth vec2 vUV;
@@ -16,11 +20,11 @@ uniform vec4 matAmb; // ambient intensities, reflection is w
 uniform vec4 matSpec; // specular intensities, shininess is w
 
 uniform int numLights;
+uniform mat4 allLights[MAX_LIGHTS];
     // [0] 0,1,2 light position, 3 if 0 is direction
     // [1] 0,1,2,3 colour intensities
     // [2] 0,1,2 attenuation coefficients
     // [3] 0,1,2 cone direction, 3 is cone angle
-uniform mat4 allLights[MAX_LIGHTS];
 
 uniform sampler2D image;
 
@@ -82,5 +86,5 @@ void main()
   }
   // Multiply intensity by diffuse color, force alpha to 1.0 and add in ambient light
   FBColor = max( 0.25 * vec4( matAmb.xyz, 1 ), vec4( diff, 1 ) * diffuse )
-            + vec4(spec * specular * matSpec.xyz, 1.0);
+                         + vec4(spec * specular * matSpec.xyz, 1.0);
 }
