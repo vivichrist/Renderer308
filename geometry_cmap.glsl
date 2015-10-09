@@ -20,8 +20,6 @@ out VertexData
     smooth vec2 vUV;
     smooth vec3 vNormal;
     smooth vec3 vView;
-    flat mat4 mvM;
-    flat mat3 normM;
     flat int side;
 } gout;
 
@@ -31,6 +29,7 @@ void main(void)
     for ( layer = 0; layer < 6; ++layer )
     {
         gl_Layer = layer;
+        gout.side = layer;
         for ( i = 0; i < 3; i++ )
         {
             // Get surface normal in eye coordinates
@@ -42,9 +41,6 @@ void main(void)
 
 		    // transform the geometry!
 		    gl_Position = projM * pos4;
-
-            gout.normM = normM[layer];
-            gout.mvM = mvM[layer];
 
             EmitVertex();
         }
