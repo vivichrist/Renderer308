@@ -135,69 +135,6 @@ GLuint Texture::addCMTexture( const string& filename )
 	return e.colorCMID;
 }
 
-//initialize FBO the hard way
-void Texture::makeEnviromentMap( const string& filename, uint resolution )
-{
-	EMap e;
-	e.res = resolution;
-	//generate the dynamic cubemap texture and bind to texture unit 1
-	glGenTextures( 1, &e.colorCMID );
-	glActiveTexture( GL_TEXTURE1 );
-	glBindTexture( GL_TEXTURE_CUBE_MAP, e.colorCMID );
-	//set texture parameters
-	glTexParameterf( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-	glTexParameterf( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-	glTexParameterf( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
-	glTexParameterf( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-	glTexParameterf( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE );
-	//for all 6 cubemap faces
-	for ( int face = 0; face < 6; face++ )
-	{
-		//allocate a different texture for each face and assign to the cubemap texture target
-		glTexImage2D( GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, 0, GL_RGBA,
-				resolution, resolution, 0, GL_RGBA, GL_FLOAT, NULL );
-	}
-
-	//setup FBO
-	glGenFramebuffers( 1, &e.fboID );
-	glBindFramebuffer( GL_DRAW_FRAMEBUFFER, e.fboID );
-
-	//setup render buffer object (RBO)
-	glGenRenderbuffers( 1, &e.rbID );
-	glBindRenderbuffer( GL_RENDERBUFFER, e.rbID );
-
-	//set the render buffer storage to have the same dimensions as the cubemap texture
-	//also set the render buffer as the depth attachment of the FBO
-	glRenderbufferStorage( GL_RENDERBUFFER, GL_DEPTH_COMPONENT, resolution,
-			resolution );
-	glFramebufferRenderbuffer( GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
-	GL_RENDERBUFFER, e.fboID );
-
-	//set the dynamic cubemap texture as the colour attachment of FBO
-	glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-	GL_TEXTURE_CUBE_MAP_POSITIVE_X, e.colorCMID, 0 );
-
-	//check the framebuffer completeness status
-	GLenum status = glCheckFramebufferStatus( GL_DRAW_FRAMEBUFFER );
-	if ( status != GL_FRAMEBUFFER_COMPLETE )
-	{
-		cerr << "Frame buffer object setup error." << endl;
-		exit( EXIT_FAILURE );
-	}
-	else
-	{
-		cerr << "FBO setup successfully." << endl;
-	}
-	//unbind FBO
-	glBindFramebuffer( GL_DRAW_FRAMEBUFFER, 0 );
-	//unbind renderbuffer
-	glBindRenderbuffer( GL_RENDERBUFFER, 0 );
-
-	cout << "Initialization successfull" << endl;
-
-	envir[filename] = e;
-}
-
 GLuint Texture::getEnvMap( const string& name )
 {
 	EMap& e = envir[name];
@@ -209,48 +146,58 @@ GLuint Texture::setupEnvMap( const string& name, uint resolution )
 {
 	EMap e;
 	e.res = resolution;
+	// how many textures to create? depends on complexity of your effects.
+	glGenFramebuffers(1, &e.fboID);
+	glBindFramebuffer(GL_FRAMEBUFFER, e.fboID);
+	glGenTextures(1, &e.colorCMID );
+	glGenTextures(1, &e.depthCMID );
 
-	// color cube map
-	glGenTextures( 1, &e.colorCMID );
-	glBindTexture( GL_TEXTURE_CUBE_MAP, e.colorCMID );
-	glTexParameterf( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER
-	      , GL_LINEAR_MIPMAP_LINEAR );
-	glTexParameterf( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-	glTexParameterf( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
-	glTexParameterf( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-	glTexParameterf( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE );
-	for ( uint face = 0; face < 6; face++ )
-	{
-		glTexImage2D( GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, 0, GL_RGBA
-		    , e.res, e.res, 0, GL_RGBA, GL_FLOAT, nullptr );
-	}
+	glActiveTexture( GL_TEXTURE1 );
+	GLenum target = GL_TEXTURE_CUBE_MAP;
 
-	// framebuffer object
-	glGenFramebuffers( 1, &e.fboID );
-	glBindFramebuffer( GL_DRAW_FRAMEBUFFER, e.fboID );
-	// setup render buffer object (RBO)
-	glGenRenderbuffers( 1, &e.rbID );
-	glBindRenderbuffer( GL_RENDERBUFFER, e.rbID );
+	// initialise depth map
+	glBindTexture(target, e.depthCMID);
+	// setting up texture parameters
+	glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(target, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+	glTexParameteri(target, GL_TEXTURE_COMPARE_MODE,
+							GL_COMPARE_REF_TO_TEXTURE);
+	glTexParameteri(target, GL_TEXTURE_COMPARE_FUNC, GL_GREATER);
 
-	//set the render buffer storage to have the same dimensions as the cubemap texture
-	//also set the render buffer as the depth attachment of the FBO
-	glRenderbufferStorage( GL_RENDERBUFFER, GL_DEPTH_COMPONENT, resolution,
-			resolution );
-	glFramebufferRenderbuffer( GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
-			GL_RENDERBUFFER, e.fboID );
+	for(int face = 0; face < 6; ++face)
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, 0,
+					 GL_DEPTH_COMPONENT24, e.res, e.res, 0,
+					 GL_DEPTH_COMPONENT, GL_FLOAT, 0);
 
-	glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_TEXTURE_CUBE_MAP_POSITIVE_X
-			, GL_COLOR_ATTACHMENT0, e.colorCMID, 0 );
-	glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_TEXTURE_CUBE_MAP_NEGATIVE_X
-			, GL_COLOR_ATTACHMENT1, e.colorCMID, 0 );
-	glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_TEXTURE_CUBE_MAP_POSITIVE_Y
-			, GL_COLOR_ATTACHMENT2, e.colorCMID, 0 );
-	glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y
-			, GL_COLOR_ATTACHMENT3, e.colorCMID, 0 );
-	glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_TEXTURE_CUBE_MAP_POSITIVE_Z
-			, GL_COLOR_ATTACHMENT4, e.colorCMID, 0 );
-	glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z
-			, GL_COLOR_ATTACHMENT5, e.colorCMID, 0 );
+	// attaching to the frame buffer
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+						 e.depthCMID, 0);
+
+	// initialise colour map
+	glBindTexture(target, e.colorCMID);
+	glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(target, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+	for(int face = 0; face < 6; ++face)
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, 0,
+					 GL_RGBA32F, e.res, e.res, 0,
+					 GL_RGBA, GL_FLOAT, 0);
+
+	// attaching to the frame buffer
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+			e.colorCMID, 0);
+
+	GLenum drawBuffers[] = {GL_COLOR_ATTACHMENT0};//, GL_COLOR_ATTACHMENT1};
+	glDrawBuffers(2, drawBuffers);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glActiveTexture( GL_TEXTURE0 );
 
 	e.shader.loadFromFile( GL_VERTEX_SHADER, "vertex_cmap.glsl" );
 	e.shader.loadFromFile( GL_GEOMETRY_SHADER, "geometry_cmap.glsl" );
@@ -266,23 +213,8 @@ GLuint Texture::setupEnvMap( const string& name, uint resolution )
 		e.shader.addUniform( "allLights[0]" );
 		e.shader.addUniform( "image" );
 	e.shader.unUse();
-	checkGLError2( 259 );
 
 	e.shader.printActiveUniforms();
-
-	GLenum status = glCheckFramebufferStatus( GL_DRAW_FRAMEBUFFER );
-	if ( status != GL_FRAMEBUFFER_COMPLETE )
-	{
-		cerr << "Frame buffer object setup error." << endl;
-
-		exit( EXIT_FAILURE );
-	}
-	else
-	{
-		cerr << "FBO setup successfully." << endl;
-	}
-	//unbind FBO
-	glBindFramebuffer( GL_DRAW_FRAMEBUFFER, 0 );
 
 	envir[name] = e;
 	return e.colorCMID;
@@ -308,12 +240,12 @@ void Texture::createOmniView( const vec3& position, mat4 mv[6], mat3 norm[6] )
 	norm[5] = inverse( transpose( mat3( mv[5] ) ) );
 }
 
-// render an environment map the hard way TODO: actually this doesn't work yet...
-void Texture::useEnvironmentMap( Shader*& shader, glm::vec3 position, const string& name )
+// render an cubemap the reflections
+void Texture::useEnvironmentMap( Shader& shader, glm::vec3 position, const string& name )
 {
 	EMap& e = envir[name];
 
-	//set the virtual viewrer at the reflective object center and render the scene
+	//set the virtual viewer at the reflective object centre and render the scene
 	mat4 views[6];
 	mat3 nm[6];
 	createOmniView( position, views, nm );
@@ -321,20 +253,15 @@ void Texture::useEnvironmentMap( Shader*& shader, glm::vec3 position, const stri
 	//set the camera transform, 90.0 degrees FOV
 	mat4 Pcubemap = perspective( (float) M_PI_2, 1.0f, 0.1f, 1000.0f );
 
-	e.shader.use();
 	//bind the FBO
 	glBindFramebuffer( GL_DRAW_FRAMEBUFFER, e.fboID );
-	GLenum args[] = { GL_COLOR_ATTACHMENT0
-					, GL_COLOR_ATTACHMENT1
-					, GL_COLOR_ATTACHMENT2
-					, GL_COLOR_ATTACHMENT3
-					, GL_COLOR_ATTACHMENT4
-					, GL_COLOR_ATTACHMENT5 };
-	glDrawBuffers(1, args );
+	glActiveTexture( GL_TEXTURE1 );
 
+	e.shader.use();
+
+	checkGLError2( 272 );
 	//set the viewport to the size of the cube map texture
 	glViewport( 0, 0, e.res, e.res );
-
 
 	//clear the colour and depth buffers
 	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
@@ -344,18 +271,17 @@ void Texture::useEnvironmentMap( Shader*& shader, glm::vec3 position, const stri
 		glUniformMatrix4fv( e.shader( "mvM[0]" ) + i, 1, GL_FALSE,
 				value_ptr( views[i] ) );
 	}
-	checkGLError2( 330 );
 	for ( uint i = 0; i<6; ++i )
 	{
 		glUniformMatrix3fv( e.shader( "normM[0]" ) + i, 1, GL_FALSE,
 				value_ptr( nm[i] ) );
 	}
-	checkGLError2( 336 );
+	checkGLError2( 289 );
 	//using the cube map projection matrix and appropriate viewing settings
 	glUniformMatrix4fv( e.shader( "projM" ), 1, GL_FALSE,
 		value_ptr( Pcubemap ) );
-	checkGLError2( 340 );
-	shader = &(e.shader);
+	checkGLError2( 393 );
+	shader = e.shader;
 }
 
 uint Texture::unUseEnvironmentMap( uint width, uint height, const string& name )
@@ -363,12 +289,13 @@ uint Texture::unUseEnvironmentMap( uint width, uint height, const string& name )
 	EMap& e = envir[name];
 
 	//unbind the FBO
-	glBindFramebuffer( GL_DRAW_FRAMEBUFFER, 0 );
+	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
 	checkGLError2( 351 );
 	//reset the default viewport
 	glViewport( 0, 0, width, height );
 	checkGLError2( 354 );
 	e.shader.unUse();
+	glActiveTexture( GL_TEXTURE0 );
 	return e.colorCMID;
 }
 
@@ -382,7 +309,6 @@ Texture::~Texture()
 	{
 		glDeleteTextures( 1, &e.second.depthCMID );
 		glDeleteTextures( 1, &e.second.colorCMID );
-		glDeleteRenderbuffers( 1, &e.second.rbID );
 		glDeleteFramebuffers( 1, &e.second.fboID );
 	}
 }

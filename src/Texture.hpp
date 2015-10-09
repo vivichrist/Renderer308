@@ -103,7 +103,7 @@ namespace vogl
 
   struct EMap
   {
-      GLuint fboID, rbID, textureID, depthCMID, colorCMID, res;
+      GLuint fboID = 0, depthCMID = 0, colorCMID = 0, res = 0;
       Shader shader;
   };
 
@@ -115,11 +115,10 @@ namespace vogl
       GLuint addCMTexture( const std::string& );
       GLuint addTexture( const glm::vec3& );
       GLuint getPNGName( const std::string& );
-      void makeEnviromentMap( const std::string&, uint );
       GLuint setupEnvMap( const std::string&, uint );
       GLuint getEnvMap( const std::string& );
       void createOmniView( const glm::vec3&, glm::mat4[ 6 ], glm::mat3[ 6 ] );
-      void useEnvironmentMap( Shader*&, glm::vec3, const std::string& );
+      void useEnvironmentMap( Shader&, glm::vec3, const std::string& );
       uint unUseEnvironmentMap( uint width, uint height, const std::string& );
       virtual ~Texture();
     private:
