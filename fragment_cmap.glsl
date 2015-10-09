@@ -4,9 +4,7 @@
 
 #define MAX_LIGHTS 10
 
-out vec4 FBColor;
-
-// flat in int gl_Layer;
+layout(location = 0) out vec4 FB0;
 
 in VertexData {
     smooth vec2 vUV;
@@ -14,6 +12,7 @@ in VertexData {
     smooth vec3 vView;
     flat mat4 mvM;
     flat mat3 normM;
+    flat int side;
 } fin;
 
 uniform vec4 matAmb; // ambient intensities, reflection is w
@@ -85,6 +84,6 @@ void main()
     specular = pow( spec, matSpec.w * 512.0 ) * (specIntense * diffuse.xyz );
   }
   // Multiply intensity by diffuse color, force alpha to 1.0 and add in ambient light
-  FBColor = max( 0.25 * vec4( matAmb.xyz, 1 ), vec4( diff, 1 ) * diffuse )
+  FB0 = max( 0.25 * vec4( matAmb.xyz, 1 ), vec4( diff, 1 ) * diffuse )
                          + vec4(spec * specular * matSpec.xyz, 1.0);
 }

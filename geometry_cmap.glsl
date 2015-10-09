@@ -22,6 +22,7 @@ out VertexData
     smooth vec3 vView;
     flat mat4 mvM;
     flat mat3 normM;
+    flat int side;
 } gout;
 
 void main(void)
@@ -41,10 +42,10 @@ void main(void)
 
 		    // transform the geometry!
 		    gl_Position = projM * pos4;
-		    
+
             gout.normM = normM[layer];
             gout.mvM = mvM[layer];
-            
+
             EmitVertex();
         }
         EndPrimitive();
