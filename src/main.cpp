@@ -488,6 +488,8 @@ int main()
 		glfwPollEvents();
 	}
 
+	delete (geo);
+	delete (txt);
 	delete (g_cam);
 	delete (g_lights);
 

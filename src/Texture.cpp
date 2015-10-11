@@ -170,7 +170,7 @@ GLuint Texture::setupEnvMap( const string& name, uint resolution )
 
 	for(int face = 0; face < 6; ++face)
 		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, 0,
-					 GL_DEPTH_COMPONENT24, e.res, e.res, 0,
+					 GL_DEPTH_COMPONENT32F, e.res, e.res, 0,
 					 GL_DEPTH_COMPONENT, GL_FLOAT, 0);
 
 	// attaching to the frame buffer
