@@ -132,6 +132,7 @@ GLuint Texture::addCMTexture( const string& filename )
 	checkGLError2( 131 );
 	// glBindTexture( GL_TEXTURE_CUBE_MAP, 0 );
 	envir[filename] = e;
+	glActiveTexture( GL_TEXTURE0 );
 	return e.colorCMID;
 }
 
@@ -163,9 +164,9 @@ GLuint Texture::setupEnvMap( const string& name, uint resolution )
 	glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(target, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-	glTexParameteri(target, GL_TEXTURE_COMPARE_MODE,
-							GL_COMPARE_REF_TO_TEXTURE);
-	glTexParameteri(target, GL_TEXTURE_COMPARE_FUNC, GL_GREATER);
+//	glTexParameteri(target, GL_TEXTURE_COMPARE_MODE,
+//							GL_COMPARE_REF_TO_TEXTURE);
+//	glTexParameteri(target, GL_TEXTURE_COMPARE_FUNC, GL_GREATER);
 
 	for(int face = 0; face < 6; ++face)
 		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, 0,
@@ -186,14 +187,14 @@ GLuint Texture::setupEnvMap( const string& name, uint resolution )
 
 	for(int face = 0; face < 6; ++face)
 		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, 0,
-					 GL_RGBA32F, e.res, e.res, 0,
-					 GL_RGBA, GL_FLOAT, 0);
+					 GL_RGB32F, e.res, e.res, 0,
+					 GL_RGB, GL_FLOAT, 0);
 
 	// attaching to the frame buffer
 	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
 			e.colorCMID, 0);
 
-	GLenum drawBuffers[] = {GL_COLOR_ATTACHMENT0};//, GL_COLOR_ATTACHMENT1};
+	GLenum drawBuffers[] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1};
 	glDrawBuffers(2, drawBuffers);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -252,14 +253,14 @@ void Texture::useEnvironmentMap( Shader& shader, glm::vec3 position, const strin
 
 	//set the camera transform, 90.0 degrees FOV
 	mat4 Pcubemap = perspective( (float) M_PI_2, 1.0f, 0.1f, 1000.0f );
-
+	checkGLError2( 256 );
 	//bind the FBO
-	glBindFramebuffer( GL_DRAW_FRAMEBUFFER, e.fboID );
+	glBindFramebuffer( GL_FRAMEBUFFER, e.fboID );
+	checkGLError2( 259 );
 	glActiveTexture( GL_TEXTURE1 );
-
+	checkGLError2( 261 );
 	e.shader.use();
-
-	checkGLError2( 272 );
+	checkGLError2( 263 );
 	//set the viewport to the size of the cube map texture
 	glViewport( 0, 0, e.res, e.res );
 

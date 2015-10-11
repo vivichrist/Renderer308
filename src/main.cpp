@@ -372,6 +372,9 @@ int main()
 	                            , vec3( 0.427451f, 0.470588f, 0.541176f ) );
 	uint table = geo->addBuffer( "res/assets/table.obj", vec3( 0, -1, 0 ) );
 	if ( checkGLErrors( 375 ) ) exit(1);
+  Texture *txt = Texture::getInstance();
+  uint reflect = txt->setupEnvMap( "reflect", 512 );
+  geo->bindCMTexure( reflect, bunny );
 	geo->bindCMTexure( "res/textures/cubeMap.jpg", teapot );
 	geo->bindTexure( "res/textures/wood.jpg", table );
 	geo->bindTexure( "res/textures/brick.jpg", box );
@@ -397,7 +400,7 @@ int main()
 	                   , 0.25f }; // shininess
 	float bronze[] = { 0.2125f, 0.1275f, 0.054f, 0.0f
 	                , 0.393548f, 0.271906f, 0.166721f, 0.2f };
-	float china[] = { 0.19225f, 0.19225f, 0.19225f, 0.5f
+	float china[] = { 0.19225f, 0.19225f, 0.19225f, 1.0f
 	                , 0.508273f, 0.508273f, 0.508273f, 0.2f };
 	float bMetal[] = { 0.105882f, 0.058824f, 0.113725f, 0.5f
 	                , 0.333333f, 0.333333f, 0.521569f, 0.84615f };
@@ -410,9 +413,6 @@ int main()
 	glClearBufferfv( GL_COLOR, 0, black );
 	glViewport( 0, 0, g_width, g_height );
 
-	Texture *txt = Texture::getInstance();
-	uint reflect = txt->setupEnvMap( "reflect", 512 );
-	geo->bindCMTexure( reflect, bunny );
 
 	Shader env;
 	while ( !glfwWindowShouldClose( window ) )

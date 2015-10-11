@@ -371,9 +371,11 @@ void Geometry::draw( uint id, GLsizei insts )
   if ( m_elemBuffOb.find( id ) != m_elemBuffOb.end() )
   {
     e = m_elemBuffOb[id];
+    glActiveTexture( GL_TEXTURE0 );
     glBindTexture( GL_TEXTURE_2D, e.texture );
     if ( e.cubeMap )
     {
+      glActiveTexture( GL_TEXTURE1 );
       glBindTexture( GL_TEXTURE_CUBE_MAP, e.cubeMap );
     }
     checkGLError( 378 );
@@ -388,9 +390,11 @@ void Geometry::draw( uint id, GLsizei insts )
   else if ( m_buffOb.find( id ) != m_buffOb.end() )
   {
     b = m_buffOb[id];
+    glActiveTexture( GL_TEXTURE0 );
     glBindTexture( GL_TEXTURE_2D, b.texture );
     if ( b.cubeMap )
     {
+      glActiveTexture( GL_TEXTURE1 );
     	glBindTexture( GL_TEXTURE_CUBE_MAP, b.cubeMap );
     	checkGLError( 395 );
     }
