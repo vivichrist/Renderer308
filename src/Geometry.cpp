@@ -357,67 +357,54 @@ uint Geometry::addBuffer(const string& load, const float *pos, const float *col,
  * @param insts how many instances we will draw
  * TODO: create buffers for instances
  */
-void Geometry::draw(uint id, GLsizei insts ) {
-	EBuffer e;
-	Buffer b;
-	if (m_elemBuffOb.find(id) != m_elemBuffOb.end()) {
-		/*e = m_elemBuffOb[id];
-		 glBindTexture( GL_TEXTURE_2D, e.texture );
+void Geometry::draw( uint id, GLsizei insts )
+{
 
-		 // Cubemap
-		 if ( e.cubeMap )
-		 {
-		 glBindTexture( GL_TEXTURE_CUBE_MAP, e.cubeMap );
-		 }
-
-		 // Normalmap
-		 if ( e.normalMap )
-		 {
-		 glBindTexture( GL_TEXTURE_2D, e.normalMap );
-		 }
-		 checkGLError( 378 );
-		 glBindVertexArray( e.vao );
-		 if ( insts == 1 )
-		 glDrawElements( GL_TRIANGLES, e.eNumElements, e.eBuffType,
-		 (GLvoid *) 0 );
-		 else
-		 glDrawElementsInstanced( GL_TRIANGLES, e.eNumElements, e.eBuffType,
-		 (GLvoid *) 0, insts );*/
-	} else if (m_buffOb.find(id) != m_buffOb.end()) {
-		b = m_buffOb[id];
-		glBindTexture( GL_TEXTURE_2D, b.texture);
-
-		// Cubemap
-		if (b.cubeMap) {
-			glBindTexture( GL_TEXTURE_CUBE_MAP, b.cubeMap);
-			checkGLError(395);
-		}
-
-		// Normalmap
-		//glBindTexture( GL_TEXTURE_2D, b.normalMap);
-
-		if (b.normalMap) {
-			//glUniform1f( shader( "normalmap" ), &b.normalMap );
-			//glUniform1i(glGetUniformLocation(programObject, "texture"), 1);
-			//glBindSampler( shader( "normalmap" ), &b.normalMap);
-			glBindTexture( GL_NORMAL_MAP, b.normalMap);
-			checkGLError(396);
-		}
-		else{
-
-		}
-
-		glBindVertexArray(b.vao);
-		if (insts == 1) {
-			glDrawArrays( GL_TRIANGLES, 0, b.numElements);
-		} else {
-			glDrawArraysInstanced( GL_TRIANGLES, 0, b.numElements, insts);
-		}
-
-	} else {
-		std::cout << "No Such Vertex Array Object (name:" << id << ")\n";
-		throw;
+  EBuffer e;
+  Buffer b;
+  if ( m_elemBuffOb.find( id ) != m_elemBuffOb.end() )
+  {
+    e = m_elemBuffOb[id];
+    glBindTexture( GL_TEXTURE_2D, e.texture );
+    if ( e.cubeMap )
+    {
+      glBindTexture( GL_TEXTURE_CUBE_MAP, e.cubeMap );
+    }
+    checkGLError( 378 );
+    glBindVertexArray( e.vao );
+    if ( insts == 1 )
+      glDrawElements( GL_TRIANGLES, e.eNumElements, e.eBuffType,
+          (GLvoid *) 0 );
+    else
+      glDrawElementsInstanced( GL_TRIANGLES, e.eNumElements, e.eBuffType,
+          (GLvoid *) 0, insts );
+  }
+  else if ( m_buffOb.find( id ) != m_buffOb.end() )
+  {
+    b = m_buffOb[id];
+    glBindTexture( GL_TEXTURE_2D, b.texture );
+    if ( b.cubeMap )
+    {
+    	glBindTexture( GL_TEXTURE_CUBE_MAP, b.cubeMap );
+    	checkGLError( 395 );
+    }
+    if (b.normalMap) {
+		glBindTexture( GL_NORMAL_MAP, b.normalMap);
+		checkGLError(396);
 	}
+    glBindVertexArray( b.vao );
+    if ( insts == 1 )
+      glDrawArrays( GL_TRIANGLES, 0, b.numElements );
+    else
+      glDrawArraysInstanced( GL_TRIANGLES, 0, b.numElements, insts );
+  }
+  else
+  {
+    std::cout << "No Such Vertex Array Object (name:" << id << ")\n";
+    throw;
+  }
+  glBindTexture( GL_TEXTURE_2D, 0 );
+  glBindTexture( GL_TEXTURE_CUBE_MAP, 0 );
 }
 
 void Geometry::draw(uint id[], GLsizei insts[]) {
