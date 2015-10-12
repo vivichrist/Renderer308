@@ -32,6 +32,26 @@ void main(void)
 	mat3 invCam = transpose( mat3( mvM ) );
 	vout.vPos = normalize( invCam * reflect( vout.vView, vout.vNormal ) );
 
+	// Normal map
+	/*vec3 tangent;
+	vec3 v1 = cross(normal,vec3(0.0,0.0,-1.0));
+	vec3 v2 = cross(normal,vec3(0.0,-1.0,0.0));
+	if( length(v1) > length(v2) )
+		tangent = v1;
+	else
+		tangent = v2;
+	vec3 n = normalize(normM*normal);
+	vec3 t = normalize(normM*tangent);
+	vec3 b = cross(n,t);
+	mat3 mat = mat3(t.x,b.x,n.x,t.y,b.y,n.y,t.z,b.z,n.z);
+
+	vec3 vector = normalize(lightPos-position);
+	tangentSurface2light = mat*vector;
+
+	vector = normalize(-position);
+	tangentSurface2view = mat*vector;*/
+
+
 	// transform the geometry!
 	gl_Position = projM * pos4;
 }

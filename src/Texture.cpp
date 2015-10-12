@@ -132,7 +132,31 @@ GLuint Texture::addCMTexture( const string& filename )
 	checkGLError2( 131 );
 	// glBindTexture( GL_TEXTURE_CUBE_MAP, 0 );
 	envir[filename] = e;
+	checkGLError2( 132 );
 	return e.colorCMID;
+}
+
+GLuint Texture::addNMTexture( const string& filename )
+{
+
+	//Load normal map
+	checkGLError2( 133 );
+	image normalMapImage( filename );
+
+	//Convert normal map to texture
+	GLuint normalMap;
+	glGenTextures(1, &normalMap);
+	glActiveTexture( GL_TEXTURE2 );
+	glBindTexture(GL_TEXTURE_2D, normalMap);
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8, normalMapImage.w, normalMapImage.h,
+		0, normalMapImage.glFormat(), GL_UNSIGNED_BYTE, normalMapImage.data.data());
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	checkGLError2( 134 );
+
+	return normalMap;
 }
 
 //initialize FBO the hard way
@@ -265,6 +289,7 @@ GLuint Texture::setupEnvMap( const string& name, uint resolution )
 		e.shader.addUniform( "numLights" );
 		e.shader.addUniform( "allLights[0]" );
 		e.shader.addUniform( "image" );
+		e.shader.addUniform( "normalmap" );
 	e.shader.unUse();
 	checkGLError2( 259 );
 

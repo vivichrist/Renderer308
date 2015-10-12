@@ -11,6 +11,8 @@ in VertexData {
 	smooth vec3 vView;
 } fin;
 
+uniform float matCubemap; // cubemap
+uniform float matNormal; // normalmap
 uniform vec4 matAmb; // ambient intensities, reflection is w
 uniform vec4 matSpec; // specular intensities, shininess is w
 
@@ -24,12 +26,16 @@ uniform int numLights;
 	// [3] 0,1,2 cone direction, 3 is cone angle
 uniform mat4 allLights[MAX_LIGHTS];
 
-
 uniform sampler2D image;
+uniform sampler2D normalmap;
 uniform samplerCube eMap;
 
 void main()
 {
+  // For normal map
+  vec3 texcolor = vec3(texture2D(normalmap,fin.vUV));
+  fin.vNormal = fin.vNormal + (texcolor*matNormal);
+
   FBColor = vec4(0);
   vec3 diff = vec3(0); // accumulated diffuse intensity
   float spec = 0; // accumulated specular intensity
@@ -79,7 +85,8 @@ void main()
   vec3 specular = vec3(0);
   vec4 cm = texture( eMap, fin.vPos );
   vec4 dm = texture( image, fin.vUV * 5.0 );
-  vec4 diffuse = vec4( (1.0 - matAmb.w) * dm.xyz, 1 ) + vec4( matAmb.w * cm.xyz, 1 );
+  vec4 diffuse = vec4( (1.0 - matCubemap) * dm.xyz, 1 ) + vec4( matCubemap * cm.xyz, 1 );
+
   // If the diffuse light is zero, don’t even bother with the pow function
   if ( diff.x > 0 && diff.y > 0 && diff.z > 0 )
   {
