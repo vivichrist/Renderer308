@@ -13,6 +13,7 @@
 #include "Geometry.hpp"
 #include "Lights.hpp"
 #include "Shader.hpp"
+#include "gbuffer.hpp"
 
 using namespace glm;
 using namespace vogl;
@@ -28,6 +29,12 @@ vec3 g_spotlight_pos;
 mat4 g_spotlight_rot;
 float g_light_array[160];
 GLint g_num_of_lights;
+
+GBuffer buff;
+
+GLuint depthTexture;
+GLuint depthTex;
+GLuint depthBuffer;
 
 int g_width = 800, g_height = 600;
 
@@ -309,6 +316,8 @@ int main()
 	std::cout << "\tGLSL:	" << glGetString( GL_SHADING_LANGUAGE_VERSION )
 			<< std::endl;
 
+	buff.Init(g_width, g_height);
+
 	glfwSetErrorCallback( error_callback );
 	glfwSetKeyCallback( window, key_callback );
 	glfwSetScrollCallback( window, scroll_callback );
@@ -340,9 +349,11 @@ int main()
 		shader.addUniform("image");
 		shader.addUniform("eMap");
 		shader.addUniform("normalmap");
+		shader.addUniform("DepthTexture");
 	shader.unUse();
 	// print debugging info
 	shader.printActiveUniforms();
+
 	// shader for drawing the lamp shade
 	Shader widget;
 	widget.loadFromFile( GL_VERTEX_SHADER, "vertex.simple.glsl" );
@@ -360,6 +371,7 @@ int main()
 	uint texture0 = shader("image");
 	uint texture1 = shader("eMap");
 	uint texture2 = shader("normalmap");
+	uint textureDepth = shader("DepthTexture");
 	g_spotgeom = geo->addBuffer( "lamp.obj", g_spotlight_pos, vec3( 0.7f, 0.7f, 0.7f ) );
 	uint sphere = geo->addBuffer( "res/assets/sphere.obj"
 	                            , vec3( -5.0f, 0.9f, 5.0f )
@@ -383,6 +395,9 @@ int main()
 	geo->bindTexure( "res/textures/wood.jpg", table );
 	geo->bindTexure( "res/textures/brick2.jpg", box );
 
+	/****************************************************************************
+	 * Setup Lighting
+	 ***************************************************************************/
 	g_lights->addPointLight( vec3( 2.0f, 3.0f, 1.0f )
 	                       , vec3( 0.7f, 0.7f, 0.7f )
 	                       , 1.0f, 0.0f, 0.0f, 0.1f );
@@ -425,6 +440,7 @@ int main()
 	GLfloat defNormal = 0.0f;
 
 	GLfloat boxNormal = 1.0f;
+
 	///////////////////////////////////////////////////////////////////////////
 	//                           Main Rendering Loop                         //
 	///////////////////////////////////////////////////////////////////////////
@@ -464,7 +480,6 @@ int main()
 			geo->draw( table, 1 );
 		txt->unUseEnvironmentMap( g_width, g_height, "reflect" );
 
-
 		shader.use();
 			glUniform1i( texture0, 0 );
 			glUniform1i( texture1, 1 );
@@ -478,8 +493,89 @@ int main()
 			glUniform1i( shader( "numLights" ), g_num_of_lights );
 			glUniformMatrix4fv( shader( "allLights[0]" ), g_num_of_lights
 					, GL_FALSE, g_light_array );
+			glUniform4fv( shader( "matAmb" ), 1, &bronze[0] );
+			glUniform4fv( shader( "matSpec" ), 1, &bronze[4] );
+			glUniform1f( shader( "matCubemap" ), bronzeCube );
+			glUniform1f( shader( "matNormal" ), bronzeNormal );
+			geo->draw( sphere, 1 );
 
-			// Sphere
+			// Bunny
+			glUniform4fv( shader( "matAmb" ), 1, &china[0] );
+			glUniform4fv( shader( "matSpec" ), 1, &china[4] );
+			glUniform1f( shader( "matCubemap" ), chinaCube );
+			glUniform1f( shader( "matNormal" ), defNormal );
+			geo->draw( bunny, 1 );
+
+			// Torus
+			glUniform4fv( shader( "matAmb" ), 1, &redplast[0] );
+			glUniform4fv( shader( "matSpec" ), 1, &redplast[4] );
+			glUniform1f( shader( "matCubemap" ), redplasticCube );
+			glUniform1f( shader( "matNormal" ), redplasticNormal );
+			geo->draw( torus, 1 );
+
+			// Teapot
+			glUniform4fv( shader( "matAmb" ), 1, &bMetal[0] );
+			glUniform4fv( shader( "matSpec" ), 1, &bMetal[4] );
+			glUniform1f( shader( "matCubemap" ), metalCube );
+			glUniform1f( shader( "matNormal" ), defNormal );
+			geo->draw( teapot, 1 );
+
+			// Box
+			glUniform4fv( shader( "matAmb" ), 1, &def[0] );
+			glUniform4fv( shader( "matSpec" ), 1, &def[4] );
+			glUniform1f( shader( "matCubemap" ), defCube );
+			glUniform1f( shader( "matNormal" ), defNormal );
+			geo->draw( box, 1 );
+
+			// Table
+			glUniform4fv( shader( "matCubemap" ), 1, &def[0] );
+			glUniform4fv( shader( "matSpec" ), 1, &def[4] );
+			glUniform1f( shader( "matCubemap" ), defCube );
+			glUniform1f( shader( "matNormal" ), defNormal );
+			geo->draw( table, 1 );
+		shader.unUse();
+
+		buff.BindForWriting();
+		glBindFramebuffer(GL_FRAMEBUFFER, depthBuffer);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		shader.use();
+			glUniform1i( texture0, 0 );
+			glUniform1i( texture1, 1 );
+			glUniformMatrix4fv( shader( "mvM" ), 1, GL_FALSE, value_ptr( g_cam->getViewMatrix() ) );
+			glUniformMatrix4fv( shader( "projM" ), 1, GL_FALSE,	value_ptr( g_cam->getProjectionMatrix() ) );
+			glUniformMatrix3fv( shader( "normM" ), 1, GL_FALSE,	value_ptr( g_cam->getNormalMatrix() ) );
+			glUniform1i( shader( "numLights" ), g_num_of_lights );
+			glUniformMatrix4fv( shader( "allLights[0]" ), g_num_of_lights, GL_FALSE, g_light_array );
+			glUniform4fv( shader( "matAmb" ), 1, &bronze[0] );
+			glUniform4fv( shader( "matSpec" ), 1, &bronze[4] );
+			geo->draw( sphere, 1 );
+			glUniform4fv( shader( "matAmb" ), 1, &china[0] );
+			glUniform4fv( shader( "matSpec" ), 1, &china[4] );
+			geo->draw( bunny, 1 );
+			glUniform4fv( shader( "matAmb" ), 1, &redplast[0] );
+			glUniform4fv( shader( "matSpec" ), 1, &redplast[4] );
+			geo->draw( torus, 1 );
+			glUniform4fv( shader( "matAmb" ), 1, &bMetal[0] );
+			glUniform4fv( shader( "matSpec" ), 1, &bMetal[4] );
+			geo->draw( teapot, 1 );
+			glUniform4fv( shader( "matAmb" ), 1, &def[0] );
+			glUniform4fv( shader( "matSpec" ), 1, &def[4] );
+			geo->draw( box, 1 );
+			geo->draw( table, 1 );
+		shader.unUse();
+		buff.BindTextures();
+
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		shader.use();
+			glUniform1i( texture0, 0 );
+			glUniform1i( texture1, 1 );
+			glUniform1i( textureDepth, 4 );
+			glUniformMatrix4fv( shader( "mvM" ), 1, GL_FALSE, value_ptr( g_cam->getViewMatrix() ) );
+			glUniformMatrix4fv( shader( "projM" ), 1, GL_FALSE,	value_ptr( g_cam->getProjectionMatrix() ) );
+			glUniformMatrix3fv( shader( "normM" ), 1, GL_FALSE,	value_ptr( g_cam->getNormalMatrix() ) );
+			glUniform1i( shader( "numLights" ), g_num_of_lights );
+			glUniformMatrix4fv( shader( "allLights[0]" ), g_num_of_lights, GL_FALSE, g_light_array );
 			glUniform4fv( shader( "matAmb" ), 1, &bronze[0] );
 			glUniform4fv( shader( "matSpec" ), 1, &bronze[4] );
 			glUniform1f( shader( "matCubemap" ), bronzeCube );

@@ -29,6 +29,7 @@ uniform mat4 allLights[MAX_LIGHTS];
 uniform sampler2D image;
 uniform sampler2D normalmap;
 uniform samplerCube eMap;
+uniform sampler2D DepthTexture;
 
 void main()
 {
@@ -95,4 +96,13 @@ void main()
   // Multiply intensity by diffuse color, force alpha to 1.0 and add in ambient light
   FBColor = max( 0.25 * vec4( matAmb.xyz, 1 ), vec4( diff, 1 ) * diffuse )
   			+ vec4(spec * specular * matSpec.xyz, 1.0);
+
+//  for (float i = 0; i<1; i+=0.01){
+//	  if (texture(DepthTexture, vec2(i)).r > 0.1){
+//		  FBColor = vec4(1,1,1,1);
+//	  }
+//	  //else FBColor = vec4(1,0,0,1);
+//  }
+
+  //FBColor = texture(DepthTexture, fin.vUV );//vec4(fin.vNormal,1);
 }
