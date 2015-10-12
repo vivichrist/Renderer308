@@ -323,6 +323,24 @@ int main()
 	/************************************************************
 	 * Load up a shader from the given files.
 	 *******************************************************//**/
+	Shader env;
+	env.loadFromFile( GL_VERTEX_SHADER, "vertex_cmap.glsl" );
+	env.loadFromFile( GL_GEOMETRY_SHADER, "geometry_cmap.glsl" );
+	env.loadFromFile( GL_FRAGMENT_SHADER, "fragment_cmap.glsl" );
+	env.createAndLinkProgram();
+	env.use();
+		env.addUniform( "mvM[0]" );
+		env.addUniform( "projM" );
+		env.addUniform( "normM[0]" );
+		env.addUniform( "matAmb" );
+		env.addUniform( "matSpec" );
+		env.addUniform( "numLights" );
+		env.addUniform( "allLights[0]" );
+		env.addUniform("image");
+	env.unUse();
+	// print debugging info
+	env.printActiveUniforms();
+
 	Shader shader;
 	shader.loadFromFile( GL_VERTEX_SHADER, "vertex_phong.glsl" );
 	shader.loadFromFile( GL_FRAGMENT_SHADER, "fragment_phong.glsl" );
@@ -349,14 +367,14 @@ int main()
 		widget.addUniform( "mvM" );
 		widget.addUniform( "projM" );
 	widget.unUse();
+	widget.printActiveUniforms();
 	/****************************************************************************
-	 * Setup Lighting
+	 * Setup Geometry
 	 ***************************************************************************/
 	g_spotlight_pos = vec3( 0.0f, 7.0f, 0.0f );
 	Geometry *geo = Geometry::getInstance();
-	uint texture1 = shader("eMap");
-	uint texture0 = shader("image");
-	g_spotgeom = geo->addBuffer( "lamp.obj", g_spotlight_pos, vec3( 0.7f, 0.7f, 0.7f ) );
+	g_spotgeom = geo->addBuffer( "lamp.obj", g_spotlight_pos
+								, vec3( 0.7f, 0.7f, 0.7f ) );
 	uint sphere = geo->addBuffer( "res/assets/sphere.obj"
 	                            , vec3( -5.0f, 0.9f, 5.0f )
 	                            , vec3( 0.714f, 0.4284f, 0.18144f ) );
@@ -372,13 +390,20 @@ int main()
 	                            , vec3( 0.427451f, 0.470588f, 0.541176f ) );
 	uint table = geo->addBuffer( "res/assets/table.obj", vec3( 0, -1, 0 ) );
 	if ( checkGLErrors( 375 ) ) exit(1);
-  Texture *txt = Texture::getInstance();
-  uint reflect = txt->setupEnvMap( "reflect", 512 );
-  geo->bindCMTexure( reflect, bunny );
+	/****************************************************************************
+	 * Setup Textures
+	 ***************************************************************************/
+	uint texture1 = shader("eMap");
+	uint texture0 = shader("image");
+	Texture *txt = Texture::getInstance();
+	uint reflect = txt->setupEnvMap( 512 );
+	geo->bindCMTexure( reflect, bunny );
 	geo->bindCMTexure( "res/textures/cubeMap.jpg", teapot );
 	geo->bindTexure( "res/textures/wood.jpg", table );
 	geo->bindTexure( "res/textures/brick.jpg", box );
-
+	/****************************************************************************
+	 * Setup Lighting
+	 ***************************************************************************/
 	g_lights->addPointLight( vec3( 2.0f, 3.0f, 1.0f )
 	                       , vec3( 0.7f, 0.7f, 0.7f )
 	                       , 1.0f, 0.0f, 0.0f, 0.1f );
@@ -391,13 +416,14 @@ int main()
 //  lights->addSpotLight( vec3( 0.0f, 10.0f, 0.0f ), vec3( 1.0f, 1.0f, 1.0f )
 //                      , 1.0f, 0.0f, 0.0f, 0.05f, vec3( 0.0f, -1.0f, 0.0f ), 10.0f );
 	g_lights->getLights( g_light_array, g_num_of_lights );
-
 	// Camera to get model view and projection matices from. Amongst other things
 	g_cam = new Camera( vec3( 0.0f, 2.0f, 25.0f ), g_width, g_height );
 	g_cam->setLookCenter();
+	/****************************************************************************
+	 * Setup Materials
+	 ***************************************************************************/
 	float redplast[] = { 0.0f, 0.0f, 0.0f, 0.0f // ambient + reflect
-	                   , 0.7f, 0.6f, 0.6f // specular
-	                   , 0.25f }; // shininess
+	                   , 0.7f, 0.6f, 0.6f, 0.25f }; // specular + shininess
 	float bronze[] = { 0.2125f, 0.1275f, 0.054f, 0.0f
 	                , 0.393548f, 0.271906f, 0.166721f, 0.2f };
 	float china[] = { 0.19225f, 0.19225f, 0.19225f, 1.0f
@@ -405,7 +431,7 @@ int main()
 	float bMetal[] = { 0.105882f, 0.058824f, 0.113725f, 0.5f
 	                , 0.333333f, 0.333333f, 0.521569f, 0.84615f };
 	float def[] 	= { 0.05f, 0.05f, 0.05f, 0.0f
-		                , 1.0f, 1.0f, 1.0f, 4.0f };
+		              , 1.0f, 1.0f, 1.0f, 4.0f };
 	///////////////////////////////////////////////////////////////////////////
 	//                           Main Rendering Loop                         //
 	///////////////////////////////////////////////////////////////////////////
@@ -413,13 +439,11 @@ int main()
 	glClearBufferfv( GL_COLOR, 0, black );
 	glViewport( 0, 0, g_width, g_height );
 
-
-	Shader env;
 	while ( !glfwWindowShouldClose( window ) )
 	{
 		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 		// load values into the uniform slots of the shader and draw
-		txt->useEnvironmentMap( env, vec3( 0.0f, 0.5f, 0.0f ), "reflect" );
+		txt->useEnvironmentMap( env, vec3( 0.0f, 0.5f, 0.0f ), reflect );
 			glUniform1i( env( "image" ), 0 );
 			checkGLErrors( 424 );
 			glUniform1i( env( "numLights" ), g_num_of_lights );
@@ -440,7 +464,7 @@ int main()
 			glUniform4fv( env( "matSpec" ), 1, &def[4] );
 			geo->draw( box, 1 );
 			geo->draw( table, 1 );
-		txt->unUseEnvironmentMap( g_width, g_height, "reflect" );
+		txt->unUseEnvironmentMap( env, g_width, g_height, reflect );
 
 		shader.use();
 			glUniform1i( texture0, 0 );

@@ -103,8 +103,16 @@ namespace vogl
 
   struct EMap
   {
-      GLuint fboID = 0, depthCMID = 0, colorCMID = 0, res = 0;
-      Shader shader;
+      GLuint fboID = 0	  , depthCMID = 0
+    	   , colorCMID = 0, res = 0;
+  };
+
+  struct FBObj
+  {
+	GLuint fboID = 0, depthID = 0
+		, colorID0 = 0, colorID1 = 0
+		, colorID2 = 0, colorID3 = 0
+		, colorID4 = 0, xres = 0, yres = 0;
   };
 
   class Texture
@@ -115,17 +123,20 @@ namespace vogl
       GLuint addCMTexture( const std::string& );
       GLuint addTexture( const glm::vec3& );
       GLuint getPNGName( const std::string& );
-      GLuint setupEnvMap( const std::string&, uint );
-      GLuint getEnvMap( const std::string& );
+      void activateTextures( uint );
+      void activateFrameBuffer( uint );
+      GLuint setupFBO( uint, uint );
+      GLuint setupEnvMap( uint );
       void createOmniView( const glm::vec3&, glm::mat4[ 6 ], glm::mat3[ 6 ] );
-      void useEnvironmentMap( Shader&, glm::vec3, const std::string& );
-      uint unUseEnvironmentMap( uint width, uint height, const std::string& );
+      void useEnvironmentMap( Shader&, glm::vec3, const uint );
+      void unUseEnvironmentMap( Shader&, uint, uint, const uint );
       virtual ~Texture();
     private:
       Texture();
       static Texture *instance;
       std::map<std::string, GLuint> names;
-      std::map<std::string, EMap> envir;
+      std::map<GLuint, EMap> envir;
+      std::map<GLuint, FBObj> framebuffer;
   };
 
 } /* namespace vogl */

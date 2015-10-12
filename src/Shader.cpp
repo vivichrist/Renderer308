@@ -63,6 +63,24 @@ void Shader::checkShader( const GLuint shaderName, const std::string& name )
 	++totalShaders;
 }
 
+void Shader::setupShader( const char** glslfiles
+						, const GLenum shadertype[]
+						, const uint numfs
+						, const char** uniforms
+						, const uint numshd )
+{
+	uint i = 0;
+	for ( ; i<numshd; ++i )
+		loadFromFile( shadertype[i], glslfiles[i] );
+	createAndLinkProgram();
+	use();
+	i = 0;
+	for ( ; i<numfs; ++i )
+		addUniform( uniforms[i] );
+	unUse();
+	printActiveUniforms();
+}
+
 void Shader::checkProgram()
 {
 	GLint isLinked = 0;
