@@ -11,7 +11,7 @@ layout(location = 0) out vec3 colour;
 layout(location = 1) out vec3 normal;
 layout(location = 2) out vec2 texCoord;
 layout(location = 3) out vec3 eye;
-layout(location = 3) out vec3 reflect;
+layout(location = 4) out vec3 refl;
 
 in VertexData {
     smooth vec3 vPos;
@@ -32,5 +32,5 @@ void main()
 	normal = fin.vNormal;
 	texCoord = fin.vUV;
 	eye = fin.vView;
-	reflect = fin.vPos;
+	refle = fin.vPos;
 }

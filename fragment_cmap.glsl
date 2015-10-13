@@ -4,7 +4,7 @@
 
 #define MAX_LIGHTS 10
 
-layout(location = 0) out vec4 FB0[6];
+layout(location = 0) out vec4 FB0;
 
 in VertexData {
     smooth vec2 vUV;
@@ -30,7 +30,7 @@ uniform sampler2D image;
 
 void main()
 {
-  FB0[fin.side] = vec4(0);
+  FB0 = vec4(0);
   vec3 diff = vec3(0); // accumulated diffuse intensity
   float spec = 0; // accumulated specular intensity
   vec3 specIntense = vec3(0);
@@ -85,6 +85,6 @@ void main()
     specular = pow( spec, matSpec.w * 512.0 ) * (specIntense * diffuse.xyz );
   }
   // Multiply intensity by diffuse color, force alpha to 1.0 and add in ambient light
-  FB0[fin.side] = max( 0.25 * vec4( matAmb.xyz, 1 ), vec4( diff, 1 ) * diffuse )
+  FB0 = max( 0.25 * vec4( matAmb.xyz, 1 ), vec4( diff, 1 ) * diffuse )
                          + vec4(spec * specular * matSpec.xyz, 1.0);
 }

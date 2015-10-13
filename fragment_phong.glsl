@@ -89,7 +89,7 @@ void main()
   vec4 diffuse = vec4( (1.0 - matCubemap) * dm.xyz, 1 ) + vec4( matCubemap * cm.xyz, 1 );
 
   // If the diffuse light is zero, don’t even bother with the pow function
-  if ( diff.x > 0 && diff.y > 0 && diff.z > 0 )
+  if ( diff.x > 0 || diff.y > 0 || diff.z > 0 )
   {
     specular = pow( spec, matSpec.w * 512.0 ) * (specIntense * diffuse.xyz );
   }

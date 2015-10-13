@@ -373,6 +373,8 @@ int main()
 	uint texture2 = shader("normalmap");
 	uint textureDepth = shader("DepthTexture");
 	g_spotgeom = geo->addBuffer( "lamp.obj", g_spotlight_pos, vec3( 0.7f, 0.7f, 0.7f ) );
+	g_spotgeom = geo->addBuffer( "lamp.obj", g_spotlight_pos
+								, vec3( 0.7f, 0.7f, 0.7f ) );
 	uint sphere = geo->addBuffer( "res/assets/sphere.obj"
 	                            , vec3( -5.0f, 0.9f, 5.0f )
 	                            , vec3( 0.714f, 0.4284f, 0.18144f ) );

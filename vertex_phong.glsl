@@ -31,6 +31,7 @@ void main(void)
 	// reflection calculation
 	mat3 invCam = transpose( mat3( mvM ) );
 	vout.vPos = normalize( invCam * reflect( vout.vView, vout.vNormal ) );
+	// vout.vPos = normalize( invCam * vout.vView );
 
 	// Normal map
 	/*vec3 tangent;
