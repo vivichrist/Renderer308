@@ -464,7 +464,7 @@ int main()
 			glUniform4fv( env( "matSpec" ), 1, &def[4] );
 			geo->draw( box, 1 );
 			geo->draw( table, 1 );
-		txt->unUseEnvironmentMap( env, g_width, g_height, reflect );
+		txt->unUseEnvironmentMap( env, g_width, g_height );
 
 		shader.use();
 			glUniform1i( texture0, 0 );

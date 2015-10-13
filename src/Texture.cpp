@@ -299,12 +299,11 @@ GLuint Texture::setupEnvMap( uint resolution )
 
 	glBindFramebuffer(GL_FRAMEBUFFER, e.fboID);
 	// attachments to the frame buffer
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT
-			, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, e.depthCMID, 0);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0
-			, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, e.colorCMID, 0);
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, e.depthCMID, 0);
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, e.colorCMID, 0);
 	// unbind, back to the usual frame buffer.
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glBindTexture(target, 0);
 
 	envir[e.colorCMID] = e;
 	return e.colorCMID;
@@ -312,16 +311,12 @@ GLuint Texture::setupEnvMap( uint resolution )
 
 void Texture::createOmniView( const vec3& position, mat4 mv[6], mat3 norm[6] )
 {
-	mv[0] = lookAt( vec3( 0 ), vec3( 1, 0, 0 ), vec3( 0,-1, 0 ) );
-	mv[1] = lookAt( vec3( 0 ), vec3(-1, 0, 0 ), vec3( 0,-1, 0 ) );
-	mv[2] = lookAt( vec3( 0 ), vec3( 0, 1, 0 ), vec3( 1, 0, 0 ) );
-	mv[3] = lookAt( vec3( 0 ), vec3( 0,-1, 0 ), vec3( 1, 0, 0 ) );
-	mv[4] = lookAt( vec3( 0 ), vec3( 0, 0, 1 ), vec3( 0,-1, 0 ) );
-	mv[5] = lookAt( vec3( 0 ), vec3( 0, 0,-1 ), vec3( 0,-1, 0 ) );
-	for ( int i = 0; i<6; ++i )
-	{
-	  mv[i] = glm::translate( mv[i], position );
-	}
+	mv[0] = lookAt( position, vec3( 1, 0, 0 ), vec3( 0,-1, 0 ) );
+	mv[1] = lookAt( position, vec3(-1, 0, 0 ), vec3( 0,-1, 0 ) );
+	mv[2] = lookAt( position, vec3( 0, 1, 0 ), vec3( 1, 0, 0 ) );
+	mv[3] = lookAt( position, vec3( 0,-1, 0 ), vec3( 1, 0, 0 ) );
+	mv[4] = lookAt( position, vec3( 0, 0, 1 ), vec3( 0,-1, 0 ) );
+	mv[5] = lookAt( position, vec3( 0, 0,-1 ), vec3( 0,-1, 0 ) );
 	norm[0] = inverse( transpose( mat3( mv[0] ) ) );
 	norm[1] = inverse( transpose( mat3( mv[1] ) ) );
 	norm[2] = inverse( transpose( mat3( mv[2] ) ) );
@@ -375,10 +370,8 @@ void Texture::useEnvironmentMap( Shader& shader, glm::vec3 position, const uint 
 	checkGLError2( 375 );
 }
 
-void Texture::unUseEnvironmentMap( Shader& shader, uint width, uint height, const uint name )
+void Texture::unUseEnvironmentMap( Shader& shader, uint width, uint height )
 {
-	EMap& e = envir[name];
-
 	//unbind the FBO
 	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
 	checkGLError2( 379 );

@@ -129,7 +129,7 @@ namespace vogl
       GLuint setupEnvMap( uint );
       void createOmniView( const glm::vec3&, glm::mat4[ 6 ], glm::mat3[ 6 ] );
       void useEnvironmentMap( Shader&, glm::vec3, const uint );
-      void unUseEnvironmentMap( Shader&, uint, uint, const uint );
+      void unUseEnvironmentMap( Shader&, uint, uint );
       virtual ~Texture();
     private:
       Texture();
