@@ -24,13 +24,15 @@ uniform mat4 mvM;
 uniform mat3 normM;
 
 uniform sampler2D image;
+uniform sampler2D normalMap;
 uniform samplerCube eMap;
 
 void main()
 {
 	colour = texture( image, texCoord );
 	normal = fin.vNormal;
+	if ( hasNMap > 0 ) normal = normal * texture( normalMap, texCoord );
 	texCoord = fin.vUV;
 	eye = fin.vView;
-	refle = fin.vPos;
+	refl = fin.vPos;
 }

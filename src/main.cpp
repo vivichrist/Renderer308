@@ -382,14 +382,10 @@ int main()
 		widget.addUniform( "projM" );
 	widget.unUse();
 	/****************************************************************************
-	 * Setup Lighting
+	 * Setup Geometry
 	 ***************************************************************************/
 	g_spotlight_pos = vec3( 0.0f, 7.0f, 0.0f );
 	Geometry *geo = Geometry::getInstance();
-	uint texture0 = shader("image");
-	uint texture1 = shader("eMap");
-	uint texture2 = shader("normalmap");
-	uint textureDepth = shader("DepthTexture");
 	g_spotgeom = geo->addBuffer( "lamp.obj", g_spotlight_pos, vec3( 0.7f, 0.7f, 0.7f ) );
 	g_spotgeom = geo->addBuffer( "lamp.obj", g_spotlight_pos
 								, vec3( 0.7f, 0.7f, 0.7f ) );
@@ -409,11 +405,14 @@ int main()
 	uint table = geo->addBuffer( "res/assets/table.obj", vec3( 0, -1, 0 ) );
 	cerr << "Table: '" << table << "' Teapot: '" << teapot << "'" << endl;
 	if ( checkGLErrors( 375 ) ) exit(1);
+  Texture *txt = Texture::getInstance();
+  uint reflect = txt->setupEnvMap( 512 );
+  geo->bindCMTexure( reflect, box );
 	geo->bindNMTexure( "res/textures/normalMap.jpg", torus );
 	geo->bindNMTexure( "res/textures/brick2_normal.jpg", sphere );
 	geo->bindCMTexure( "res/textures/cubeMap.jpg", teapot );
 	geo->bindTexure( "res/textures/wood.jpg", table );
-	geo->bindTexure( "res/textures/brick2.jpg", box );
+	geo->bindTexure( "res/textures/brick2.jpg", bunny );
 
 	/****************************************************************************
 	 * Setup Lighting
@@ -443,7 +442,7 @@ int main()
 	GLfloat bronzeCube = 0.0f;
 	GLfloat bronzeNormal = 1.0f;
 
-	GLfloat chinaCube = 0.7f;
+	GLfloat chinaCube = 0.5f;
 	GLfloat metalCube = 0.8f;
 
 	float bronze[] = { 0.2125f, 0.1275f, 0.054f, 0.0f
@@ -455,7 +454,7 @@ int main()
 	float def[] 	= { 0.05f, 0.05f, 0.05f, 0.0f
 		                , 1.0f, 1.0f, 1.0f, 4.0f
 		                , 0.0f, 0.0f, 0.0f, 0.0f}; // cubemap };
-	GLfloat defCube = 0.0f;
+	GLfloat defCube = 0.5f;
 	GLfloat defNormal = 0.0f;
 
 	GLfloat boxNormal = 1.0f;
@@ -467,15 +466,11 @@ int main()
 	glClearBufferfv( GL_COLOR, 0, black );
 	glViewport( 0, 0, g_width, g_height );
 
-	Texture *txt = Texture::getInstance();
-	uint reflect = txt->setupEnvMap( 512 );
-	geo->bindCMTexure( reflect, bunny );
-
 	while ( !glfwWindowShouldClose( window ) )
 	{
 		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 		// load values into the uniform slots of the shader and draw
-		txt->useEnvironmentMap( env, vec3( 0.0f, 0.5f, 0.0f ), reflect );
+		txt->useEnvironmentMap( env, vec3( 5.0f, 1.5f, -5.0f ), reflect );
 			glUniform1i( env( "image" ), 0 );
 			checkGLErrors( 424 );
 			glUniform1i( env( "numLights" ), g_num_of_lights );
@@ -492,73 +487,77 @@ int main()
 			glUniform4fv( env( "matAmb" ), 1, &bMetal[0] );
 			glUniform4fv( env( "matSpec" ), 1, &bMetal[4] );
 			geo->draw( teapot, 1 );
-			glUniform4fv( env( "matAmb" ), 1, &def[0] );
-			glUniform4fv( env( "matSpec" ), 1, &def[4] );
-			geo->draw( box, 1 );
+//			glUniform4fv( env( "matAmb" ), 1, &def[0] );
+//			glUniform4fv( env( "matSpec" ), 1, &def[4] );
+//			geo->draw( box, 1 );
+			glUniform4fv( env( "matAmb" ), 1, &china[0] );
+      glUniform4fv( env( "matSpec" ), 1, &china[4] );
+      geo->draw( bunny, 1 );
 			geo->draw( table, 1 );
 		txt->unUseEnvironmentMap( env, g_width, g_height );
 
-		shader.use();
-			glUniform1i( texture0, 0 );
-			glUniform1i( texture1, 1 );
-			glUniform1i( texture2, 2 );
-			glUniformMatrix4fv( shader( "mvM" ), 1, GL_FALSE,
-					value_ptr( g_cam->getViewMatrix() ) );
-			glUniformMatrix4fv( shader( "projM" ), 1, GL_FALSE,
-					value_ptr( g_cam->getProjectionMatrix() ) );
-			glUniformMatrix3fv( shader( "normM" ), 1, GL_FALSE,
-					value_ptr( g_cam->getNormalMatrix() ) );
-			glUniform1i( shader( "numLights" ), g_num_of_lights );
-			glUniformMatrix4fv( shader( "allLights[0]" ), g_num_of_lights
-					, GL_FALSE, g_light_array );
-			glUniform4fv( shader( "matAmb" ), 1, &bronze[0] );
-			glUniform4fv( shader( "matSpec" ), 1, &bronze[4] );
-			glUniform1f( shader( "matCubemap" ), bronzeCube );
-			glUniform1f( shader( "matNormal" ), bronzeNormal );
-			geo->draw( sphere, 1 );
-
-			// Bunny
-			glUniform4fv( shader( "matAmb" ), 1, &china[0] );
-			glUniform4fv( shader( "matSpec" ), 1, &china[4] );
-			glUniform1f( shader( "matCubemap" ), chinaCube );
-			glUniform1f( shader( "matNormal" ), defNormal );
-			geo->draw( bunny, 1 );
-
-			// Torus
-			glUniform4fv( shader( "matAmb" ), 1, &redplast[0] );
-			glUniform4fv( shader( "matSpec" ), 1, &redplast[4] );
-			glUniform1f( shader( "matCubemap" ), redplasticCube );
-			glUniform1f( shader( "matNormal" ), redplasticNormal );
-			geo->draw( torus, 1 );
-
-			// Teapot
-			glUniform4fv( shader( "matAmb" ), 1, &bMetal[0] );
-			glUniform4fv( shader( "matSpec" ), 1, &bMetal[4] );
-			glUniform1f( shader( "matCubemap" ), metalCube );
-			glUniform1f( shader( "matNormal" ), defNormal );
-			geo->draw( teapot, 1 );
-
-			// Box
-			glUniform4fv( shader( "matAmb" ), 1, &def[0] );
-			glUniform4fv( shader( "matSpec" ), 1, &def[4] );
-			glUniform1f( shader( "matCubemap" ), defCube );
-			glUniform1f( shader( "matNormal" ), defNormal );
-			geo->draw( box, 1 );
-
-			// Table
-			glUniform4fv( shader( "matCubemap" ), 1, &def[0] );
-			glUniform4fv( shader( "matSpec" ), 1, &def[4] );
-			glUniform1f( shader( "matCubemap" ), defCube );
-			glUniform1f( shader( "matNormal" ), defNormal );
-			geo->draw( table, 1 );
-		shader.unUse();
+//		shader.use();
+//			glUniform1i( shader("image"), 0 );
+//			glUniform1i( shader("eMap"), 1 );
+//			glUniform1i( shader("normalmap"), 2 );
+//			glUniformMatrix4fv( shader( "mvM" ), 1, GL_FALSE,
+//					value_ptr( g_cam->getViewMatrix() ) );
+//			glUniformMatrix4fv( shader( "projM" ), 1, GL_FALSE,
+//					value_ptr( g_cam->getProjectionMatrix() ) );
+//			glUniformMatrix3fv( shader( "normM" ), 1, GL_FALSE,
+//					value_ptr( g_cam->getNormalMatrix() ) );
+//			glUniform1i( shader( "numLights" ), g_num_of_lights );
+//			glUniformMatrix4fv( shader( "allLights[0]" ), g_num_of_lights
+//					, GL_FALSE, g_light_array );
+//			glUniform4fv( shader( "matAmb" ), 1, &bronze[0] );
+//			glUniform4fv( shader( "matSpec" ), 1, &bronze[4] );
+//			glUniform1f( shader( "matCubemap" ), bronzeCube );
+//			glUniform1f( shader( "matNormal" ), bronzeNormal );
+//			geo->draw( sphere, 1 );
+//
+//			// Bunny
+//			glUniform4fv( shader( "matAmb" ), 1, &china[0] );
+//			glUniform4fv( shader( "matSpec" ), 1, &china[4] );
+//			glUniform1f( shader( "matCubemap" ), chinaCube );
+//			glUniform1f( shader( "matNormal" ), defNormal );
+//			geo->draw( bunny, 1 );
+//
+//			// Torus
+//			glUniform4fv( shader( "matAmb" ), 1, &redplast[0] );
+//			glUniform4fv( shader( "matSpec" ), 1, &redplast[4] );
+//			glUniform1f( shader( "matCubemap" ), redplasticCube );
+//			glUniform1f( shader( "matNormal" ), redplasticNormal );
+//			geo->draw( torus, 1 );
+//
+//			// Teapot
+//			glUniform4fv( shader( "matAmb" ), 1, &bMetal[0] );
+//			glUniform4fv( shader( "matSpec" ), 1, &bMetal[4] );
+//			glUniform1f( shader( "matCubemap" ), metalCube );
+//			glUniform1f( shader( "matNormal" ), defNormal );
+//			geo->draw( teapot, 1 );
+//
+//			// Box
+//			glUniform4fv( shader( "matAmb" ), 1, &def[0] );
+//			glUniform4fv( shader( "matSpec" ), 1, &def[4] );
+//			glUniform1f( shader( "matCubemap" ), defCube );
+//			glUniform1f( shader( "matNormal" ), defNormal );
+//			geo->draw( box, 1 );
+//
+//			// Table
+//			glUniform4fv( shader( "matCubemap" ), 1, &def[0] );
+//			glUniform4fv( shader( "matSpec" ), 1, &def[4] );
+//			glUniform1f( shader( "matCubemap" ), defCube );
+//			glUniform1f( shader( "matNormal" ), defNormal );
+//			geo->draw( table, 1 );
+//		shader.unUse();
 
 		buff.BindForWriting();
 		glBindFramebuffer(GL_FRAMEBUFFER, depthBuffer);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		shader.use();
-			glUniform1i( texture0, 0 );
-			glUniform1i( texture1, 1 );
+			glUniform1i( shader("image"), 0 );
+			glUniform1i( shader("eMap"), 1 );
+			glUniform1i( shader("normalmap"), 2 );
 			glUniformMatrix4fv( shader( "mvM" ), 1, GL_FALSE, value_ptr( g_cam->getViewMatrix() ) );
 			glUniformMatrix4fv( shader( "projM" ), 1, GL_FALSE,	value_ptr( g_cam->getProjectionMatrix() ) );
 			glUniformMatrix3fv( shader( "normM" ), 1, GL_FALSE,	value_ptr( g_cam->getNormalMatrix() ) );
@@ -583,12 +582,13 @@ int main()
 		shader.unUse();
 		buff.BindTextures();
 
+		shader.use();
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		shader.use();
-			glUniform1i( texture0, 0 );
-			glUniform1i( texture1, 1 );
-			glUniform1i( textureDepth, 4 );
+			glUniform1i( shader("image"), 0 );
+			glUniform1i( shader("eMap"), 1 );
+			glUniform1i( shader("normalmap"), 2 );
+			glUniform1i( shader("DepthTexture"), 4 );
 			glUniformMatrix4fv( shader( "mvM" ), 1, GL_FALSE, value_ptr( g_cam->getViewMatrix() ) );
 			glUniformMatrix4fv( shader( "projM" ), 1, GL_FALSE,	value_ptr( g_cam->getProjectionMatrix() ) );
 			glUniformMatrix3fv( shader( "normM" ), 1, GL_FALSE,	value_ptr( g_cam->getNormalMatrix() ) );
