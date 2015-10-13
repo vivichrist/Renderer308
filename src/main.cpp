@@ -451,7 +451,7 @@ int main()
 	glViewport( 0, 0, g_width, g_height );
 
 	Texture *txt = Texture::getInstance();
-	uint reflect = txt->setupEnvMap( "reflect", 512 );
+	uint reflect = txt->setupEnvMap( 512 );
 	geo->bindCMTexure( reflect, bunny );
 
 	Shader env;
@@ -459,7 +459,7 @@ int main()
 	{
 		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 		// load values into the uniform slots of the shader and draw
-		txt->useEnvironmentMap( env, vec3( 0.0f, 0.5f, 0.0f ), "reflect" );
+		txt->useEnvironmentMap( env, vec3( 0.0f, 0.5f, 0.0f ), reflect );
 			glUniform1i( env( "image" ), 0 );
 			checkGLErrors( 424 );
 			glUniform1i( env( "numLights" ), g_num_of_lights );
@@ -480,7 +480,7 @@ int main()
 			glUniform4fv( env( "matSpec" ), 1, &def[4] );
 			geo->draw( box, 1 );
 			geo->draw( table, 1 );
-		txt->unUseEnvironmentMap( g_width, g_height, "reflect" );
+		txt->unUseEnvironmentMap( env, g_width, g_height );
 
 		shader.use();
 			glUniform1i( texture0, 0 );
