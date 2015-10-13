@@ -332,6 +332,24 @@ int main()
 	/************************************************************
 	 * Load up a shader from the given files.
 	 *******************************************************//**/
+	Shader env;
+  env.loadFromFile( GL_VERTEX_SHADER, "vertex_cmap.glsl" );
+  env.loadFromFile( GL_GEOMETRY_SHADER, "geometry_cmap.glsl" );
+  env.loadFromFile( GL_FRAGMENT_SHADER, "fragment_cmap.glsl" );
+  env.createAndLinkProgram();
+  env.use();
+    env.addUniform( "mvM[0]" );
+    env.addUniform( "projM" );
+    env.addUniform( "normM[0]" );
+    env.addUniform( "matAmb" );
+    env.addUniform( "matSpec" );
+    env.addUniform( "numLights" );
+    env.addUniform( "allLights[0]" );
+    env.addUniform("image");
+  env.unUse();
+  // print debugging info
+  env.printActiveUniforms();
+
 	Shader shader;
 	shader.loadFromFile( GL_VERTEX_SHADER, "vertex_phong.glsl" );
 	shader.loadFromFile( GL_FRAGMENT_SHADER, "fragment_phong.glsl" );
@@ -417,16 +435,15 @@ int main()
 	g_cam = new Camera( vec3( 0.0f, 2.0f, 25.0f ), g_width, g_height );
 	g_cam->setLookCenter();
 	float redplast[] = { 0.0f, 0.0f, 0.0f, 0.0f // ambient + reflect
-	                   , 0.7f, 0.6f, 0.6f // specular
-	                   , 0.25f // shininess
-					   , 0.0f, 0.0f, 0.0f, 0.0f}; // cubemap
+	                   , 0.7f, 0.6f, 0.6f, 0.25f // specular + shininess
+	                   , 0.0f, 0.0f, 0.0f, 0.0f}; // cubemap
 	GLfloat redplasticCube = 0.0f;
 	GLfloat redplasticNormal = 1.0f;
 
 	GLfloat bronzeCube = 0.0f;
 	GLfloat bronzeNormal = 1.0f;
 
-	GLfloat chinaCube = 0.0f;
+	GLfloat chinaCube = 0.7f;
 	GLfloat metalCube = 0.8f;
 
 	float bronze[] = { 0.2125f, 0.1275f, 0.054f, 0.0f
@@ -437,7 +454,7 @@ int main()
 	                , 0.333333f, 0.333333f, 0.521569f, 0.84615f };
 	float def[] 	= { 0.05f, 0.05f, 0.05f, 0.0f
 		                , 1.0f, 1.0f, 1.0f, 4.0f
-						, 0.0f, 0.0f, 0.0f, 0.0f}; // cubemap };
+		                , 0.0f, 0.0f, 0.0f, 0.0f}; // cubemap };
 	GLfloat defCube = 0.0f;
 	GLfloat defNormal = 0.0f;
 
@@ -454,7 +471,6 @@ int main()
 	uint reflect = txt->setupEnvMap( 512 );
 	geo->bindCMTexure( reflect, bunny );
 
-	Shader env;
 	while ( !glfwWindowShouldClose( window ) )
 	{
 		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
@@ -636,6 +652,8 @@ int main()
 		glfwPollEvents();
 	}
 
+	delete (geo);
+	delete (txt);
 	delete (g_cam);
 	delete (g_lights);
 
