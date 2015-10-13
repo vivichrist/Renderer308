@@ -393,14 +393,13 @@ int main()
 	/****************************************************************************
 	 * Setup Textures
 	 ***************************************************************************/
-	uint texture1 = shader("eMap");
-	uint texture0 = shader("image");
 	Texture *txt = Texture::getInstance();
 	uint reflect = txt->setupEnvMap( 512 );
-	geo->bindCMTexure( reflect, bunny );
-	geo->bindCMTexure( "res/textures/cubeMap.jpg", teapot );
+	// geo->bindCMTexure( reflect, bunny );
+	geo->bindCMTexure( reflect, box );
 	geo->bindTexure( "res/textures/wood.jpg", table );
-	geo->bindTexure( "res/textures/brick.jpg", box );
+	geo->bindTexure( "res/textures/brick.jpg", bunny );
+	geo->bindCMTexure( "res/textures/cubeMap.jpg", teapot );
 	/****************************************************************************
 	 * Setup Lighting
 	 ***************************************************************************/
@@ -426,11 +425,11 @@ int main()
 	                   , 0.7f, 0.6f, 0.6f, 0.25f }; // specular + shininess
 	float bronze[] = { 0.2125f, 0.1275f, 0.054f, 0.0f
 	                , 0.393548f, 0.271906f, 0.166721f, 0.2f };
-	float china[] = { 0.19225f, 0.19225f, 0.19225f, 1.0f
+	float china[] = { 0.19225f, 0.19225f, 0.19225f, 0.0f
 	                , 0.508273f, 0.508273f, 0.508273f, 0.2f };
 	float bMetal[] = { 0.105882f, 0.058824f, 0.113725f, 0.5f
 	                , 0.333333f, 0.333333f, 0.521569f, 0.84615f };
-	float def[] 	= { 0.05f, 0.05f, 0.05f, 0.0f
+	float def[] 	= { 0.05f, 0.05f, 0.05f, 1.0f
 		              , 1.0f, 1.0f, 1.0f, 4.0f };
 	///////////////////////////////////////////////////////////////////////////
 	//                           Main Rendering Loop                         //
@@ -443,32 +442,33 @@ int main()
 	{
 		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 		// load values into the uniform slots of the shader and draw
-		txt->useEnvironmentMap( env, vec3( 0.0f, 0.5f, 0.0f ), reflect );
+		txt->useEnvironmentMap( env, vec3( 5.0f, 1.5f, -5.0f ), reflect );
 			glUniform1i( env( "image" ), 0 );
-			checkGLErrors( 424 );
 			glUniform1i( env( "numLights" ), g_num_of_lights );
-			checkGLErrors( 426 );
 			glUniformMatrix4fv( env( "allLights[0]" ), g_num_of_lights
 					, GL_FALSE, g_light_array );
-			checkGLErrors( 429 );
 			glUniform4fv( env( "matAmb" ), 1, &bronze[0] );
 			glUniform4fv( env( "matSpec" ), 1, &bronze[4] );
 			geo->draw( sphere, 1 );
+			checkGLErrors( 453 );
 			glUniform4fv( env( "matAmb" ), 1, &redplast[0] );
 			glUniform4fv( env( "matSpec" ), 1, &redplast[4] );
 			geo->draw( torus, 1 );
+			checkGLErrors( 457 );
+			glUniform4fv( shader( "matAmb" ), 1, &china[0] );
+			glUniform4fv( shader( "matSpec" ), 1, &china[4] );
+			geo->draw( bunny, 1 );
+			checkGLErrors( 461 );
 			glUniform4fv( env( "matAmb" ), 1, &bMetal[0] );
 			glUniform4fv( env( "matSpec" ), 1, &bMetal[4] );
 			geo->draw( teapot, 1 );
-			glUniform4fv( env( "matAmb" ), 1, &def[0] );
-			glUniform4fv( env( "matSpec" ), 1, &def[4] );
-			geo->draw( box, 1 );
+			checkGLErrors( 461 );
 			geo->draw( table, 1 );
 		txt->unUseEnvironmentMap( env, g_width, g_height );
 
 		shader.use();
-			glUniform1i( texture0, 0 );
-			glUniform1i( texture1, 1 );
+			glUniform1i( shader("image"), 0 );
+			glUniform1i( shader("eMap"), 1 );
 			glUniformMatrix4fv( shader( "mvM" ), 1, GL_FALSE,
 					value_ptr( g_cam->getViewMatrix() ) );
 			glUniformMatrix4fv( shader( "projM" ), 1, GL_FALSE,
@@ -481,19 +481,19 @@ int main()
 			glUniform4fv( shader( "matAmb" ), 1, &bronze[0] );
 			glUniform4fv( shader( "matSpec" ), 1, &bronze[4] );
 			geo->draw( sphere, 1 );
-			glUniform4fv( shader( "matAmb" ), 1, &china[0] );
-			glUniform4fv( shader( "matSpec" ), 1, &china[4] );
-			geo->draw( bunny, 1 );
 			glUniform4fv( shader( "matAmb" ), 1, &redplast[0] );
 			glUniform4fv( shader( "matSpec" ), 1, &redplast[4] );
 			geo->draw( torus, 1 );
 			glUniform4fv( shader( "matAmb" ), 1, &bMetal[0] );
 			glUniform4fv( shader( "matSpec" ), 1, &bMetal[4] );
 			geo->draw( teapot, 1 );
+			glUniform4fv( shader( "matAmb" ), 1, &china[0] );
+			glUniform4fv( shader( "matSpec" ), 1, &china[4] );
+			geo->draw( bunny, 1 );
 			glUniform4fv( shader( "matAmb" ), 1, &def[0] );
 			glUniform4fv( shader( "matSpec" ), 1, &def[4] );
-			geo->draw( box, 1 );
 			geo->draw( table, 1 );
+			geo->draw( box, 1 );
 		shader.unUse();
 
 		widget.use();

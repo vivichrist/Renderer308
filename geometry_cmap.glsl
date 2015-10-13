@@ -38,6 +38,8 @@ void main(void)
 		    // Get vertex position in eye coordinates
 		    vec4 pos4 = mvM[layer] * vec4( vin[i].vView, 1 );
 		    gout.vView = pos4.xyz / pos4.w;
+		    
+		    gout.vUV = vin[i].vUV;
 
 		    // transform the geometry!
 		    gl_Position = projM * pos4;

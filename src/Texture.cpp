@@ -66,7 +66,7 @@ GLuint Texture::addTexture( const string& filename )
 			GL_LINEAR_MIPMAP_LINEAR );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 	glGenerateMipmap( GL_TEXTURE_2D );
-
+	glBindTexture( GL_TEXTURE_2D, 0 );
 	names[filename] = texture;
 	return texture;
 }
@@ -84,7 +84,8 @@ GLuint Texture::addTexture( const vec3& colour )
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-
+	glGenerateMipmap( GL_TEXTURE_2D );
+	glBindTexture( GL_TEXTURE_2D, 0 );
 	names[ to_string( texture ) ] = texture;
 	return texture;
 }
@@ -92,7 +93,7 @@ GLuint Texture::addTexture( const vec3& colour )
 GLuint Texture::addCMTexture( const string& filename )
 {
 	image tex( filename );
-	checkGLError2( 92 );
+
 	EMap e;
 	e.res = tex.w;
 	//Now generate the OpenGL texture object
@@ -123,17 +124,14 @@ GLuint Texture::addCMTexture( const string& filename )
 	img = tex.subImage( dx * 3, dy, dx, dy );
 	glTexImage2D(	GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0,
 		GL_RGB, dx, dy, 0, tex.glFormat(), GL_UNSIGNED_BYTE, (GLvoid*) img.data.data() );
-	checkGLError2( 128 );
 	e.res = dx;
 	glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
-	checkGLError2( 131 );
-	// glBindTexture( GL_TEXTURE_CUBE_MAP, 0 );
+	glBindTexture( GL_TEXTURE_CUBE_MAP, 0 );
 	envir[e.colorCMID] = e;
-	glActiveTexture( GL_TEXTURE0 );
 	return e.colorCMID;
 }
 
-void Texture::activateTextures( uint fbID )
+void Texture::activateTexturesFB( uint fbID )
 {
 	FBObj& fbo = framebuffer[fbID];
 	glBindFramebuffer( GL_FRAMEBUFFER, 0 ); // just in case
@@ -281,7 +279,6 @@ GLuint Texture::setupEnvMap( uint resolution )
 	glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(target, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-	checkGLError2( 279 );
 
 
 	// initialise colour map
@@ -295,7 +292,6 @@ GLuint Texture::setupEnvMap( uint resolution )
 	glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(target, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-	checkGLError2( 293 );
 
 	glBindFramebuffer(GL_FRAMEBUFFER, e.fboID);
 	// attachments to the frame buffer
@@ -311,12 +307,12 @@ GLuint Texture::setupEnvMap( uint resolution )
 
 void Texture::createOmniView( const vec3& position, mat4 mv[6], mat3 norm[6] )
 {
-	mv[0] = lookAt( position, vec3( 1, 0, 0 ), vec3( 0,-1, 0 ) );
-	mv[1] = lookAt( position, vec3(-1, 0, 0 ), vec3( 0,-1, 0 ) );
-	mv[2] = lookAt( position, vec3( 0, 1, 0 ), vec3( 1, 0, 0 ) );
-	mv[3] = lookAt( position, vec3( 0,-1, 0 ), vec3( 1, 0, 0 ) );
-	mv[4] = lookAt( position, vec3( 0, 0, 1 ), vec3( 0,-1, 0 ) );
-	mv[5] = lookAt( position, vec3( 0, 0,-1 ), vec3( 0,-1, 0 ) );
+	mv[0] = lookAt( position, position + vec3( 1, 0, 0 ), vec3( 0,-1, 0 ) );
+	mv[1] = lookAt( position, position + vec3(-1, 0, 0 ), vec3( 0,-1, 0 ) );
+	mv[2] = lookAt( position, position + vec3( 0, 1, 0 ), vec3( -1, 0, 0 ) );
+	mv[3] = lookAt( position, position + vec3( 0,-1, 0 ), vec3( -1, 0, 0 ) );
+	mv[4] = lookAt( position, position + vec3( 0, 0, 1 ), vec3( 0,-1, 0 ) );
+	mv[5] = lookAt( position, position + vec3( 0, 0,-1 ), vec3( 0,-1, 0 ) );
 	norm[0] = inverse( transpose( mat3( mv[0] ) ) );
 	norm[1] = inverse( transpose( mat3( mv[1] ) ) );
 	norm[2] = inverse( transpose( mat3( mv[2] ) ) );
@@ -337,47 +333,37 @@ void Texture::useEnvironmentMap( Shader& shader, glm::vec3 position, const uint 
 
 	//set the camera transform, 90.0 degrees FOV
 	mat4 Pcubemap = perspective( (float) M_PI_2, 1.0f, 0.1f, 1000.0f );
-	checkGLError2( 345 );
 	//bind the FBO
 	glBindFramebuffer( GL_FRAMEBUFFER, e.fboID );
-	checkGLError2( 348 );
 	shader.use();
-	checkGLError2( 350 );
 	//set the viewport to the size of the cube map texture
 	glViewport( 0, 0, e.res, e.res );
 
 	//clear the colour and depth buffers
 	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-	checkGLError2( 356 );
 	GLenum drawBuffers[] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1};
 	glDrawBuffers(2, drawBuffers);
-	checkGLError2( 359 );
 	for ( uint i = 0; i<6; ++i )
 	{
 		glUniformMatrix4fv( shader( "mvM[0]" ) + i, 1, GL_FALSE,
 				value_ptr( views[i] ) );
 	}
-	checkGLError2( 365 );
 	for ( uint i = 0; i<6; ++i )
 	{
 		glUniformMatrix3fv( shader( "normM[0]" ) + i, 1, GL_FALSE,
 				value_ptr( nm[i] ) );
 	}
-	checkGLError2( 371 );
 	//using the cube map projection matrix and appropriate viewing settings
 	glUniformMatrix4fv( shader( "projM" ), 1, GL_FALSE,
 		value_ptr( Pcubemap ) );
-	checkGLError2( 375 );
 }
 
 void Texture::unUseEnvironmentMap( Shader& shader, uint width, uint height )
 {
 	//unbind the FBO
 	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
-	checkGLError2( 379 );
 	//reset the default viewport
 	glViewport( 0, 0, width, height );
-	checkGLError2( 382 );
 	shader.unUse();
 }
 
