@@ -309,8 +309,8 @@ GLuint Texture::setupEnvMap( uint resolution )
 	glBindTexture(target, e.colorCMID);
 	for(int face = 0; face < 6; ++face)
 		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, 0,
-					 GL_RGBA, e.res, e.res, 0,
-					 GL_RGBA, GL_UNSIGNED_BYTE, 0);
+					 GL_RGB, e.res, e.res, 0,
+					 GL_RGB, GL_UNSIGNED_BYTE, 0);
 	glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -331,12 +331,12 @@ GLuint Texture::setupEnvMap( uint resolution )
 
 void Texture::createOmniView( const vec3& position, mat4 mv[6], mat3 norm[6] )
 {
-	mv[0] = lookAt( position, position + vec3( 1, 0, 0 ), vec3( 0,-1, 0 ) );
-	mv[1] = lookAt( position, position + vec3(-1, 0, 0 ), vec3( 0,-1, 0 ) );
+	mv[0] = lookAt( position, position + vec3( 1, 0, 0 ), vec3( 0, -1, 0 ) );
+	mv[1] = lookAt( position, position + vec3(-1, 0, 0 ), vec3( 0, -1, 0 ) );
 	mv[2] = lookAt( position, position + vec3( 0, 1, 0 ), vec3( -1, 0, 0 ) );
 	mv[3] = lookAt( position, position + vec3( 0,-1, 0 ), vec3( -1, 0, 0 ) );
-	mv[4] = lookAt( position, position + vec3( 0, 0, 1 ), vec3( 0,-1, 0 ) );
-	mv[5] = lookAt( position, position + vec3( 0, 0,-1 ), vec3( 0,-1, 0 ) );
+	mv[4] = lookAt( position, position + vec3( 0, 0, 1 ), vec3( 0, -1, 0 ) );
+	mv[5] = lookAt( position, position + vec3( 0, 0,-1 ), vec3( 0, -1, 0 ) );
 	norm[0] = inverse( transpose( mat3( mv[0] ) ) );
 	norm[1] = inverse( transpose( mat3( mv[1] ) ) );
 	norm[2] = inverse( transpose( mat3( mv[2] ) ) );

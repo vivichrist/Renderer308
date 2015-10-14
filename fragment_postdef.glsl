@@ -35,7 +35,7 @@ void main()
 {
   // For normal map
   vec3 texcolor = vec3(texture2D(normalmap,fin.vUV));
-  vec3 normal = fin.vNormal + (texcolor*matNormal);
+  fin.vNormal = fin.vNormal + (texcolor*matNormal);
 
   FBColor = vec4(0);
   vec3 diff = vec3(0); // accumulated diffuse intensity
@@ -60,14 +60,14 @@ void main()
       { // spotlight
           // Dot product gives us diffuse intensity
           att = 1.0/( light[2].x + light[2].y*dist + light[2].z*dist*dist );
-          d = max(0.0, dot(normalize(normal), lightDir));// * att;
+          d = max(0.0, dot(normalize(fin.vNormal), lightDir));// * att;
       }
     }
     else
     { // directional light
         lightDir = -normalize( normM * light[0].xyz );
         // Dot product gives us diffuse intensity
-        d = max(0.0, dot(normalize(normal), lightDir));
+        d = max(0.0, dot(normalize(fin.vNormal), lightDir));
         att = 1.0;
     }
     vec3 lightstrength = min( att, d ) * light[1].xyz;
@@ -76,7 +76,7 @@ void main()
       // Halfway Normal
       vec3 halfway = normalize( lightDir - normalize(fin.vView) );
       // specular
-      s = max( 0.0, dot( normalize(normal), halfway ) );
+      s = max( 0.0, dot( normalize(fin.vNormal), halfway ) );
       specIntense = max( specIntense, lightstrength );
       spec = max( spec, s );
     }
@@ -96,4 +96,13 @@ void main()
   // Multiply intensity by diffuse color, force alpha to 1.0 and add in ambient light
   FBColor = max( 0.25 * vec4( matAmb.xyz, 1 ), vec4( diff, 1 ) * diffuse )
   			+ vec4(spec * specular * matSpec.xyz, 1.0);
+
+//  for (float i = 0; i<1; i+=0.01){
+//	  if (texture(DepthTexture, vec2(i)).r > 0.1){
+//		  FBColor = vec4(1,1,1,1);
+//	  }
+//	  //else FBColor = vec4(1,0,0,1);
+//  }
+
+  //FBColor = texture(DepthTexture, fin.vUV );//vec4(fin.vNormal,1);
 }

@@ -372,6 +372,11 @@ void Geometry::draw( uint id, GLsizei insts )
       glActiveTexture( GL_TEXTURE1 );
       glBindTexture( GL_TEXTURE_CUBE_MAP, e.cubeMap );
     }
+    if (e.normalMap) {
+		glActiveTexture( GL_TEXTURE2 );
+		glBindTexture( GL_NORMAL_MAP, e.normalMap);
+		checkGLError(396);
+	}
     checkGLError( 378 );
     glBindVertexArray( e.vao );
     if ( insts == 1 )
@@ -388,11 +393,12 @@ void Geometry::draw( uint id, GLsizei insts )
     glBindTexture( GL_TEXTURE_2D, b.texture );
     if ( b.cubeMap )
     {
-      glActiveTexture( GL_TEXTURE1 );
+    	glActiveTexture( GL_TEXTURE1 );
     	glBindTexture( GL_TEXTURE_CUBE_MAP, b.cubeMap );
     	checkGLError( 395 );
     }
     if (b.normalMap) {
+    	glActiveTexture( GL_TEXTURE2 );
 		glBindTexture( GL_NORMAL_MAP, b.normalMap);
 		checkGLError(396);
 	}
