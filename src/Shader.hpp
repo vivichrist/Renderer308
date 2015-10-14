@@ -38,6 +38,7 @@ public:
 	GLuint operator()( const std::string& uniform );
 	void printActiveUniforms();
 	void deleteShaderProgram();
+	GLuint getProgram();
 private:
 	void getShader( const std::string& filename, std::string& source );
 	void checkShader( const GLuint shaderName, const std::string& name );

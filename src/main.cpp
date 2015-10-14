@@ -250,6 +250,7 @@ int checkGLErrors( int where )
 
 int main()
 {
+	cerr << "1" << endl;
 	///////////////////////////////////////////////////////////////////////////
 	// Initiate the opengl context and try to get an opengl 3.3 context. Then//
 	// initialise the scene.                                                 //
@@ -320,13 +321,46 @@ int main()
 	glDepthFunc( GL_LEQUAL );
 //	glEnable( GL_CULL_FACE );
 //	glCullFace( GL_BACK );
-	/************************************************************
+	/********************u_normalTexture****************************************
 	 * Load up a shader from the given files.
 	 *******************************************************//**/
 	Shader shader;
 	shader.loadFromFile( GL_VERTEX_SHADER, "vertex_phong.glsl" );
 	shader.loadFromFile( GL_FRAGMENT_SHADER, "fragment_phong.glsl" );
+	//shader.loadFromFile( GL_VERTEX_SHADER, "fragment_parallax_vertex.glsl" );
+	//shader.loadFromFile( GL_FRAGMENT_SHADER, "fragment_parallax.glsl" );
+	//shader.loadFromFile( GL_VERTEX_SHADER, "vertex.simple.glsl" );
+	//shader.loadFromFile( GL_FRAGMENT_SHADER, "fragment.simple.glsl" );
+
+	//shader.loadFromFile( GL_FRAGMENT_SHADER, "fragment_parallax_vertex.glsl" );
+	GLint testLocation;
+	float testVec[] = {1.0, 1.0, 0.0, 1.0};
+
 	shader.createAndLinkProgram();
+
+	/*GLuint buffer;
+	glGenBuffers(1, &buffer);
+
+	// get the location of attribute "position" in program <code>p</code>
+	testLocation = glGetAttribLocation(shader.getProgram(),"test");
+
+	// bind buffer for positions and copy data into buffer
+	// GL_ARRAY_BUFFER is the buffer type we use to feed attributes
+	glBindBuffer(GL_ARRAY_BUFFER, buffer);
+
+	// feed the buffer, and let OpenGL know that we don't plan to
+	// change it (STATIC) and that it will be used for drawing (DRAW)
+	glBufferData(GL_ARRAY_BUFFER, sizeof(testVec), testVec, GL_STATIC_DRAW);
+
+	// Enable the attribute at that location
+	glEnableVertexAttribArray(testLocation );
+
+	// Tell OpenGL what the array contains:
+	// it is a set of 4 floats for each vertex
+	glVertexAttribPointer(testLocation , 4, GL_FLOAT, 0, 0, 0);*/
+
+
+
 	shader.use();
 		shader.addUniform( "mvM" );
 		shader.addUniform( "projM" );
@@ -340,6 +374,11 @@ int main()
 		shader.addUniform("image");
 		shader.addUniform("eMap");
 		shader.addUniform("normalmap");
+		shader.addUniform("heightmap");
+
+
+
+	//shader.addUniform("eMap");
 	shader.unUse();
 	// print debugging info
 	shader.printActiveUniforms();
@@ -360,8 +399,9 @@ int main()
 	uint texture0 = shader("image");
 	uint texture1 = shader("eMap");
 	uint texture2 = shader("normalmap");
+	uint texture3 = shader("heightmap");
 	g_spotgeom = geo->addBuffer( "lamp.obj", g_spotlight_pos, vec3( 0.7f, 0.7f, 0.7f ) );
-	uint sphere = geo->addBuffer( "res/assets/sphere.obj"
+	/*uint sphere = geo->addBuffer( "res/assets/sphere.obj"
 	                            , vec3( -5.0f, 0.9f, 5.0f )
 	                            , vec3( 0.714f, 0.4284f, 0.18144f ) );
 	uint bunny = geo->addBuffer( "res/assets/bunny.obj"
@@ -373,15 +413,17 @@ int main()
 	                            , vec3( 0.5f, 0.0f, 0.0f ) );
 	uint teapot = geo->addBuffer( "res/assets/teapot.obj"
 	                            , vec3( -5.0f, -0.5f, -5.0f )
-	                            , vec3( 0.427451f, 0.470588f, 0.541176f ) );
+	                            , vec3( 0.427451f, 0.470588f, 0.541176f ) );*/
 	uint table = geo->addBuffer( "res/assets/table.obj", vec3( 0, -1, 0 ) );
-	cerr << "Table: '" << table << "' Teapot: '" << teapot << "'" << endl;
 	if ( checkGLErrors( 375 ) ) exit(1);
-	geo->bindNMTexure( "res/textures/normalMap.jpg", torus );
-	geo->bindNMTexure( "res/textures/brick2_normal.jpg", sphere );
-	geo->bindCMTexure( "res/textures/cubeMap.jpg", teapot );
-	geo->bindTexure( "res/textures/wood.jpg", table );
-	geo->bindTexure( "res/textures/brick2.jpg", box );
+	//geo->bindNMTexure( "res/textures/normalMap.jpg", table );
+	//geo->bindNMTexure( "res/textures/brick2_normal.jpg", sphere );
+	//geo->bindCMTexure( "res/textures/cubeMap.jpg", teapot );
+	geo->bindTexure( "res/textures/test.jpg", table );
+	geo->bindNMTexure( "res/textures/test_normal.jpg", table );
+	geo->bindHMTexure( "res/textures/test_height.jpg", table );
+	//geo->bindTexure( "res/textures/brick2.jpg", box );
+
 
 	g_lights->addPointLight( vec3( 2.0f, 3.0f, 1.0f )
 	                       , vec3( 0.7f, 0.7f, 0.7f )
@@ -390,8 +432,8 @@ int main()
 	                                    , vec3( 1.0f, 1.0f, 1.0f )
 	                                    ,	1.0f, 0.0f, 0.0f, 0.1f
 	                                    , vec3( 0.0f, -1.0f, 0.0f ), 45.0f );
-	g_lights->addDirectionalLight( vec3( 0.0f, -1.0f, 0.0f )
-	                             , vec3( 0.9f,  0.9f, 0.9f ) );
+	/*g_lights->addDirectionalLight( vec3( 0.0f, -1.0f, 0.0f )
+	                             , vec3( 0.9f,  0.9f, 0.9f ) );*/
 //  lights->addSpotLight( vec3( 0.0f, 10.0f, 0.0f ), vec3( 1.0f, 1.0f, 1.0f )
 //                      , 1.0f, 0.0f, 0.0f, 0.05f, vec3( 0.0f, -1.0f, 0.0f ), 10.0f );
 	g_lights->getLights( g_light_array, g_num_of_lights );
@@ -434,7 +476,7 @@ int main()
 
 	Texture *txt = Texture::getInstance();
 	uint reflect = txt->setupEnvMap( "reflect", 512 );
-	geo->bindCMTexure( reflect, bunny );
+	//geo->bindCMTexure( reflect, bunny );
 
 	Shader env;
 	while ( !glfwWindowShouldClose( window ) )
@@ -442,6 +484,7 @@ int main()
 		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 		// load values into the uniform slots of the shader and draw
 		txt->useEnvironmentMap( env, vec3( 0.0f, 0.5f, 0.0f ), "reflect" );
+
 			glUniform1i( env( "image" ), 0 );
 			checkGLErrors( 424 );
 			glUniform1i( env( "numLights" ), g_num_of_lights );
@@ -451,16 +494,19 @@ int main()
 			checkGLErrors( 429 );
 			glUniform4fv( env( "matAmb" ), 1, &bronze[0] );
 			glUniform4fv( env( "matSpec" ), 1, &bronze[4] );
-			geo->draw( sphere, 1 );
+			//geo->draw( sphere, 1 );
 			glUniform4fv( env( "matAmb" ), 1, &redplast[0] );
 			glUniform4fv( env( "matSpec" ), 1, &redplast[4] );
-			geo->draw( torus, 1 );
+			//geo->draw( torus, 1 );
 			glUniform4fv( env( "matAmb" ), 1, &bMetal[0] );
 			glUniform4fv( env( "matSpec" ), 1, &bMetal[4] );
-			geo->draw( teapot, 1 );
+			//geo->draw( teapot, 1 );
 			glUniform4fv( env( "matAmb" ), 1, &def[0] );
 			glUniform4fv( env( "matSpec" ), 1, &def[4] );
-			geo->draw( box, 1 );
+			//glAttribute
+
+
+			//geo->draw( box, 1 );
 			geo->draw( table, 1 );
 		txt->unUseEnvironmentMap( g_width, g_height, "reflect" );
 
@@ -469,6 +515,7 @@ int main()
 			glUniform1i( texture0, 0 );
 			glUniform1i( texture1, 1 );
 			glUniform1i( texture2, 2 );
+			glUniform1i( texture3, 3 );
 			glUniformMatrix4fv( shader( "mvM" ), 1, GL_FALSE,
 					value_ptr( g_cam->getViewMatrix() ) );
 			glUniformMatrix4fv( shader( "projM" ), 1, GL_FALSE,
@@ -479,8 +526,11 @@ int main()
 			glUniformMatrix4fv( shader( "allLights[0]" ), g_num_of_lights
 					, GL_FALSE, g_light_array );
 
+			// Parallax
+			/*glUniform4fv( shader( "diffuseColor" ), 1, &bronze[0] );*/
+
 			// Sphere
-			glUniform4fv( shader( "matAmb" ), 1, &bronze[0] );
+			/*glUniform4fv( shader( "matAmb" ), 1, &bronze[0] );
 			glUniform4fv( shader( "matSpec" ), 1, &bronze[4] );
 			glUniform1f( shader( "matCubemap" ), bronzeCube );
 			glUniform1f( shader( "matNormal" ), bronzeNormal );
@@ -512,23 +562,15 @@ int main()
 			glUniform4fv( shader( "matSpec" ), 1, &def[4] );
 			glUniform1f( shader( "matCubemap" ), defCube );
 			glUniform1f( shader( "matNormal" ), defNormal );
-			geo->draw( box, 1 );
+			geo->draw( box, 1 );*/
 
 			// Table
-			glUniform4fv( shader( "matCubemap" ), 1, &def[0] );
+			/*glUniform4fv( shader( "matCubemap" ), 1, &def[0] );
 			glUniform4fv( shader( "matSpec" ), 1, &def[4] );
-			glUniform1f( shader( "matCubemap" ), defCube );
-			glUniform1f( shader( "matNormal" ), defNormal );
+			glUniform1f( shader( "matCubemap" ), defCube );*/
+			glUniform1f( shader( "matNormal" ), 1.0 );
 			geo->draw( table, 1 );
 		shader.unUse();
-
-		widget.use();
-		  glUniformMatrix4fv( widget( "mvM" ), 1, GL_FALSE, value_ptr(
-				  translate( g_cam->getViewMatrix(), g_spotlight_pos ) * g_spotlight_rot ) );
-		  glUniformMatrix4fv( widget( "projM" ), 1, GL_FALSE
-				  , value_ptr( g_cam->getProjectionMatrix() ) );
-		  geo->draw( g_spotgeom, 1 );
-		widget.unUse();
 
 		// make sure the camera rotations, position and matrices are updated
 		g_cam->update();

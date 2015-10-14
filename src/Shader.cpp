@@ -283,3 +283,7 @@ void Shader::deleteShaderProgram()
 	glDeleteShader( shaders[1] );
 	glDeleteShader( shaders[2] );
 }
+
+GLuint Shader::getProgram(){
+	return pgName;
+}

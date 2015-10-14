@@ -10,6 +10,8 @@ layout (location = 2) in vec2 texCoord;
 layout (location = 3) in vec3 instpos;
 layout (location = 4) in vec3 instcolor;
 
+in vec3 test;
+
 out VertexData {
     smooth out vec3 vPos;
 	smooth out vec2 vUV;

@@ -159,6 +159,28 @@ GLuint Texture::addNMTexture( const string& filename )
 	return normalMap;
 }
 
+GLuint Texture::addHMTexture( const string& filename )
+{
+
+	//Load normal map
+	checkGLError2( 134 );
+	image normalMapImage( filename );
+
+	//Convert normal map to texture
+	GLuint heightMap;
+	glGenTextures(1, &heightMap);
+	glActiveTexture( GL_TEXTURE3 );
+	glBindTexture(GL_TEXTURE_2D, heightMap);
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8, normalMapImage.w, normalMapImage.h,
+		0, normalMapImage.glFormat(), GL_UNSIGNED_BYTE, normalMapImage.data.data());
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	checkGLError2( 134 );
+
+	return heightMap;
+}
 
 GLuint Texture::getEnvMap( const string& name )
 {

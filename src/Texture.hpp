@@ -114,6 +114,7 @@ namespace vogl
       GLuint addTexture( const std::string& );
       GLuint addCMTexture( const std::string& );
       GLuint addNMTexture( const std::string& );
+      GLuint addHMTexture( const std::string& );
       GLuint addTexture( const glm::vec3& );
       GLuint getPNGName( const std::string& );
       GLuint setupEnvMap( const std::string&, uint );

@@ -11,8 +11,8 @@ in VertexData {
 	smooth vec3 vView;
 } fin;
 
-uniform float matCubemap; // cubemap
-uniform float matNormal; // normalmap
+uniform float matNormal; // normal Intensity
+uniform float matCubemap; // cubemap Intensity
 uniform vec4 matAmb; // ambient intensities, reflection is w
 uniform vec4 matSpec; // specular intensities, shininess is w
 
@@ -28,13 +28,80 @@ uniform mat4 allLights[MAX_LIGHTS];
 
 uniform sampler2D image;
 uniform sampler2D normalmap;
+uniform sampler2D heightmap;
 uniform samplerCube eMap;
+
+
+
+vec3 tangent3(vec3 v, vec3 normal){
+
+	vec3 tangent;
+	vec3 v1 = cross(normal,vec3(0.0,0.0,-1.0));
+	vec3 v2 = cross(normal,vec3(0.0,-1.0,0.0));
+	if( length(v1) > length(v2) )
+		tangent = v1;
+	else
+		tangent = v2;
+	vec3 n = normalize(normM*normal);
+	vec3 t = normalize(normM*tangent);
+	vec3 b = cross(n,t);
+	mat3 mat = mat3(t.x,b.x,n.x,t.y,b.y,n.y,t.z,b.z,n.z);
+
+	return mat*v;
+}
+
+vec2 tangent2(vec2 v, vec3 normal){
+	return tangent3(vec3(v.xy,0),normal).xy;
+}
+
+
+
+vec2 parallaxMapping(out float parallaxHeight)
+{
+	vec3 V = normalize(tangent3(mvM*fin.vView,    fin.vNormal));
+	vec2 T = normalize(tangent2((fin.vUV * 5.0),fin.vNormal));
+
+   // determine number of layers from angle between V and N
+   const float parallaxScale = 1;
+   const float minLayers = 5;
+   const float maxLayers = 15;
+   float numLayers = mix(maxLayers, minLayers, abs(dot(vec3(0, 0, 1), V)));
+
+   // height of each layer
+   float layerHeight = 1.0 / numLayers;
+   // depth of current layer
+   float currentLayerHeight = 0;
+   // shift of texture coordinates for each iteration
+   vec2 dtex = parallaxScale * V.xy / V.z / numLayers;
+
+   // current texture coordinates
+   vec2 currentTextureCoords = T;
+
+   // get first depth from heightmap
+   float heightFromTexture = texture(heightmap, currentTextureCoords).r;
+
+   // while point is above surface
+   while(heightFromTexture > currentLayerHeight)
+   {
+      // to the next layer
+      currentLayerHeight += layerHeight;
+      // shift texture coordinates along vector V
+      currentTextureCoords -= dtex;
+      // get new depth from heightmap
+      heightFromTexture = texture(heightmap, currentTextureCoords).r;
+   }
+
+   // return results
+   parallaxHeight = currentLayerHeight;
+   return currentTextureCoords;
+}
+
 
 void main()
 {
   // For normal map
-  vec3 texcolor = vec3(texture2D(normalmap,fin.vUV));
-  fin.vNormal = fin.vNormal + (texcolor*matNormal);
+  vec3 normalColor = vec3(texture2D(normalmap,fin.vUV*5));
+  //fin.vNormal = fin.vNormal + (normalColor*matNormal);
 
   FBColor = vec4(0);
   vec3 diff = vec3(0); // accumulated diffuse intensity
@@ -84,7 +151,10 @@ void main()
 
   vec3 specular = vec3(0);
   vec4 cm = texture( eMap, fin.vPos );
-  vec4 dm = texture( image, fin.vUV * 5.0 );
+  //vec4 dm = texture( image, parallaxMapping(fin.vUV * 5.0) );
+
+  float parallaxHeight;
+  vec4 dm = texture( image, parallaxMapping(parallaxHeight) );
   vec4 diffuse = vec4( (1.0 - matCubemap) * dm.xyz, 1 ) + vec4( matCubemap * cm.xyz, 1 );
 
   // If the diffuse light is zero, don’t even bother with the pow function
