@@ -36,7 +36,7 @@ struct Buffer
 {
 
 	GLenum buffType, type;
-	GLuint vao = 0, vbo, texture = 0, cubeMap = 0, normalMap = 0;
+	GLuint vao = 0, vbo;
 	GLsizei numElements;
 	GLuint64 bytesSize;
 };
@@ -44,7 +44,7 @@ struct Buffer
 struct EBuffer
 {
 	GLenum vBuffType, eBuffType, type;
-	GLuint vbo, ebo, vao = 0, texture = 0, cubeMap = 0, normalMap = 0;
+	GLuint vbo, ebo, vao = 0;
 	GLsizei vNumElements, eNumElements;
 	GLuint64 vBytesSize, eBytesSize;
 };
@@ -58,9 +58,9 @@ public:
 	uint addBuffer( const std::string& load, const glm::vec3& pos );
 	uint addBuffer( const std::string& load, const glm::vec3& pos, const glm::vec3& col );
 	uint addBuffer( const std::string&, const float*, const float*, uint );
-	void bindTexure( const std::string&, GLuint );
-	void bindCMTexure( const std::string&, GLuint );
-	void bindNMTexure( const std::string&, GLuint );
+	uint bindTexure( const std::string&, GLuint );
+	uint bindCMTexure( const std::string&, GLuint );
+	uint bindNMTexure( const std::string&, GLuint );
 	void bindCMTexure( GLuint, GLuint );
 	void bindNMTexure( GLuint, GLuint );
 	void draw( uint, GLsizei );

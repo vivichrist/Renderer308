@@ -29,13 +29,13 @@ uniform mat4 allLights[MAX_LIGHTS];
 uniform sampler2D image;
 uniform sampler2D normalmap;
 uniform samplerCube eMap;
-uniform sampler2D DepthTexture;
+// uniform sampler2D DepthTexture;
 
 void main()
 {
   // For normal map
   vec3 texcolor = vec3(texture2D(normalmap,fin.vUV));
-  fin.vNormal = fin.vNormal + (texcolor*matNormal);
+  vec3 normal = fin.vNormal + (texcolor*matNormal);
 
   FBColor = vec4(0);
   vec3 diff = vec3(0); // accumulated diffuse intensity
@@ -60,14 +60,14 @@ void main()
       { // spotlight
           // Dot product gives us diffuse intensity
           att = 1.0/( light[2].x + light[2].y*dist + light[2].z*dist*dist );
-          d = max(0.0, dot(normalize(fin.vNormal), lightDir));// * att;
+          d = max(0.0, dot(normalize(normal), lightDir));// * att;
       }
     }
     else
     { // directional light
         lightDir = -normalize( normM * light[0].xyz );
         // Dot product gives us diffuse intensity
-        d = max(0.0, dot(normalize(fin.vNormal), lightDir));
+        d = max(0.0, dot(normalize(normal), lightDir));
         att = 1.0;
     }
     vec3 lightstrength = min( att, d ) * light[1].xyz;
@@ -76,7 +76,7 @@ void main()
       // Halfway Normal
       vec3 halfway = normalize( lightDir - normalize(fin.vView) );
       // specular
-      s = max( 0.0, dot( normalize(fin.vNormal), halfway ) );
+      s = max( 0.0, dot( normalize(normal), halfway ) );
       specIntense = max( specIntense, lightstrength );
       spec = max( spec, s );
     }
