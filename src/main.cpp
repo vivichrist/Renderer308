@@ -36,7 +36,8 @@ GLfloat noiseScale[2];
 GLfloat noise[3*kernelRadius*kernelRadius];
 GLuint noiseTex;
 
-bool aoRight = false;
+int aoMode = 0;
+int drawBunny = 1;
 
 int g_width = 800, g_height = 600;
 
@@ -146,7 +147,15 @@ void key_callback( GLFWwindow * window, int key, int scancode
 		}
 	}
 
-	if (key == GLFW_KEY_P && action == GLFW_PRESS )aoRight = !aoRight;
+	if (key == GLFW_KEY_O && action == GLFW_PRESS ){
+		aoMode++;
+		aoMode %= 3;
+	}
+
+	if (key == GLFW_KEY_P && action == GLFW_PRESS ){
+		drawBunny++;
+		drawBunny %=2;
+	}
 }
 
 void mousebutton_callback( GLFWwindow * window, int button
@@ -358,7 +367,7 @@ int main()
 		postShader.addUniform( "normal" );
 		postShader.addUniform( "eye" );
 		postShader.addUniform( "pixelSize" );
-		postShader.addUniform( "aoRight" );
+		postShader.addUniform( "aoMode" );
 		postShader.addUniform( "projMat" );
 		postShader.addUniform( "noiseScale" );
 		postShader.addUniform( "noiseTexture" );
@@ -372,8 +381,11 @@ int main()
 	 ***************************************************************************/
 	//g_spotlight_pos = vec3( 0.0f, 7.0f, 0.0f );
 	Geometry *geo = Geometry::getInstance();
+	uint bunny = geo->addBuffer( "res/assets/bunny.obj"
+			, vec3( 0.0f, -0.5f, 0.0f )
+			, vec3( 0.50754f, 0.50754f, 0.50754f ) );
 	uint sphere = geo->addBuffer( "res/assets/sphere.obj"
-	                            , vec3( 0.0f, 0.0f, 0.0f ) );
+            , vec3( 0.0f, 0.0f, 0.0f ) );
 
 	if ( checkGLErrors( 375 ) ) exit(1);
 
@@ -468,7 +480,8 @@ int main()
 			glUniformMatrix3fv( shader( "normM" ), 1, GL_FALSE,
 					value_ptr( g_cam->getNormalMatrix() ) );
 			glUniform3fv( shader( "lightP" ), 1, lightPos );
-			geo->draw( sphere, 1 );
+			if (drawBunny) geo->draw( bunny, 1 );
+			else geo->draw( sphere, 1 );
 		shader.unUse();
 		txt->activateTexturesFB( fbo );
 
@@ -479,7 +492,7 @@ int main()
 			glUniform1i( postShader("normal"), 2 );
 			glUniform1i( postShader("eye"), 3 );
 			glUniform1i( postShader("noiseTexture"), 4 );
-			glUniform1i( postShader("aoRight"), aoRight );
+			glUniform1i( postShader("aoMode"), aoMode );
 			glUniform3fv( postShader("kernel"), kernelSize, ssaoKernel);
 			glUniformMatrix4fv( postShader( "projMat" ), 1, GL_FALSE,
 					value_ptr( g_cam->getProjectionMatrix() ) );
