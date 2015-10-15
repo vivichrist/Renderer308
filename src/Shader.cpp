@@ -237,6 +237,11 @@ void Shader::addUniform( const std::string& uniform )
  * @param attribute
  * @return id
  */
+void Shader::registerFragOut( uint loc, const std::string& called )
+{
+	glBindFragDataLocation( pgName, loc, called.c_str());
+}
+
 GLuint Shader::operator []( const std::string& attribute )
 {
 	std::map<std::string, GLuint>::iterator it =
