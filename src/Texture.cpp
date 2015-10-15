@@ -160,15 +160,26 @@ void Texture::activateTexturesFB( uint fbID )
 	FBObj& fbo = framebuffer[fbID];
 	glBindFramebuffer( GL_FRAMEBUFFER, 0 ); // just in case
 	glActiveTexture( GL_TEXTURE0 );
-	glBindTexture( GL_TEXTURE_2D, fbo.colorID0 );
+	glBindTexture( GL_TEXTURE_2D, fbo.depthID );
 	glActiveTexture( GL_TEXTURE1 );
-	glBindTexture( GL_TEXTURE_2D, fbo.colorID1 );
+	glBindTexture( GL_TEXTURE_2D, fbo.colorID0);
 	glActiveTexture( GL_TEXTURE2 );
-	glBindTexture( GL_TEXTURE_2D, fbo.colorID2 );
+	glBindTexture( GL_TEXTURE_2D, fbo.colorID1 );
 	glActiveTexture( GL_TEXTURE3 );
-	glBindTexture( GL_TEXTURE_2D, fbo.colorID3 );
-	glActiveTexture( GL_TEXTURE4 );
-	glBindTexture( GL_TEXTURE_2D, fbo.colorID4 );
+	glBindTexture( GL_TEXTURE_2D, fbo.colorID2 );
+}
+
+void Texture::deactivateTexturesFB()
+{
+	glBindFramebuffer( GL_FRAMEBUFFER, 0 ); // just in case
+	glActiveTexture( GL_TEXTURE0 );
+	glBindTexture( GL_TEXTURE_2D, 0 );
+	glActiveTexture( GL_TEXTURE1 );
+	glBindTexture( GL_TEXTURE_2D, 0 );
+	glActiveTexture( GL_TEXTURE2 );
+	glBindTexture( GL_TEXTURE_2D, 0 );
+	glActiveTexture( GL_TEXTURE3 );
+	glBindTexture( GL_TEXTURE_2D, 0 );
 }
 
 void Texture::activateFrameBuffer( uint fbID )
@@ -179,16 +190,15 @@ void Texture::activateFrameBuffer( uint fbID )
 		  GL_COLOR_ATTACHMENT0
 		, GL_COLOR_ATTACHMENT1
 		, GL_COLOR_ATTACHMENT2
-		, GL_COLOR_ATTACHMENT3
-		, GL_COLOR_ATTACHMENT4
 	};
-	glDrawBuffers(5, drawBuffers);
+	glDrawBuffers(3, drawBuffers);
 }
 
 GLuint Texture::setupFBO( uint width, uint height )
 {
 	FBObj fbo;
 	glGenFramebuffers( 1, &fbo.fboID );
+	glBindFramebuffer( GL_FRAMEBUFFER, fbo.fboID );
 
 	// Generate and bind the texture for the depth buffer
 	glGenTextures( 1, &fbo.depthID );
@@ -199,6 +209,8 @@ GLuint Texture::setupFBO( uint width, uint height )
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+	glFramebufferTexture2D( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D
+			, fbo.depthID, 0 );
 
 	// Generate and bind the texture for diffuse
 	glGenTextures( 1, &fbo.colorID0 );
@@ -209,62 +221,35 @@ GLuint Texture::setupFBO( uint width, uint height )
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-
-	// Generate and bind the texture for fragment normals
-	glGenTextures( 1, &fbo.colorID1 );
-	glBindTexture( GL_TEXTURE_2D, fbo.colorID1 );
-	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA
-			, GL_FLOAT, 0 );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+	glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D
+			, fbo.colorID0, 0 );
 
 	// Generate and bind the texture for texture coordinates
-	glGenTextures( 1, &fbo.colorID2 );
-	glBindTexture( GL_TEXTURE_2D, fbo.colorID2 );
+	glGenTextures( 1, &fbo.colorID1 );
+	glBindTexture( GL_TEXTURE_2D, fbo.colorID1 );
 	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA
 			, GL_UNSIGNED_BYTE, 0 );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+	glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D
+			, fbo.colorID1, 0 );
 
 	// Generate and bind the texture for eye positions
-	glGenTextures( 1, &fbo.colorID3 );
-	glBindTexture( GL_TEXTURE_2D, fbo.colorID3 );
-	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA
+	glGenTextures( 1, &fbo.colorID2 );
+	glBindTexture( GL_TEXTURE_2D, fbo.colorID2 );
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA
 			, GL_FLOAT,	0 );
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-	// Generate and bind the texture for reflection normals
-	glGenTextures( 1, &fbo.colorID4 );
-	glBindTexture( GL_TEXTURE_2D, fbo.colorID4 );
-	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA
-			, GL_UNSIGNED_BYTE, 0 );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+	glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D
+			, fbo.colorID2, 0 );
 
 	// Bind the FBO so that the next operations will be bound to it.
-	glBindFramebuffer( GL_FRAMEBUFFER, fbo.fboID );
 	// Attach the texture to the FBO
-	glFramebufferTexture2D( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D
-			, fbo.depthID, 0 );
-	glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D
-			, fbo.colorID0, 0 );
-	glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D
-			, fbo.colorID1, 0 );
-	glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D
-			, fbo.colorID2, 0 );
-	glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D
-			, fbo.colorID3, 0 );
-	glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D
-			, fbo.colorID4, 0 );
 
 	GLenum fboStatus = glCheckFramebufferStatus( GL_FRAMEBUFFER );
 	if ( fboStatus != GL_FRAMEBUFFER_COMPLETE )

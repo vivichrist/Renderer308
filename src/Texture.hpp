@@ -125,6 +125,7 @@ namespace vogl
       GLuint addTexture( const glm::vec3& );
       GLuint getPNGName( const std::string& );
       void activateTexturesFB( uint );
+      void deactivateTexturesFB();
       void activateFrameBuffer( uint );
       GLuint setupFBO( uint, uint );
       GLuint setupEnvMap( uint );

@@ -332,94 +332,57 @@ int main()
 	/************************************************************
 	 * Load up a shader from the given files.
 	 *******************************************************//**/
-	Shader env;
-	env.loadFromFile( GL_VERTEX_SHADER, "vertex_cmap.glsl" );
-	env.loadFromFile( GL_GEOMETRY_SHADER, "geometry_cmap.glsl" );
-	env.loadFromFile( GL_FRAGMENT_SHADER, "fragment_cmap.glsl" );
-	env.createAndLinkProgram();
-	env.use();
-		env.addUniform( "mvM[0]" );
-		env.addUniform( "projM" );
-		env.addUniform( "normM[0]" );
-		env.addUniform( "matAmb" );
-		env.addUniform( "matSpec" );
-		env.addUniform( "numLights" );
-		env.addUniform( "allLights[0]" );
-		env.addUniform("image");
-	env.unUse();
-	// print debugging info
-	env.printActiveUniforms();
 
 	Shader shader;
-	shader.loadFromFile( GL_VERTEX_SHADER, "vertex_phong.glsl" );
-	shader.loadFromFile( GL_FRAGMENT_SHADER, "fragment_phong.glsl" );
+	shader.loadFromFile( GL_VERTEX_SHADER, "vertex.glsl" );
+	shader.loadFromFile( GL_FRAGMENT_SHADER, "fragment_def.glsl" );
+//	shader.registerFragOut( 0, "colour" );
+//	shader.registerFragOut( 1, "normal" );
+//	shader.registerFragOut( 2, "pos" );
+//	shader.registerFragOut( 3, "eye" );
 	shader.createAndLinkProgram();
 	shader.use();
 		shader.addUniform( "mvM" );
 		shader.addUniform( "projM" );
 		shader.addUniform( "normM" );
-		shader.addUniform( "matCubemap" );
-		shader.addUniform( "matNormal" );
-		shader.addUniform( "matAmb" );
-		shader.addUniform( "matSpec" );
-		shader.addUniform( "numLights" );
-		shader.addUniform( "allLights[0]" );
-		shader.addUniform("image");
-		shader.addUniform("eMap");
-		shader.addUniform("normalmap");
-		shader.addUniform("DepthTexture");
+		shader.addUniform( "lightP" );
+		shader.addUniform( "image" );
 	shader.unUse();
 	// print debugging info
 	shader.printActiveUniforms();
 
-	// shader for drawing the lamp shade
-	Shader widget;
-	widget.loadFromFile( GL_VERTEX_SHADER, "vertex.simple.glsl" );
-	widget.loadFromFile( GL_FRAGMENT_SHADER, "fragment.simple.glsl" );
-	widget.createAndLinkProgram();
-	widget.use();
-		widget.addUniform( "mvM" );
-		widget.addUniform( "projM" );
-	widget.unUse();
+	Shader shader2;
+	shader2.loadFromFile( GL_VERTEX_SHADER, "vertex_pdef.glsl" );
+	shader2.loadFromFile( GL_GEOMETRY_SHADER, "geometry_pdef.glsl" );
+	shader2.loadFromFile( GL_FRAGMENT_SHADER, "fragment_pdef.glsl" );
+	shader2.createAndLinkProgram();
+	shader2.use();
+		shader2.addUniform( "depth" );
+		shader2.addUniform( "colour" );
+		shader2.addUniform( "normal" );
+		shader2.addUniform( "eye" );
+	shader2.unUse();
+	// print debugging info
+	shader.printActiveUniforms();
 	/****************************************************************************
 	 * Setup Geometry
 	 ***************************************************************************/
 	g_spotlight_pos = vec3( 0.0f, 7.0f, 0.0f );
 	Geometry *geo = Geometry::getInstance();
-	g_spotgeom = geo->addBuffer( "lamp.obj", g_spotlight_pos, vec3( 0.7f, 0.7f, 0.7f ) );
-	g_spotgeom = geo->addBuffer( "lamp.obj", g_spotlight_pos
-								, vec3( 0.7f, 0.7f, 0.7f ) );
-	uint sphere = geo->addBuffer( "res/assets/sphere.obj"
-	                            , vec3( -5.0f, 0.9f, 5.0f )
-	                            , vec3( 0.714f, 0.4284f, 0.18144f ) );
 	uint bunny = geo->addBuffer( "res/assets/bunny.obj"
 	                            , vec3( 0.0f, -0.5f, 0.0f )
 	                            , vec3( 0.50754f, 0.50754f, 0.50754f ) );
-	uint box = geo->addBuffer( "res/assets/box.obj", vec3( 5.0f, 1.5f, -5.0f ) );
-	uint torus = geo->addBuffer( "res/assets/torus.obj"
-	                            , vec3( 5.0f, 0.0f, 5.0f )
-	                            , vec3( 0.5f, 0.0f, 0.0f ) );
-	uint teapot = geo->addBuffer( "res/assets/teapot.obj"
-	                            , vec3( -5.0f, -0.5f, -5.0f )
-	                            , vec3( 0.427451f, 0.470588f, 0.541176f ) );
-	uint table = geo->addBuffer( "res/assets/table.obj", vec3( 0, -1, 0 ) );
-	cerr << "Table: '" << table << "' Teapot: '" << teapot << "'" << endl;
+
 	if ( checkGLErrors( 375 ) ) exit(1);
 
 	Texture *txt = Texture::getInstance();
-	uint reflect = txt->setupEnvMap( 512 );
-	geo->bindCMTexure( reflect, box );
 
-	geo->bindNMTexure( "res/textures/normalMap.jpg", torus );
-	geo->bindNMTexure( "res/textures/brick2_normal.jpg", sphere );
-	geo->bindCMTexure( "res/textures/cubeMap.jpg", teapot );
-	geo->bindTexure( "res/textures/wood.jpg", table );
-	geo->bindTexure( "res/textures/brick2.jpg", box );
+	geo->bindTexure( "res/textures/wood.jpg", bunny );
 
 	/****************************************************************************
 	 * Setup Lighting
 	 ***************************************************************************/
-	g_lights->addPointLight( vec3( 5.0f, 5.0f, 5.0f )
+	g_lights->addPointLight( vec3( 5.0f, 5.0f, -5.0f )
 	                       , vec3( 1.5f, 1.5f, 1.5f )
 	                       , 2.0f, 0.0f, 0.0f, 0.1f );
 //	g_spotlight = g_lights->addSpotLight( g_spotlight_pos
@@ -433,98 +396,88 @@ int main()
 	g_lights->getLights( g_light_array, g_num_of_lights );
 
 	// Camera to get model view and projection matices from. Amongst other things
-	g_cam = new Camera( vec3( 0.0f, 2.0f, 25.0f ), g_width, g_height );
+	g_cam = new Camera( vec3( 0.0f, 2.0f, 10.0f ), g_width, g_height );
 	g_cam->setLookCenter();
-	float redplast[] = { 0.0f, 0.0f, 0.0f, 0.0f // ambient + reflect
-	                   , 0.7f, 0.6f, 0.6f, 0.25f // specular + shininess
-	                   , 0.0f, 0.0f, 0.0f, 0.0f}; // cubemap
-	GLfloat redplasticCube = 0.0f;
-	GLfloat redplasticNormal = 1.0f;
-
-	GLfloat bronzeCube = 0.0f;
-	GLfloat bronzeNormal = 1.0f;
-
-	GLfloat chinaCube = 0.5f;
-	GLfloat metalCube = 0.8f;
-
-	float bronze[] = { 0.2125f, 0.1275f, 0.054f, 0.0f
-	                , 0.393548f, 0.271906f, 0.166721f, 0.2f };
-	float china[] = { 0.19225f, 0.19225f, 0.19225f, 0.5f
-	                , 0.508273f, 0.508273f, 0.508273f, 0.2f };
-	float bMetal[] = { 0.105882f, 0.058824f, 0.113725f, 0.5f
-	                , 0.333333f, 0.333333f, 0.521569f, 0.84615f };
-	float def[] 	= { 0.05f, 0.05f, 0.05f, 0.0f
-		                , 1.0f, 1.0f, 1.0f, 4.0f
-		                , 0.0f, 0.0f, 0.0f, 0.0f}; // cubemap };
-	GLfloat defCube = 0.5f;
-	GLfloat defNormal = 0.0f;
+//	float redplast[] = { 0.0f, 0.0f, 0.0f, 0.0f // ambient + reflect
+//	                   , 0.7f, 0.6f, 0.6f, 0.25f // specular + shininess
+//	                   , 0.0f, 0.0f, 0.0f, 0.0f}; // cubemap
+//	GLfloat redplasticCube = 0.0f;
+//	GLfloat redplasticNormal = 1.0f;
+//
+//	GLfloat bronzeCube = 0.0f;
+//	GLfloat bronzeNormal = 1.0f;
+//
+//	GLfloat chinaCube = 0.5f;
+//	GLfloat metalCube = 0.8f;
+//
+//	float bronze[] = { 0.2125f, 0.1275f, 0.054f, 0.0f
+//	                , 0.393548f, 0.271906f, 0.166721f, 0.2f };
+//	float china[] = { 0.19225f, 0.19225f, 0.19225f, 0.5f
+//	                , 0.508273f, 0.508273f, 0.508273f, 0.2f };
+//	float bMetal[] = { 0.105882f, 0.058824f, 0.113725f, 0.5f
+//	                , 0.333333f, 0.333333f, 0.521569f, 0.84615f };
+//	float def[] 	= { 0.05f, 0.05f, 0.05f, 0.0f
+//		                , 1.0f, 1.0f, 1.0f, 4.0f
+//		                , 0.0f, 0.0f, 0.0f, 0.0f}; // cubemap };
+//	GLfloat defCube = 0.5f;
+//	GLfloat defNormal = 0.0f;
 
 	///////////////////////////////////////////////////////////////////////////
 	//                           Main Rendering Loop                         //
 	///////////////////////////////////////////////////////////////////////////
 	float black[] =	{ 0, 0, 0 };
+	float lightPos[] =	{ 0, 10, 0 };
 	glClearBufferfv( GL_COLOR, 0, black );
 	glViewport( 0, 0, g_width, g_height );
+	uint fbo = txt->setupFBO( g_width, g_height );
+
+//	GLuint vao, vbo;
+//	glGenVertexArrays( 1, &vao );
+//	glBindVertexArray(vao);
+//	// initialise/bind vertex buffer object
+//	glGenBuffers(1, vbo);
+//	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+//	// write data
+//	float quad[] = {  -1.0f, -1.0f, 0.0f
+//					, 1.0f, -1.0f, 0.0f
+//					, 1.0f, 1.0f, 0.0f
+//					,-1.0f, 1.0f, 0.0f };
+//	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 12, quad, GL_STATIC_DRAW);
+//	glBindVertexArray(0);
 
 	while ( !glfwWindowShouldClose( window ) )
 	{
-		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 		// load values into the uniform slots of the shader and draw
-
+		txt->activateFrameBuffer( fbo );
+		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+		//glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 
 		shader.use();
 			glUniform1i( shader("image"), 0 );
-			glUniform1i( shader("eMap"), 1 );
 			glUniformMatrix4fv( shader( "mvM" ), 1, GL_FALSE,
 					value_ptr( g_cam->getViewMatrix() ) );
 			glUniformMatrix4fv( shader( "projM" ), 1, GL_FALSE,
 					value_ptr( g_cam->getProjectionMatrix() ) );
 			glUniformMatrix3fv( shader( "normM" ), 1, GL_FALSE,
 					value_ptr( g_cam->getNormalMatrix() ) );
-			glUniform1i( shader( "numLights" ), g_num_of_lights );
-			glUniformMatrix4fv( shader( "allLights[0]" ), g_num_of_lights
-					, GL_FALSE, g_light_array );
-			glUniform4fv( shader( "matAmb" ), 1, &bronze[0] );
-			glUniform4fv( shader( "matSpec" ), 1, &bronze[4] );
-			glUniform1f( shader( "matCubemap" ), bronzeCube );
-			glUniform1f( shader( "matNormal" ), bronzeNormal );
-			geo->draw( sphere, 1 );
-
-			// Bunny
-			glUniform4fv( shader( "matAmb" ), 1, &china[0] );
-			glUniform4fv( shader( "matSpec" ), 1, &china[4] );
-			glUniform1f( shader( "matCubemap" ), chinaCube );
-			glUniform1f( shader( "matNormal" ), defNormal );
+			glUniform3fv( shader( "lightP" ), 1
+					, lightPos );
 			geo->draw( bunny, 1 );
-
-			// Torus
-			glUniform4fv( shader( "matAmb" ), 1, &redplast[0] );
-			glUniform4fv( shader( "matSpec" ), 1, &redplast[4] );
-			glUniform1f( shader( "matCubemap" ), redplasticCube );
-			glUniform1f( shader( "matNormal" ), redplasticNormal );
-			geo->draw( torus, 1 );
-
-			// Teapot
-			glUniform4fv( shader( "matAmb" ), 1, &bMetal[0] );
-			glUniform4fv( shader( "matSpec" ), 1, &bMetal[4] );
-			glUniform1f( shader( "matCubemap" ), metalCube );
-			glUniform1f( shader( "matNormal" ), defNormal );
-			geo->draw( teapot, 1 );
-
-			// Box
-			glUniform4fv( shader( "matAmb" ), 1, &def[0] );
-			glUniform4fv( shader( "matSpec" ), 1, &def[4] );
-			glUniform1f( shader( "matCubemap" ), defCube );
-			glUniform1f( shader( "matNormal" ), defNormal );
-			geo->draw( box, 1 );
-
-			// Table
-			glUniform4fv( shader( "matCubemap" ), 1, &def[0] );
-			glUniform4fv( shader( "matSpec" ), 1, &def[4] );
-			glUniform1f( shader( "matCubemap" ), defCube );
-			glUniform1f( shader( "matNormal" ), defNormal );
-			geo->draw( table, 1 );
 		shader.unUse();
+		txt->activateTexturesFB( fbo );
+		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+
+//		glBindVertexArray( vao );
+		shader2.use();
+			glUniform1i( shader2("depth"), 0 );
+			glUniform1i( shader2("colour"), 1 );
+			glUniform1i( shader2("normal"), 2 );
+			glUniform1i( shader2("eye"), 3 );
+//			glBindVertexArray(vao);
+			glDrawArrays(GL_POINTS, 0, 1);
+		shader2.unUse();
+
+		txt->deactivateTexturesFB();
 
 		// make sure the camera rotations, position and matrices are updated
 		g_cam->update();

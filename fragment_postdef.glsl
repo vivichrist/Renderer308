@@ -1,108 +1,22 @@
 // fragment shader for simple Phong Lighting model
 #version 330
-#define MAX_LIGHTS 10
 
 out vec4 FBColor;
 
-in VertexData {
-    smooth vec3 vPos;
-	smooth vec2 vUV;
-	smooth vec3 vNormal;
-	smooth vec3 vView;
-} fin;
+in vec3 position;
 
-uniform float matCubemap; // cubemap
-uniform float matNormal; // normalmap
-uniform vec4 matAmb; // ambient intensities, reflection is w
-uniform vec4 matSpec; // specular intensities, shininess is w
-
-uniform mat4 mvM;
-uniform mat3 normM;
-
-uniform int numLights;
-	// [0] 0,1,2 light position, 3 if 0 is direction
-	// [1] 0,1,2,3 colour intensities
-	// [2] 0,1,2 attenuation coefficients
-	// [3] 0,1,2 cone direction, 3 is cone angle
-uniform mat4 allLights[MAX_LIGHTS];
-
-uniform sampler2D image;
-uniform sampler2D normalmap;
-uniform samplerCube eMap;
-uniform sampler2D DepthTexture;
+uniform sampler2D depth;
+uniform sampler2D colour;
+uniform sampler2D normal;
+uniform sampler2D pos;
+uniform sampler2D eye;
 
 void main()
 {
-  // For normal map
-  vec3 texcolor = vec3(texture2D(normalmap,fin.vUV));
-  fin.vNormal = fin.vNormal + (texcolor*matNormal);
-
-  FBColor = vec4(0);
-  vec3 diff = vec3(0); // accumulated diffuse intensity
-  float spec = 0; // accumulated specular intensity
-  vec3 specIntense = vec3(0);
-  for ( int i = 0; i<numLights; ++i )
-  {
-    float d = 0; // current diffuse intensity
-	float s = 0; // current specular intensity
-    float att = 0; // attenuation
-    vec3 lightDir = vec3(0); // direction to light from fragment
-    mat4 light = allLights[i]; // chosen light
-
-    if ( light[0].w == 1.0 ) // point light
-    {
-      vec4 lgt4 = mvM * light[0]; // light position in eye coordinates
-      lightDir = (lgt4.xyz / lgt4.w) - fin.vView;
-      float dist = length( lightDir );
-      lightDir = normalize(lightDir);
-      // check angle between light direction and spotlight direction.
-      if ( light[3].w == 0.0 || degrees( acos( dot( normM * light[3].xyz, -lightDir ))) < light[3].w )
-      { // spotlight
-          // Dot product gives us diffuse intensity
-          att = 1.0/( light[2].x + light[2].y*dist + light[2].z*dist*dist );
-          d = max(0.0, dot(normalize(fin.vNormal), lightDir));// * att;
-      }
-    }
-    else
-    { // directional light
-        lightDir = -normalize( normM * light[0].xyz );
-        // Dot product gives us diffuse intensity
-        d = max(0.0, dot(normalize(fin.vNormal), lightDir));
-        att = 1.0;
-    }
-    vec3 lightstrength = min( att, d ) * light[1].xyz;
-    if ( d > 0.0 )
-    {
-      // Halfway Normal
-      vec3 halfway = normalize( lightDir - normalize(fin.vView) );
-      // specular
-      s = max( 0.0, dot( normalize(fin.vNormal), halfway ) );
-      specIntense = max( specIntense, lightstrength );
-      spec = max( spec, s );
-    }
-    diff = max( diff, lightstrength );
-  }// end for each light
-
-  vec3 specular = vec3(0);
-  vec4 cm = texture( eMap, fin.vPos );
-  vec4 dm = texture( image, fin.vUV * 5.0 );
-  vec4 diffuse = vec4( (1.0 - matCubemap) * dm.xyz, 1 ) + vec4( matCubemap * cm.xyz, 1 );
-
-  // If the diffuse light is zero, don’t even bother with the pow function
-  if ( diff.x > 0 || diff.y > 0 || diff.z > 0 )
-  {
-    specular = pow( spec, matSpec.w * 512.0 ) * (specIntense * diffuse.xyz );
-  }
-  // Multiply intensity by diffuse color, force alpha to 1.0 and add in ambient light
-  FBColor = max( 0.25 * vec4( matAmb.xyz, 1 ), vec4( diff, 1 ) * diffuse )
-  			+ vec4(spec * specular * matSpec.xyz, 1.0);
-
-//  for (float i = 0; i<1; i+=0.01){
-//	  if (texture(DepthTexture, vec2(i)).r > 0.1){
-//		  FBColor = vec4(1,1,1,1);
-//	  }
-//	  //else FBColor = vec4(1,0,0,1);
-//  }
-
-  //FBColor = texture(DepthTexture, fin.vUV );//vec4(fin.vNormal,1);
+    vec3 d = texture( depth, position.xy );
+    vec3 c = texture( colour, position.xy );
+    vec3 n = texture( normal, position.xy );
+    vec3 p = texture( pos, position.xy );
+    vec3 e = texture( eye, position.xy );
+    FBColor = d + c + n + p + e; 
 }

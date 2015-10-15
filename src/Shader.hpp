@@ -36,6 +36,7 @@ public:
 	void unUse();
 	void addAttribute( const std::string& attribute );
 	void addUniform( const std::string& uniform );
+	void registerFragOut( uint, const std::string& );
 	GLuint operator[]( const std::string& attribute );
 	GLuint operator()( const std::string& uniform );
 	void printActiveUniforms();

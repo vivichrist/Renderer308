@@ -3,7 +3,9 @@
 #pragma optimize(off)
 #pragma debug(on)
 
-out vec4 FBColor;
+layout(location = 1) out vec4 colour;
+layout(location = 2) out vec4 normal;
+layout(location = 3) out vec4 eye;
 
 smooth in vec2 vUV;
 smooth in vec3 vNormal;
@@ -19,7 +21,7 @@ void main()
     float diff = max(0.0, dot(normalize(vNormal), vLightDir)) * 4;
 
     // Multiply intensity by diffuse color, force alpha to 1.0 and add in ambient light
-    FBColor = max( diff, 0.05 ) * texture( image, vUV );
+    colour = max( diff, 0.05 ) * texture( image, vUV );
 
     // Specular Light
     vec3 halfway = normalize(vLightDir - normalize(vView));
@@ -30,6 +32,11 @@ void main()
     if ( diff > 0 )
     {
         float fSpec = pow(spec, 128.0);
-        FBColor.rgb += vec3(fSpec, fSpec, fSpec);
+        colour.rgb += vec3(fSpec, fSpec, fSpec);
     }
+    
+    eye = vec4( vView, 1 );
+    normal = vec4( vNormal, 1 );
+    
+    // colour = vec4(1.0, 0.0, 0.0, 1.0);
 }
