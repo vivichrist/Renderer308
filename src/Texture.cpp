@@ -78,7 +78,7 @@ GLuint Texture::addTexture( const vec3& colour )
 	GLuint texture;
 	glGenTextures( 1, &texture );
 	glBindTexture( GL_TEXTURE_2D, texture );
-	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB32F, 1, 1, 0, GL_RGB, GL_FLOAT,
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB, 1, 1, 0, GL_RGB, GL_FLOAT,
 			(GLvoid*) value_ptr( colour ) );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
@@ -141,9 +141,8 @@ GLuint Texture::addNMTexture( const string& filename )
 	//Convert normal map to texture
 	GLuint normalMap;
 	glGenTextures(1, &normalMap);
-	glActiveTexture( GL_TEXTURE2 );
 	glBindTexture(GL_TEXTURE_2D, normalMap);
-	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8, normalMapImage.w, normalMapImage.h,
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB, normalMapImage.w, normalMapImage.h,
 		0, normalMapImage.glFormat(), GL_UNSIGNED_BYTE, normalMapImage.data.data());
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -166,13 +165,12 @@ void Texture::activateTexturesFB( uint fbID )
 	glActiveTexture( GL_TEXTURE2 );
 	glBindTexture( GL_TEXTURE_2D, fbo.colorID2 );
 	glActiveTexture( GL_TEXTURE3 );
-	glBindTexture( GL_TEXTURE_2D, fbo.colorID3 );
-	glActiveTexture( GL_TEXTURE4 );
-	glBindTexture( GL_TEXTURE_2D, fbo.colorID4 );
+	glBindTexture( GL_TEXTURE_2D, fbo.colorID3 );checkGLError2( 168 );
 }
 
 void Texture::activateFrameBuffer( uint fbID )
 {
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glBindFramebuffer( GL_FRAMEBUFFER, fbID );
 	GLenum drawBuffers[] =
 	{
@@ -182,14 +180,14 @@ void Texture::activateFrameBuffer( uint fbID )
 		, GL_COLOR_ATTACHMENT3
 		, GL_COLOR_ATTACHMENT4
 	};
-	glDrawBuffers(5, drawBuffers);
+	glDrawBuffers(5, drawBuffers); checkGLError2( 182 );
 }
 
 GLuint Texture::setupFBO( uint width, uint height )
 {
 	FBObj fbo;
 	glGenFramebuffers( 1, &fbo.fboID );
-
+	checkGLError2( 189 );
 	// Generate and bind the texture for the depth buffer
 	glGenTextures( 1, &fbo.depthID );
 	glBindTexture( GL_TEXTURE_2D, fbo.depthID );
@@ -199,7 +197,7 @@ GLuint Texture::setupFBO( uint width, uint height )
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-
+	checkGLError2( 199 );
 	// Generate and bind the texture for diffuse
 	glGenTextures( 1, &fbo.colorID0 );
 	glBindTexture( GL_TEXTURE_2D, fbo.colorID0 );
@@ -209,47 +207,37 @@ GLuint Texture::setupFBO( uint width, uint height )
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-
+	checkGLError2( 209 );
 	// Generate and bind the texture for fragment normals
 	glGenTextures( 1, &fbo.colorID1 );
 	glBindTexture( GL_TEXTURE_2D, fbo.colorID1 );
-	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA
-			, GL_FLOAT, 0 );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-
-	// Generate and bind the texture for texture coordinates
-	glGenTextures( 1, &fbo.colorID2 );
-	glBindTexture( GL_TEXTURE_2D, fbo.colorID2 );
 	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA
 			, GL_UNSIGNED_BYTE, 0 );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-
+	checkGLError2( 219 );
 	// Generate and bind the texture for eye positions
-	glGenTextures( 1, &fbo.colorID3 );
-	glBindTexture( GL_TEXTURE_2D, fbo.colorID3 );
-	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA
-			, GL_FLOAT,	0 );
+	glGenTextures( 1, &fbo.colorID2 );
+	glBindTexture( GL_TEXTURE_2D, fbo.colorID2 );
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA
+			, GL_UNSIGNED_BYTE,	0 );
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
+	checkGLError2( 229 );
 	// Generate and bind the texture for reflection normals
-	glGenTextures( 1, &fbo.colorID4 );
-	glBindTexture( GL_TEXTURE_2D, fbo.colorID4 );
+	glGenTextures( 1, &fbo.colorID3 );
+	glBindTexture( GL_TEXTURE_2D, fbo.colorID3 );
 	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA
 			, GL_UNSIGNED_BYTE, 0 );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-
+	checkGLError2( 239 );
 	// Bind the FBO so that the next operations will be bound to it.
 	glBindFramebuffer( GL_FRAMEBUFFER, fbo.fboID );
 	// Attach the texture to the FBO
@@ -263,9 +251,7 @@ GLuint Texture::setupFBO( uint width, uint height )
 			, fbo.colorID2, 0 );
 	glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D
 			, fbo.colorID3, 0 );
-	glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D
-			, fbo.colorID4, 0 );
-
+	checkGLError2( 253 );
 	GLenum fboStatus = glCheckFramebufferStatus( GL_FRAMEBUFFER );
 	if ( fboStatus != GL_FRAMEBUFFER_COMPLETE )
 	{
@@ -273,7 +259,7 @@ GLuint Texture::setupFBO( uint width, uint height )
 				fboStatus );
 		exit( 1 );
 	}
-
+	checkGLError2( 261 );
 	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
 	framebuffer[ fbo.fboID ] = fbo;
 	return fbo.fboID;

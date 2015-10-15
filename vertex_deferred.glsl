@@ -13,11 +13,10 @@ layout (location = 3) in vec3 instpos;
 layout (location = 4) in vec3 instcolor;
 
 out VertexData {
-    smooth out vec3 vPos; // actually reflection
+  smooth out vec3 vPos; // actually reflection from
 	smooth out vec2 vUV;
 	smooth out vec3 vNormal;
 	smooth out vec3 vView;
-	flat out int hasNMap;
 } vout;
 
 void main(void)

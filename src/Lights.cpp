@@ -41,8 +41,11 @@ uint Lights::addPointLight( vec3 position, vec3 color, float attConstant,
 {
 	Light light;
 	light.pos = vec4( position, 1.0f );
-	light.spec = vec4( color, 1.0f );
 	light.att = vec4( attConstant, attLinear, attQuadratic, ambient );
+	float lightMax  = std::max(std::max(color.r, color.g), color.b);
+	float radius    = (-attLinear + std::sqrt( attLinear * attLinear - 4.0f * attQuadratic *
+	    (attConstant - (256.0 / 5.0) * lightMax) ) ) / (2.0f * attQuadratic);
+	light.spec = vec4( color, radius );
 	light.coneDir = vec4();
 	lights.push_back( light );
 	return lights.size() - 1;
@@ -54,7 +57,10 @@ uint Lights::addSpotLight( vec3 position, vec3 color,
 {
 	Light light;
 	light.pos = vec4( position, 1.0f );
-	light.spec = vec4( color, 1.0f );
+	float lightMax  = std::max(std::max(color.r, color.g), color.b);
+	float radius    = (-attLinear + std::sqrt( attLinear * attLinear - 4.0f * attQuadratic *
+	      (attConstant - (256.0 / 5.0) * lightMax) ) ) / (2.0f * attQuadratic);
+	  light.spec = vec4( color, radius );
 	light.att = vec4( attConstant, attLinear, attQuadratic, ambient );
 	light.coneDir = vec4( coneDir, coneAngle );
 	lights.push_back( light );

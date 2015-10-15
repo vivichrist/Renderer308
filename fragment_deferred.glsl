@@ -9,30 +9,30 @@
 
 layout(location = 0) out vec3 colour;
 layout(location = 1) out vec3 normal;
-layout(location = 2) out vec2 texCoord;
-layout(location = 3) out vec3 eye;
-layout(location = 4) out vec3 refl;
+layout(location = 2) out vec3 eye;
+layout(location = 3) out vec3 refl;
 
 in VertexData {
-    smooth vec3 vPos;
+  smooth vec3 vPos;
 	smooth vec2 vUV;
 	smooth vec3 vNormal;
 	smooth vec3 vView;
 } fin;
 
-uniform mat4 mvM;
-uniform mat3 normM;
+uniform float matNorm;
 
 uniform sampler2D image;
 uniform sampler2D normalMap;
-uniform samplerCube eMap;
 
 void main()
 {
-	colour = texture( image, texCoord );
-	normal = fin.vNormal;
-	if ( hasNMap > 0 ) normal = normal * texture( normalMap, texCoord );
-	texCoord = fin.vUV;
+  // Diffuse colour
+	colour = texture( image, fin.vUV ).xyz;
+	// Surface normal in eye coordinates
+	vec4 texcoord = texture( normalMap, fin.vUV );
+	normal = fin.vNormal + (texcoord.xyz * matNorm);
+	// vertex position in eye coordinates
 	eye = fin.vView;
+	// reflection from eye pos
 	refl = fin.vPos;
 }
