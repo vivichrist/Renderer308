@@ -11,7 +11,7 @@ uniform sampler2D normal;
 uniform sampler2D eye;
 
 uniform vec2 pixelSize;
-uniform int aoRight;
+uniform int aoMode;
 uniform vec3 kernel[MAX_KERNEL_SIZE];
 uniform mat4 projMat;
 
@@ -120,10 +120,13 @@ void main()
 	}
 
 
-	if (aoRight == 1 && texcoord.x > 0.5){
+	if (aoMode == 1 && texcoord.x > 0.5){
+		FBColor = max(multiplier, 0.2) * vec4(1,1,1,1);
+	}
+	else if (aoMode == 2){
 		FBColor = max(multiplier, 0.2) * vec4(1,1,1,1);
 	}
 	else {
-		FBColor = max(multiplier, 0.6) * c;
+		FBColor = max(multiplier, 0.2) * c;
 	}
 }
