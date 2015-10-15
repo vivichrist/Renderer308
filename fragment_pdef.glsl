@@ -20,15 +20,7 @@ void main()
     vec4 c = texture( colour, texcoord );
     vec4 n = texture( normal, texcoord );
     vec4 e = texture( eye, texcoord );
-<<<<<<< HEAD
-    //FBColor = vec4( 1 - d.r,1 - d.r,1 - d.r, 1 ) + c * e + n;
-    //FBColor = vec4(d.r,d.r,d.r,1);
-    FBColor = e;
-=======
     FBColor = c;
-
-
-
 //    int KernelSize = 32;
 //    int KernelRadius = 4;
 //    float IsTurnedOn  = 1;
@@ -123,5 +115,4 @@ void main()
 	else {
 		FBColor = max(multiplier, 0.6) * c;
 	}
->>>>>>> e2c0ad0f4466f4237ae72b296417e23e864b7f49
 }
