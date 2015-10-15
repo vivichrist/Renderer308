@@ -21,7 +21,7 @@ void main()
     float diff = max(0.0, dot(normalize(vNormal), vLightDir)) * 4;
 
     // Multiply intensity by diffuse color, force alpha to 1.0 and add in ambient light
-    colour = max( diff, 0.05 ) * texture( image, vUV );
+    colour = texture( image, (vUV*4-50)+vec2(1.5,1) );
 
     // Specular Light
     vec3 halfway = normalize(vLightDir - normalize(vView));
@@ -34,9 +34,9 @@ void main()
         float fSpec = pow(spec, 128.0);
         colour.rgb += vec3(fSpec, fSpec, fSpec);
     }
-    
+
     eye = vec4( vView, 1 );
     normal = vec4( vNormal, 1 );
-    
+
     // colour = vec4(1.0, 0.0, 0.0, 1.0);
 }

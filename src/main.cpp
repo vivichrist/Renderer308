@@ -369,15 +369,14 @@ int main()
 	 ***************************************************************************/
 	g_spotlight_pos = vec3( 0.0f, 7.0f, 0.0f );
 	Geometry *geo = Geometry::getInstance();
-	uint bunny = geo->addBuffer( "res/assets/bunny.obj"
-	                            , vec3( 0.0f, -0.5f, 0.0f )
-	                            , vec3( 0.50754f, 0.50754f, 0.50754f ) );
+	uint bunny = geo->addBuffer( "res/assets/table.obj"
+	                            , vec3( 0.0f, -0.5f, 0.0f ) );
 
 	if ( checkGLErrors( 375 ) ) exit(1);
 
 	Texture *txt = Texture::getInstance();
 
-	geo->bindTexure( "res/textures/wood.jpg", bunny );
+	geo->bindTexure( "res/textures/test_height.jpg", bunny );
 
 	/****************************************************************************
 	 * Setup Lighting
