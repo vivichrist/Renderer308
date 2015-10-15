@@ -29,12 +29,9 @@ vec3 g_spotlight_pos;
 mat4 g_spotlight_rot;
 float g_light_array[160];
 GLint g_num_of_lights;
+int kernelSize = 32;
 
-GBuffer buff;
-
-GLuint depthTexture;
-GLuint depthTex;
-GLuint depthBuffer;
+bool aoRight = false;
 
 int g_width = 800, g_height = 600;
 
@@ -143,6 +140,8 @@ void key_callback( GLFWwindow * window, int key, int scancode
 			g_spotlight_pos = vec3( g_lights->getPosition( g_spotlight ) );
 		}
 	}
+
+	if (key == GLFW_KEY_P && action == GLFW_PRESS )aoRight = !aoRight;
 }
 
 void mousebutton_callback( GLFWwindow * window, int button
@@ -316,8 +315,6 @@ int main()
 	std::cout << "\tGLSL:	" << glGetString( GL_SHADING_LANGUAGE_VERSION )
 			<< std::endl;
 
-	buff.Init(g_width, g_height);
-
 	glfwSetErrorCallback( error_callback );
 	glfwSetKeyCallback( window, key_callback );
 	glfwSetScrollCallback( window, scroll_callback );
@@ -361,6 +358,8 @@ int main()
 		shader2.addUniform( "colour" );
 		shader2.addUniform( "normal" );
 		shader2.addUniform( "eye" );
+		shader2.addUniform( "pixelSize" );
+		shader2.addUniform( "aoRight" );
 	shader2.unUse();
 	// print debugging info
 	shader.printActiveUniforms();
@@ -445,6 +444,26 @@ int main()
 //	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 12, quad, GL_STATIC_DRAW);
 //	glBindVertexArray(0);
 
+	GLfloat ssaoKernel[3 * kernelSize];
+
+	srand(time(NULL));
+	for(int i = 0; i < kernelSize; i++) {
+		vec3 randVec = vec3( rand() * 2.0 - 1.0,
+				rand() * 2.0 - 1.0,
+				rand());
+
+		normalize(randVec);
+
+		float scale = float(i/3) / (float)kernelSize;
+		scale = 0.1 + scale*scale*0.9;
+
+		randVec *= scale;
+
+		ssaoKernel[i*3] = randVec.x;
+		ssaoKernel[i*3 + 1] = randVec.y;
+		ssaoKernel[i*3 + 2] = randVec.z;
+	}
+
 	while ( !glfwWindowShouldClose( window ) )
 	{
 		// load values into the uniform slots of the shader and draw
@@ -473,6 +492,9 @@ int main()
 			glUniform1i( shader2("colour"), 1 );
 			glUniform1i( shader2("normal"), 2 );
 			glUniform1i( shader2("eye"), 3 );
+			glUniform1i( shader2("aoRight"), aoRight );
+			glUniform3fv( shader2("kernel"), kernelSize, ssaoKernel);
+			glUniform2f( shader2("pixelSize"), 1.0/g_width, 1.0/g_height);
 //			glBindVertexArray(vao);
 			glDrawArrays(GL_POINTS, 0, 1);
 		shader2.unUse();
