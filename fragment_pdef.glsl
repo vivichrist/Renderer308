@@ -128,8 +128,4 @@ void main()
 	else {
 		FBColor = max(multiplier, 0.2) * c;
 	}
-
-	if (getViewSpacePosition(texcoord).x > 0.5){
-		FBColor = vec4(1,0,0,1);
-	}
 }
