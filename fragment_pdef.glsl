@@ -20,6 +20,8 @@ uniform sampler2D noiseTexture;
 uniform int kernelSize;
 uniform int kernelRadius;
 
+uniform float zoom;
+
 vec4 getViewSpacePosition(vec2 uv) {
     float x = uv.s * 2.0 - 1.0;
     float y = uv.t * 2.0 - 1.0;
@@ -78,23 +80,20 @@ void main()
 //	FBColor = vec4(vec3(occlusion), 1.0);
 
 
-
-
-
 	float d2 = d - 0.01;
 	if (d == 1){
 		FBColor = vec4(0,0,0,1);
 		return;
 	}
+
 	float threshold = 1.0;
 	float range = 50.0;
-	float strength = 0.01;
-	float zoom = 1.0;
+	float strength = 0.005;
 	float multiplier = threshold;
 	float end = (range*(1/zoom));
 
 	for (float i=0; i<=end; i+=1/zoom){
-		float diagonalStep = sin(0.785398);
+		float diagonalStep = sin(0.785398)*i;
 		float left  = texture(depth, vec2(texcoord.x-pixelSize.x * i, texcoord.y)).r;
 		float right = texture(depth, vec2(texcoord.x+pixelSize.x * i, texcoord.y)).r;
 		float up    = texture(depth, vec2(texcoord.x, texcoord.y+pixelSize.y * i)).r;
@@ -128,5 +127,9 @@ void main()
 	}
 	else {
 		FBColor = max(multiplier, 0.2) * c;
+	}
+
+	if (getViewSpacePosition(texcoord).x > 0.5){
+		FBColor = vec4(1,0,0,1);
 	}
 }

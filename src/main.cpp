@@ -373,6 +373,7 @@ int main()
 		postShader.addUniform( "noiseTexture" );
 		postShader.addUniform( "kernelSize" );
 		postShader.addUniform( "kernelRadius" );
+		postShader.addUniform( "zoom" );
 	postShader.unUse();
 	// print debugging info
 	shader.printActiveUniforms();
@@ -387,11 +388,15 @@ int main()
 	uint sphere = geo->addBuffer( "res/assets/sphere.obj"
             , vec3( 0.0f, 0.0f, 0.0f ) );
 
+	uint table = geo->addBuffer( "res/assets/table.obj"
+            , vec3( 0.0f, -1.0f, 0.0f ) );
+
 	if ( checkGLErrors( 375 ) ) exit(1);
 
 	Texture *txt = Texture::getInstance();
 
 	geo->bindTexure( "res/textures/brick.jpg", sphere );
+	geo->bindTexure( "res/textures/wood.jpg", table );
 
 	/****************************************************************************
 	 * Setup Lighting
@@ -482,6 +487,7 @@ int main()
 			glUniform3fv( shader( "lightP" ), 1, lightPos );
 			if (drawBunny) geo->draw( bunny, 1 );
 			else geo->draw( sphere, 1 );
+			geo->draw( table, 1 );
 		shader.unUse();
 		txt->activateTexturesFB( fbo );
 
@@ -500,6 +506,7 @@ int main()
 			glUniform2f( postShader("noiseScale"), noiseScale[0], noiseScale[1] );
 			glUniform1i( postShader("kernelSize"), kernelSize );
 			glUniform1i( postShader("kernelRadius"), kernelRadius );
+			glUniform1f( postShader("zoom"), glm::length(g_cam->getPosition())/10.0);
 			glDrawArrays(GL_POINTS, 0, 1);
 		postShader.unUse();
 
