@@ -190,8 +190,9 @@ void Texture::activateFrameBuffer( uint fbID )
 		  GL_COLOR_ATTACHMENT0
 		, GL_COLOR_ATTACHMENT1
 		, GL_COLOR_ATTACHMENT2
+		, GL_COLOR_ATTACHMENT3
 	};
-	glDrawBuffers(3, drawBuffers);
+	glDrawBuffers(4, drawBuffers);
 }
 
 GLuint Texture::setupFBO( uint width, uint height )
