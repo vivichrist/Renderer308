@@ -29,7 +29,12 @@ vec3 g_spotlight_pos;
 mat4 g_spotlight_rot;
 float g_light_array[160];
 GLint g_num_of_lights;
-int kernelSize = 32;
+
+const int kernelRadius = 4;
+const int kernelSize = 32;
+GLfloat noiseScale[2];
+GLfloat noise[3*kernelRadius*kernelRadius];
+GLuint noiseTex;
 
 bool aoRight = false;
 
@@ -324,8 +329,6 @@ int main()
 	// tell GL to only draw onto a pixel if the shape is closer to the viewer
 	glEnable( GL_DEPTH_TEST );
 	glDepthFunc( GL_LEQUAL );
-//	glEnable( GL_CULL_FACE );
-//	glCullFace( GL_BACK );
 	/************************************************************
 	 * Load up a shader from the given files.
 	 *******************************************************//**/
@@ -344,19 +347,24 @@ int main()
 	// print debugging info
 	shader.printActiveUniforms();
 
-	Shader shader2;
-	shader2.loadFromFile( GL_VERTEX_SHADER, "vertex_pdef.glsl" );
-	shader2.loadFromFile( GL_GEOMETRY_SHADER, "geometry_pdef.glsl" );
-	shader2.loadFromFile( GL_FRAGMENT_SHADER, "fragment_pdef.glsl" );
-	shader2.createAndLinkProgram();
-	shader2.use();
-		shader2.addUniform( "depth" );
-		shader2.addUniform( "colour" );
-		shader2.addUniform( "normal" );
-		shader2.addUniform( "eye" );
-		shader2.addUniform( "pixelSize" );
-		shader2.addUniform( "aoRight" );
-	shader2.unUse();
+	Shader postShader;
+	postShader.loadFromFile( GL_VERTEX_SHADER, "vertex_pdef.glsl" );
+	postShader.loadFromFile( GL_GEOMETRY_SHADER, "geometry_pdef.glsl" );
+	postShader.loadFromFile( GL_FRAGMENT_SHADER, "fragment_pdef.glsl" );
+	postShader.createAndLinkProgram();
+	postShader.use();
+		postShader.addUniform( "depth" );
+		postShader.addUniform( "colour" );
+		postShader.addUniform( "normal" );
+		postShader.addUniform( "eye" );
+		postShader.addUniform( "pixelSize" );
+		postShader.addUniform( "aoRight" );
+		postShader.addUniform( "projMat" );
+		postShader.addUniform( "noiseScale" );
+		postShader.addUniform( "noiseTexture" );
+		postShader.addUniform( "kernelSize" );
+		postShader.addUniform( "kernelRadius" );
+	postShader.unUse();
 	// print debugging info
 	shader.printActiveUniforms();
 	/****************************************************************************
@@ -376,76 +384,33 @@ int main()
 	/****************************************************************************
 	 * Setup Lighting
 	 ***************************************************************************/
-//	g_lights->addPointLight( vec3( 5.0f, 5.0f, -5.0f )
-//	                       , vec3( 1.5f, 1.5f, 1.5f )
-//	                       , 2.0f, 0.0f, 0.0f, 0.1f );
-//	g_spotlight = g_lights->addSpotLight( g_spotlight_pos
-//	                                    , vec3( 1.0f, 1.0f, 1.0f )
-//	                                    ,	1.0f, 0.0f, 0.0f, 0.1f
-//	                                    , vec3( 0.0f, -1.0f, 0.0f ), 45.0f );
-//	g_lights->addDirectionalLight( vec3( 0.0f, -1.0f, 0.0f )
-//	                             , vec3( 1.5f,  1.5f, 1.5f ) );
-//  lights->addSpotLight( vec3( 0.0f, 10.0f, 0.0f ), vec3( 1.0f, 1.0f, 1.0f )
-//                      , 1.0f, 0.0f, 0.0f, 0.05f, vec3( 0.0f, -1.0f, 0.0f ), 10.0f );
-//	g_lights->getLights( g_light_array, g_num_of_lights );
+	g_lights->addPointLight( vec3( 5.0f, 5.0f, -5.0f )
+	                       , vec3( 1.5f, 1.5f, 1.5f )
+	                       , 2.0f, 0.0f, 0.0f, 0.1f );
+	g_lights->addDirectionalLight( vec3( 0.0f, -1.0f, 0.0f )
+	                             , vec3( 1.5f,  1.5f, 1.5f ) );
+	g_lights->getLights( g_light_array, g_num_of_lights );
 
 	// Camera to get model view and projection matices from. Amongst other things
 	g_cam = new Camera( vec3( 0.0f, 2.0f, 10.0f ), g_width, g_height );
 	g_cam->setLookCenter();
-//	float redplast[] = { 0.0f, 0.0f, 0.0f, 0.0f // ambient + reflect
-//	                   , 0.7f, 0.6f, 0.6f, 0.25f // specular + shininess
-//	                   , 0.0f, 0.0f, 0.0f, 0.0f}; // cubemap
-//	GLfloat redplasticCube = 0.0f;
-//	GLfloat redplasticNormal = 1.0f;
-//
-//	GLfloat bronzeCube = 0.0f;
-//	GLfloat bronzeNormal = 1.0f;
-//
-//	GLfloat chinaCube = 0.5f;
-//	GLfloat metalCube = 0.8f;
-//
-//	float bronze[] = { 0.2125f, 0.1275f, 0.054f, 0.0f
-//	                , 0.393548f, 0.271906f, 0.166721f, 0.2f };
-//	float china[] = { 0.19225f, 0.19225f, 0.19225f, 0.5f
-//	                , 0.508273f, 0.508273f, 0.508273f, 0.2f };
-//	float bMetal[] = { 0.105882f, 0.058824f, 0.113725f, 0.5f
-//	                , 0.333333f, 0.333333f, 0.521569f, 0.84615f };
-//	float def[] 	= { 0.05f, 0.05f, 0.05f, 0.0f
-//		                , 1.0f, 1.0f, 1.0f, 4.0f
-//		                , 0.0f, 0.0f, 0.0f, 0.0f}; // cubemap };
-//	GLfloat defCube = 0.5f;
-//	GLfloat defNormal = 0.0f;
 
 	///////////////////////////////////////////////////////////////////////////
 	//                           Main Rendering Loop                         //
 	///////////////////////////////////////////////////////////////////////////
-
-//	GLuint vao, vbo;
-//	glGenVertexArrays( 1, &vao );
-//	glBindVertexArray(vao);
-//	// initialise/bind vertex buffer object
-//	glGenBuffers(1, vbo);
-//	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-//	// write data
-//	float quad[] = {  -1.0f, -1.0f, 0.0f
-//					, 1.0f, -1.0f, 0.0f
-//					, 1.0f, 1.0f, 0.0f
-//					,-1.0f, 1.0f, 0.0f };
-//	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 12, quad, GL_STATIC_DRAW);
-//	glBindVertexArray(0);
-
 	float black[] =	{ 0, 0, 0 };
 	float lightPos[] =	{ 0, 10, 0 };
 	glClearBufferfv( GL_COLOR, 0, black );
 	glViewport( 0, 0, g_width, g_height );
 	uint fbo = txt->setupFBO( g_width, g_height );
-	GLfloat ssaoKernel[3 * kernelSize];
+
+        GLfloat ssaoKernel[3 * kernelSize];
 
 	srand(time(NULL));
 	for(int i = 0; i < kernelSize; i++) {
-		vec3 randVec = vec3( rand() * 2.0 - 1.0,
-				rand() * 2.0 - 1.0,
-				rand());
+		vec3 randVec = vec3( (rand()/(float)RAND_MAX) * 2.0 - 1.0,
+				(rand()/(float)RAND_MAX) * 2.0 - 1.0,
+				(rand()/(float)RAND_MAX));
 
 		normalize(randVec);
 
@@ -458,6 +423,34 @@ int main()
 		ssaoKernel[i*3 + 1] = randVec.y;
 		ssaoKernel[i*3 + 2] = randVec.z;
 	}
+
+	for(unsigned int i = 0; i < kernelRadius*kernelRadius; i++) {
+		vec3 randVec = glm::vec3( (rand()/(float)RAND_MAX) * 2.0 - 1.0,
+				(rand()/(float)RAND_MAX) * 2.0 - 1.0,
+				0.0);
+		normalize(randVec);
+
+		noise[i*3] = randVec.x;
+		noise[i*3 + 1] = randVec.y;
+		noise[i*3 + 2] = randVec.z;
+	}
+
+	noiseScale[0] = g_width / 4.0;
+	noiseScale[1] = g_height / 4.0;
+
+	glActiveTexture(GL_TEXTURE4);
+	// Create SSAO rotation noise texture
+	glGenTextures(1, &noiseTex);
+	glBindTexture(GL_TEXTURE_2D, noiseTex);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, kernelRadius, kernelRadius, 0, GL_RGB, GL_FLOAT, noise);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	glBindTexture(GL_TEXTURE_2D, noiseTex);
+	glActiveTexture(GL_TEXTURE0);
 
 	while ( !glfwWindowShouldClose( window ) )
 	{
@@ -480,17 +473,22 @@ int main()
 		txt->activateTexturesFB( fbo );
 
 		glClear( GL_DEPTH_BUFFER_BIT );
-
-		shader2.use();
-			glUniform1i( shader2("depth"), 0 );
-			glUniform1i( shader2("colour"), 1 );
-			glUniform1i( shader2("normal"), 2 );
-			glUniform1i( shader2("eye"), 3 );
-			glUniform1i( shader2("aoRight"), aoRight );
-			glUniform3fv( shader2("kernel"), kernelSize, ssaoKernel);
-			glUniform2f( shader2("pixelSize"), 1.0/g_width, 1.0/g_height);
+		postShader.use();
+			glUniform1i( postShader("depth"), 0 );
+			glUniform1i( postShader("colour"), 1 );
+			glUniform1i( postShader("normal"), 2 );
+			glUniform1i( postShader("eye"), 3 );
+			glUniform1i( postShader("noiseTexture"), 4 );
+			glUniform1i( postShader("aoRight"), aoRight );
+			glUniform3fv( postShader("kernel"), kernelSize, ssaoKernel);
+			glUniformMatrix4fv( postShader( "projMat" ), 1, GL_FALSE,
+					value_ptr( g_cam->getProjectionMatrix() ) );
+			glUniform2f( postShader("pixelSize"), 1.0/g_width, 1.0/g_height);
+			glUniform2f( postShader("noiseScale"), noiseScale[0], noiseScale[1] );
+			glUniform1i( postShader("kernelSize"), kernelSize );
+			glUniform1i( postShader("kernelRadius"), kernelRadius );
 			glDrawArrays(GL_POINTS, 0, 1);
-		shader2.unUse();
+		postShader.unUse();
 
 		//txt->deactivateTexturesFB();
 
