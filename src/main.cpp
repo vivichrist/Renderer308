@@ -35,6 +35,8 @@ const int kernelSize = 32;
 GLfloat noiseScale[2];
 GLfloat noise[3*kernelRadius*kernelRadius];
 GLuint noiseTex;
+uint fbo;
+Texture* txt;
 
 int aoMode = 0;
 int drawBunny = 1;
@@ -247,6 +249,7 @@ void resize_callback( GLFWwindow * window, int newWidth, int newHeight )
 	g_height = g_height > 0 ? g_height : 1;
 	g_cam->setAspectRatio( g_width, g_height );
 	glViewport( 0, 0, g_width, g_height );
+	fbo = txt->setupFBO( g_width, g_height );
 }
 
 /******************************************************************************
@@ -383,17 +386,16 @@ int main()
 	//g_spotlight_pos = vec3( 0.0f, 7.0f, 0.0f );
 	Geometry *geo = Geometry::getInstance();
 	uint bunny = geo->addBuffer( "res/assets/bunny.obj"
-			, vec3( 0.0f, -0.5f, 0.0f )
+			, vec3( 0.0f, -1.5f, 0.0f )
 			, vec3( 0.50754f, 0.50754f, 0.50754f ) );
 	uint sphere = geo->addBuffer( "res/assets/sphere.obj"
             , vec3( 0.0f, 0.0f, 0.0f ) );
-
 	uint table = geo->addBuffer( "res/assets/table.obj"
             , vec3( 0.0f, -1.0f, 0.0f ) );
 
 	if ( checkGLErrors( 375 ) ) exit(1);
 
-	Texture *txt = Texture::getInstance();
+	txt = Texture::getInstance();
 
 	geo->bindTexure( "res/textures/brick.jpg", sphere );
 	geo->bindTexure( "res/textures/wood.jpg", table );
@@ -419,10 +421,9 @@ int main()
 	float lightPos[] =	{ 0, 10, 0 };
 	glClearBufferfv( GL_COLOR, 0, black );
 	glViewport( 0, 0, g_width, g_height );
-	uint fbo = txt->setupFBO( g_width, g_height );
+	fbo = txt->setupFBO( g_width, g_height );
 
-        GLfloat ssaoKernel[3 * kernelSize];
-
+    GLfloat ssaoKernel[3 * kernelSize];
 	srand(time(NULL));
 	for(int i = 0; i < kernelSize; i++) {
 		vec3 randVec = vec3( (rand()/(float)RAND_MAX) * 2.0 - 1.0,
@@ -487,7 +488,7 @@ int main()
 			glUniform3fv( shader( "lightP" ), 1, lightPos );
 			if (drawBunny) geo->draw( bunny, 1 );
 			else geo->draw( sphere, 1 );
-			geo->draw( table, 1 );
+//			geo->draw( table, 1 );
 		shader.unUse();
 		txt->activateTexturesFB( fbo );
 
