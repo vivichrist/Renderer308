@@ -27,15 +27,14 @@ void main()
     vec3 halfway = normalize(vLightDir - normalize(vView));
 
     float spec = max(0.0, dot(normalize(vNormal), halfway));
-
+    eye = vec4(0);
     // If the diffuse light is zero, don’t even bother with the pow function
     if ( diff > 0 )
     {
         float fSpec = pow(spec, 128.0);
-        colour.rgb += vec3(fSpec, fSpec, fSpec);
+        eye = vec4(fSpec, fSpec, fSpec, 1);
     }
     
-    eye = vec4( vView, 1 );
     normal = vec4( vNormal, 1 );
     
     // colour = vec4(1.0, 0.0, 0.0, 1.0);

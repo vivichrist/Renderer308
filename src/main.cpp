@@ -336,10 +336,6 @@ int main()
 	Shader shader;
 	shader.loadFromFile( GL_VERTEX_SHADER, "vertex.glsl" );
 	shader.loadFromFile( GL_FRAGMENT_SHADER, "fragment_def.glsl" );
-//	shader.registerFragOut( 0, "colour" );
-//	shader.registerFragOut( 1, "normal" );
-//	shader.registerFragOut( 2, "pos" );
-//	shader.registerFragOut( 3, "eye" );
 	shader.createAndLinkProgram();
 	shader.use();
 		shader.addUniform( "mvM" );
@@ -367,33 +363,32 @@ int main()
 	/****************************************************************************
 	 * Setup Geometry
 	 ***************************************************************************/
-	g_spotlight_pos = vec3( 0.0f, 7.0f, 0.0f );
+	//g_spotlight_pos = vec3( 0.0f, 7.0f, 0.0f );
 	Geometry *geo = Geometry::getInstance();
-	uint bunny = geo->addBuffer( "res/assets/bunny.obj"
-	                            , vec3( 0.0f, -0.5f, 0.0f )
-	                            , vec3( 0.50754f, 0.50754f, 0.50754f ) );
+	uint sphere = geo->addBuffer( "res/assets/sphere.obj"
+	                            , vec3( 0.0f, 0.0f, 0.0f ) );
 
 	if ( checkGLErrors( 375 ) ) exit(1);
 
 	Texture *txt = Texture::getInstance();
 
-	geo->bindTexure( "res/textures/wood.jpg", bunny );
+	geo->bindTexure( "res/textures/brick.jpg", sphere );
 
 	/****************************************************************************
 	 * Setup Lighting
 	 ***************************************************************************/
-	g_lights->addPointLight( vec3( 5.0f, 5.0f, -5.0f )
-	                       , vec3( 1.5f, 1.5f, 1.5f )
-	                       , 2.0f, 0.0f, 0.0f, 0.1f );
+//	g_lights->addPointLight( vec3( 5.0f, 5.0f, -5.0f )
+//	                       , vec3( 1.5f, 1.5f, 1.5f )
+//	                       , 2.0f, 0.0f, 0.0f, 0.1f );
 //	g_spotlight = g_lights->addSpotLight( g_spotlight_pos
 //	                                    , vec3( 1.0f, 1.0f, 1.0f )
 //	                                    ,	1.0f, 0.0f, 0.0f, 0.1f
 //	                                    , vec3( 0.0f, -1.0f, 0.0f ), 45.0f );
-	g_lights->addDirectionalLight( vec3( 0.0f, -1.0f, 0.0f )
-	                             , vec3( 1.5f,  1.5f, 1.5f ) );
+//	g_lights->addDirectionalLight( vec3( 0.0f, -1.0f, 0.0f )
+//	                             , vec3( 1.5f,  1.5f, 1.5f ) );
 //  lights->addSpotLight( vec3( 0.0f, 10.0f, 0.0f ), vec3( 1.0f, 1.0f, 1.0f )
 //                      , 1.0f, 0.0f, 0.0f, 0.05f, vec3( 0.0f, -1.0f, 0.0f ), 10.0f );
-	g_lights->getLights( g_light_array, g_num_of_lights );
+//	g_lights->getLights( g_light_array, g_num_of_lights );
 
 	// Camera to get model view and projection matices from. Amongst other things
 	g_cam = new Camera( vec3( 0.0f, 2.0f, 10.0f ), g_width, g_height );
@@ -425,11 +420,6 @@ int main()
 	///////////////////////////////////////////////////////////////////////////
 	//                           Main Rendering Loop                         //
 	///////////////////////////////////////////////////////////////////////////
-	float black[] =	{ 0, 0, 0 };
-	float lightPos[] =	{ 0, 10, 0 };
-	glClearBufferfv( GL_COLOR, 0, black );
-	glViewport( 0, 0, g_width, g_height );
-	uint fbo = txt->setupFBO( g_width, g_height );
 
 //	GLuint vao, vbo;
 //	glGenVertexArrays( 1, &vao );
@@ -445,12 +435,18 @@ int main()
 //	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 12, quad, GL_STATIC_DRAW);
 //	glBindVertexArray(0);
 
+	float black[] =	{ 0, 0, 0 };
+	float lightPos[] =	{ 0, 10, 0 };
+	glClearBufferfv( GL_COLOR, 0, black );
+	glViewport( 0, 0, g_width, g_height );
+	uint fbo = txt->setupFBO( g_width, g_height );
+
 	while ( !glfwWindowShouldClose( window ) )
 	{
 		// load values into the uniform slots of the shader and draw
 		txt->activateFrameBuffer( fbo );
+
 		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-		//glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 
 		shader.use();
 			glUniform1i( shader("image"), 0 );
@@ -460,24 +456,22 @@ int main()
 					value_ptr( g_cam->getProjectionMatrix() ) );
 			glUniformMatrix3fv( shader( "normM" ), 1, GL_FALSE,
 					value_ptr( g_cam->getNormalMatrix() ) );
-			glUniform3fv( shader( "lightP" ), 1
-					, lightPos );
-			geo->draw( bunny, 1 );
+			glUniform3fv( shader( "lightP" ), 1, lightPos );
+			geo->draw( sphere, 1 );
 		shader.unUse();
 		txt->activateTexturesFB( fbo );
-		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
-//		glBindVertexArray( vao );
+		glClear( GL_DEPTH_BUFFER_BIT );
+
 		shader2.use();
 			glUniform1i( shader2("depth"), 0 );
 			glUniform1i( shader2("colour"), 1 );
 			glUniform1i( shader2("normal"), 2 );
 			glUniform1i( shader2("eye"), 3 );
-//			glBindVertexArray(vao);
 			glDrawArrays(GL_POINTS, 0, 1);
 		shader2.unUse();
 
-		txt->deactivateTexturesFB();
+		//txt->deactivateTexturesFB();
 
 		// make sure the camera rotations, position and matrices are updated
 		g_cam->update();
