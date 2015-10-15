@@ -141,9 +141,8 @@ GLuint Texture::addNMTexture( const string& filename )
 	//Convert normal map to texture
 	GLuint normalMap;
 	glGenTextures(1, &normalMap);
-	glActiveTexture( GL_TEXTURE2 );
 	glBindTexture(GL_TEXTURE_2D, normalMap);
-	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8, normalMapImage.w, normalMapImage.h,
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, normalMapImage.w, normalMapImage.h,
 		0, normalMapImage.glFormat(), GL_UNSIGNED_BYTE, normalMapImage.data.data());
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -159,15 +158,14 @@ GLuint Texture::addHMTexture( const string& filename )
 
 	//Load normal map
 	checkGLError2( 134 );
-	image normalMapImage( filename );
+	image heightMapImage( filename );
 
 	//Convert normal map to texture
 	GLuint heightMap;
 	glGenTextures(1, &heightMap);
-	glActiveTexture( GL_TEXTURE3 );
 	glBindTexture(GL_TEXTURE_2D, heightMap);
-	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8, normalMapImage.w, normalMapImage.h,
-		0, normalMapImage.glFormat(), GL_UNSIGNED_BYTE, normalMapImage.data.data());
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, heightMapImage.w, heightMapImage.h,
+		0, heightMapImage.glFormat(), GL_UNSIGNED_BYTE, heightMapImage.data.data());
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);

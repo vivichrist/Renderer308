@@ -347,6 +347,8 @@ int main()
 		shader.addUniform( "normM" );
 		shader.addUniform( "lightP" );
 		shader.addUniform( "image" );
+		shader.addUniform( "normalmap" );
+		shader.addUniform( "heightmap" );
 	shader.unUse();
 	// print debugging info
 	shader.printActiveUniforms();
@@ -360,8 +362,6 @@ int main()
 		shader2.addUniform( "depth" );
 		shader2.addUniform( "colour" );
 		shader2.addUniform( "normal" );
-		shader2.addUniform( "normalmap" );
-		shader2.addUniform( "heightmap" );
 		shader2.addUniform( "eye" );
 	shader2.unUse();
 	// print debugging info
@@ -371,7 +371,7 @@ int main()
 	 ***************************************************************************/
 	g_spotlight_pos = vec3( 0.0f, 7.0f, 0.0f );
 	Geometry *geo = Geometry::getInstance();
-	uint bunny = geo->addBuffer( "res/assets/table.obj"
+	uint table = geo->addBuffer( "res/assets/table.obj"
 	                            , vec3( 0.0f, -0.5f, 0.0f ) );
 
 	if ( checkGLErrors( 375 ) ) exit(1);
@@ -379,9 +379,9 @@ int main()
 	Texture *txt = Texture::getInstance();
 
 
-	geo->bindTexure( "res/textures/test.jpg", bunny );
-	geo->bindNMTexure( "res/textures/test_normal.jpg", bunny );
-	geo->bindHMTexure( "res/textures/test_height.jpg", bunny );
+	geo->bindTexure( "res/textures/test.jpg", table );
+	geo->bindNMTexure( "res/textures/test_normal.jpg", table );
+	geo->bindHMTexure( "res/textures/test_height.jpg", table );
 
 	/****************************************************************************
 	 * Setup Lighting
@@ -458,8 +458,8 @@ int main()
 
 		shader.use();
 			glUniform1i( shader("image"), 0 );
-			glUniform1i( shader("normalmap"), 2 );
-			glUniform1i( shader("heightmap"), 3 );
+			glUniform1i( shader("normalmap"), 1 );
+			glUniform1i( shader("heightmap"), 2 );
 			glUniformMatrix4fv( shader( "mvM" ), 1, GL_FALSE,
 					value_ptr( g_cam->getViewMatrix() ) );
 			glUniformMatrix4fv( shader( "projM" ), 1, GL_FALSE,
@@ -468,7 +468,7 @@ int main()
 					value_ptr( g_cam->getNormalMatrix() ) );
 			glUniform3fv( shader( "lightP" ), 1
 					, lightPos );
-			geo->draw( bunny, 1 );
+			geo->draw( table, 1 );
 		shader.unUse();
 		txt->activateTexturesFB( fbo );
 		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );

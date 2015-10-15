@@ -383,16 +383,22 @@ void Geometry::draw( uint id, GLsizei insts )
     e = m_elemBuffOb[id];
     glActiveTexture( GL_TEXTURE0 );
     glBindTexture( GL_TEXTURE_2D, e.texture );
-    if ( e.cubeMap )
-    {
-      glActiveTexture( GL_TEXTURE1 );
-      glBindTexture( GL_TEXTURE_CUBE_MAP, e.cubeMap );
-    }
     if (e.normalMap) {
-		glActiveTexture( GL_TEXTURE2 );
-		glBindTexture( GL_NORMAL_MAP, e.normalMap);
+		glActiveTexture( GL_TEXTURE1 );
+		glBindTexture( GL_TEXTURE_2D, e.normalMap);
 		checkGLError(396);
 	}
+    if (e.heightMap) {
+		glActiveTexture( GL_TEXTURE2 );
+		glBindTexture( GL_TEXTURE_2D, e.heightMap);
+		checkGLError(397);
+	}
+    if ( e.cubeMap )
+    {
+    	glActiveTexture( GL_TEXTURE3 );
+    	glBindTexture( GL_TEXTURE_CUBE_MAP, e.cubeMap );
+		checkGLError(395);
+    }
     checkGLError( 378 );
     glBindVertexArray( e.vao );
     if ( insts == 1 )
@@ -407,17 +413,22 @@ void Geometry::draw( uint id, GLsizei insts )
     b = m_buffOb[id];
     glActiveTexture( GL_TEXTURE0 );
     glBindTexture( GL_TEXTURE_2D, b.texture );
+    if (b.normalMap) {
+    	glActiveTexture( GL_TEXTURE1 );
+		glBindTexture( GL_TEXTURE_2D, b.normalMap);
+		checkGLError(399);
+	}
+    if (b.heightMap) {
+		glActiveTexture( GL_TEXTURE2 );
+		glBindTexture( GL_TEXTURE_2D, b.heightMap);
+		checkGLError(400);
+	}
     if ( b.cubeMap )
     {
-    	glActiveTexture( GL_TEXTURE1 );
+    	glActiveTexture( GL_TEXTURE3 );
     	glBindTexture( GL_TEXTURE_CUBE_MAP, b.cubeMap );
-    	checkGLError( 395 );
+    	checkGLError( 398 );
     }
-    if (b.normalMap) {
-    	glActiveTexture( GL_TEXTURE2 );
-		glBindTexture( GL_NORMAL_MAP, b.normalMap);
-		checkGLError(396);
-	}
     glBindVertexArray( b.vao );
     if ( insts == 1 )
       glDrawArrays( GL_TRIANGLES, 0, b.numElements );
