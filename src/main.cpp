@@ -370,17 +370,16 @@ int main()
 	/****************************************************************************
 	 * Setup Geometry
 	 ***************************************************************************/
-	g_spotlight_pos = vec3( 0.0f, 7.0f, 0.0f );
+	//g_spotlight_pos = vec3( 0.0f, 7.0f, 0.0f );
 	Geometry *geo = Geometry::getInstance();
-	uint bunny = geo->addBuffer( "res/assets/bunny.obj"
-	                            , vec3( 0.0f, -0.5f, 0.0f )
-	                            , vec3( 0.50754f, 0.50754f, 0.50754f ) );
+	uint sphere = geo->addBuffer( "res/assets/sphere.obj"
+	                            , vec3( 0.0f, 0.0f, 0.0f ) );
 
 	if ( checkGLErrors( 375 ) ) exit(1);
 
 	Texture *txt = Texture::getInstance();
 
-	geo->bindTexure( "res/textures/wood.jpg", bunny );
+	geo->bindTexure( "res/textures/brick.jpg", sphere );
 
 	/****************************************************************************
 	 * Setup Lighting
@@ -405,7 +404,7 @@ int main()
 	glViewport( 0, 0, g_width, g_height );
 	uint fbo = txt->setupFBO( g_width, g_height );
 
-	GLfloat ssaoKernel[3 * kernelSize];
+        GLfloat ssaoKernel[3 * kernelSize];
 
 	srand(time(NULL));
 	for(int i = 0; i < kernelSize; i++) {
@@ -457,8 +456,8 @@ int main()
 	{
 		// load values into the uniform slots of the shader and draw
 		txt->activateFrameBuffer( fbo );
+
 		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-		//glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 
 		shader.use();
 			glUniform1i( shader("image"), 0 );
@@ -468,14 +467,12 @@ int main()
 					value_ptr( g_cam->getProjectionMatrix() ) );
 			glUniformMatrix3fv( shader( "normM" ), 1, GL_FALSE,
 					value_ptr( g_cam->getNormalMatrix() ) );
-			glUniform3fv( shader( "lightP" ), 1
-					, lightPos );
-			geo->draw( bunny, 1 );
+			glUniform3fv( shader( "lightP" ), 1, lightPos );
+			geo->draw( sphere, 1 );
 		shader.unUse();
 		txt->activateTexturesFB( fbo );
-		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
-//		glBindVertexArray( vao );
+		glClear( GL_DEPTH_BUFFER_BIT );
 		postShader.use();
 			glUniform1i( postShader("depth"), 0 );
 			glUniform1i( postShader("colour"), 1 );
@@ -490,11 +487,10 @@ int main()
 			glUniform2f( postShader("noiseScale"), noiseScale[0], noiseScale[1] );
 			glUniform1i( postShader("kernelSize"), kernelSize );
 			glUniform1i( postShader("kernelRadius"), kernelRadius );
-//			glBindVertexArray(vao);
 			glDrawArrays(GL_POINTS, 0, 1);
 		postShader.unUse();
 
-		txt->deactivateTexturesFB();
+		//txt->deactivateTexturesFB();
 
 		// make sure the camera rotations, position and matrices are updated
 		g_cam->update();
