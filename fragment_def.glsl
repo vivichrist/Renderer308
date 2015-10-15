@@ -14,6 +14,8 @@ smooth in vec3 vLightDir;
 
 uniform mat4 mvM;
 uniform sampler2D image;
+uniform sampler2D normalmap;
+uniform sampler2D heightmap;
 
 void main()
 {
@@ -21,7 +23,7 @@ void main()
     float diff = max(0.0, dot(normalize(vNormal), vLightDir)) * 4;
 
     // Multiply intensity by diffuse color, force alpha to 1.0 and add in ambient light
-    colour = texture( image, (vUV*4-50)+vec2(1.5,1) );
+    colour = texture( normalmap, (vUV*4-50)+vec2(1.5,1) );
 
     // Specular Light
     vec3 halfway = normalize(vLightDir - normalize(vView));
@@ -32,7 +34,7 @@ void main()
     if ( diff > 0 )
     {
         float fSpec = pow(spec, 128.0);
-        colour.rgb += vec3(fSpec, fSpec, fSpec);
+        //colour.rgb += vec3(fSpec, fSpec, fSpec);
     }
 
     eye = vec4( vView, 1 );

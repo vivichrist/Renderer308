@@ -360,6 +360,8 @@ int main()
 		shader2.addUniform( "depth" );
 		shader2.addUniform( "colour" );
 		shader2.addUniform( "normal" );
+		shader2.addUniform( "normalmap" );
+		shader2.addUniform( "heightmap" );
 		shader2.addUniform( "eye" );
 	shader2.unUse();
 	// print debugging info
@@ -376,7 +378,10 @@ int main()
 
 	Texture *txt = Texture::getInstance();
 
-	geo->bindTexure( "res/textures/test_height.jpg", bunny );
+
+	geo->bindTexure( "res/textures/test.jpg", bunny );
+	geo->bindNMTexure( "res/textures/test_normal.jpg", bunny );
+	geo->bindHMTexure( "res/textures/test_height.jpg", bunny );
 
 	/****************************************************************************
 	 * Setup Lighting
@@ -453,6 +458,8 @@ int main()
 
 		shader.use();
 			glUniform1i( shader("image"), 0 );
+			glUniform1i( shader("normalmap"), 2 );
+			glUniform1i( shader("heightmap"), 3 );
 			glUniformMatrix4fv( shader( "mvM" ), 1, GL_FALSE,
 					value_ptr( g_cam->getViewMatrix() ) );
 			glUniformMatrix4fv( shader( "projM" ), 1, GL_FALSE,

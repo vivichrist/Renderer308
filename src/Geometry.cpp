@@ -229,6 +229,22 @@ void Geometry::bindNMTexure(const std::string& load, GLuint id) {
 	}
 }
 
+void Geometry::bindHMTexure(const std::string& load, GLuint id) {
+	checkGLError(100);
+	GLuint nmapID = Texture::getInstance()->addHMTexture(load);
+	if (m_elemBuffOb.find(id) != m_elemBuffOb.end()) {
+		m_elemBuffOb[id].heightMap = nmapID;
+	} else if (m_buffOb.find(id) != m_buffOb.end()) {
+		m_buffOb[id].heightMap = nmapID;
+
+		cerr << "ID: " << id << endl;
+		cerr << "Heightmap: " << m_buffOb[id].heightMap << endl;
+	} else {
+		std::cout << "No Such VBObject (name:" << id << ")\n";
+		throw;
+	}
+}
+
 uint Geometry::addBuffer(const string& load) {
 	float p[] = { 0, 0, 0 };
 	checkGLError(194);
