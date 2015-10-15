@@ -15,6 +15,7 @@ out VertexData {
 	smooth out vec2 vUV;
 	smooth out vec3 vNormal;
 	smooth out vec3 vView;
+	smooth out vec3 vTangentView
 } vout;
 
 void main(void)

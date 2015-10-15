@@ -29,12 +29,12 @@ vec3 g_spotlight_pos;
 mat4 g_spotlight_rot;
 float g_light_array[160];
 GLint g_num_of_lights;
+int kernelSize = 32;
 
-GBuffer buff;
-
-GLuint depthTexture;
-GLuint depthTex;
-GLuint depthBuffer;
+GLfloat parallaxScale = 0.05;
+GLfloat parallaxMinLayer = 20;
+GLfloat parallaxMaxLayer = 50;
+bool aoRight = false;
 
 int g_width = 800, g_height = 600;
 
@@ -104,6 +104,46 @@ void key_callback( GLFWwindow * window, int key, int scancode
 	{
 	  g_cam_select = !g_cam_select;
 	}
+	else if ( key == GLFW_KEY_PAGE_DOWN && action == GLFW_PRESS )
+	{
+	  parallaxScale -= 0.05;
+	}
+	//
+	// Parallax Commands
+	//
+	else if ( key == GLFW_KEY_PAGE_UP && action == GLFW_PRESS )
+	{
+		parallaxScale += 0.05;
+		cerr << "Parallax Scale: " << parallaxScale << endl;
+	}
+	else if ( key == GLFW_KEY_PAGE_DOWN && action == GLFW_PRESS )
+	{
+		parallaxScale -= 0.05;
+		cerr << "Parallax Scale: " << parallaxScale << endl;
+	}
+	else if ( key == GLFW_KEY_HOME && action == GLFW_PRESS )
+	{
+		parallaxMaxLayer += 5;
+		cerr << "Parallax Max Layer: " << parallaxMaxLayer << endl;
+	}
+	else if ( key == GLFW_KEY_END && action == GLFW_PRESS )
+	{
+		float p = parallaxMaxLayer - 5;
+		parallaxMaxLayer = p > parallaxMinLayer ? p : parallaxMaxLayer;
+		cerr << "Parallax Max Layer: " << parallaxMaxLayer << endl;
+	}
+	else if ( key == GLFW_KEY_INSERT && action == GLFW_PRESS )
+	{
+		float p = parallaxMinLayer + 5;
+		parallaxMinLayer = p < parallaxMinLayer ? p : parallaxMinLayer;
+		cerr << "Parallax Min Layer: " << parallaxMinLayer << endl;
+	}
+	else if ( key == GLFW_KEY_DELETE && action == GLFW_PRESS )
+	{
+		float p = parallaxMinLayer - 5;
+		parallaxMinLayer = p < 0 ? 0 : p;
+		cerr << "Parallax Min Layer: " << parallaxMaxLayer << endl;
+	}
 	else if ( g_cam_select )
 	{
 	  if ( key == GLFW_KEY_PAGE_UP && action == GLFW_PRESS )
@@ -143,6 +183,8 @@ void key_callback( GLFWwindow * window, int key, int scancode
 			g_spotlight_pos = vec3( g_lights->getPosition( g_spotlight ) );
 		}
 	}
+
+	if (key == GLFW_KEY_P && action == GLFW_PRESS )aoRight = !aoRight;
 }
 
 void mousebutton_callback( GLFWwindow * window, int button
@@ -316,8 +358,6 @@ int main()
 	std::cout << "\tGLSL:	" << glGetString( GL_SHADING_LANGUAGE_VERSION )
 			<< std::endl;
 
-	buff.Init(g_width, g_height);
-
 	glfwSetErrorCallback( error_callback );
 	glfwSetKeyCallback( window, key_callback );
 	glfwSetScrollCallback( window, scroll_callback );
@@ -336,19 +376,19 @@ int main()
 	Shader shader;
 	shader.loadFromFile( GL_VERTEX_SHADER, "vertex.glsl" );
 	shader.loadFromFile( GL_FRAGMENT_SHADER, "fragment_def.glsl" );
-//	shader.registerFragOut( 0, "colour" );
-//	shader.registerFragOut( 1, "normal" );
-//	shader.registerFragOut( 2, "pos" );
-//	shader.registerFragOut( 3, "eye" );
 	shader.createAndLinkProgram();
 	shader.use();
 		shader.addUniform( "mvM" );
 		shader.addUniform( "projM" );
 		shader.addUniform( "normM" );
 		shader.addUniform( "lightP" );
+		shader.addUniform( "viewP" );
 		shader.addUniform( "image" );
 		shader.addUniform( "normalmap" );
 		shader.addUniform( "heightmap" );
+		shader.addUniform( "parallaxScale" );
+		shader.addUniform( "parallaxMinLayer" );
+		shader.addUniform( "parallaxMaxLayer" );
 	shader.unUse();
 	// print debugging info
 	shader.printActiveUniforms();
@@ -363,15 +403,17 @@ int main()
 		shader2.addUniform( "colour" );
 		shader2.addUniform( "normal" );
 		shader2.addUniform( "eye" );
+		shader2.addUniform( "pixelSize" );
+		shader2.addUniform( "aoRight" );
 	shader2.unUse();
 	// print debugging info
 	shader.printActiveUniforms();
 	/****************************************************************************
 	 * Setup Geometry
 	 ***************************************************************************/
-	g_spotlight_pos = vec3( 0.0f, 7.0f, 0.0f );
+	//g_spotlight_pos = vec3( 0.0f, 7.0f, 0.0f );
 	Geometry *geo = Geometry::getInstance();
-	uint table = geo->addBuffer( "res/assets/table.obj"
+	uint table = geo->addBuffer( "res/assets/box.obj"
 	                            , vec3( 0.0f, -0.5f, 0.0f ) );
 
 	if ( checkGLErrors( 375 ) ) exit(1);
@@ -379,25 +421,25 @@ int main()
 	Texture *txt = Texture::getInstance();
 
 
-	geo->bindTexure( "res/textures/test.jpg", table );
-	geo->bindNMTexure( "res/textures/test_normal.jpg", table );
-	geo->bindHMTexure( "res/textures/test_height.jpg", table );
+	geo->bindTexure( "res/textures/brick2.jpg", table );
+	geo->bindNMTexure( "res/textures/brick2_normal.jpg", table );
+	geo->bindHMTexure( "res/textures/brick2_height.jpg", table );
 
 	/****************************************************************************
 	 * Setup Lighting
 	 ***************************************************************************/
-	g_lights->addPointLight( vec3( 5.0f, 5.0f, -5.0f )
-	                       , vec3( 1.5f, 1.5f, 1.5f )
-	                       , 2.0f, 0.0f, 0.0f, 0.1f );
+//	g_lights->addPointLight( vec3( 5.0f, 5.0f, -5.0f )
+//	                       , vec3( 1.5f, 1.5f, 1.5f )
+//	                       , 2.0f, 0.0f, 0.0f, 0.1f );
 //	g_spotlight = g_lights->addSpotLight( g_spotlight_pos
 //	                                    , vec3( 1.0f, 1.0f, 1.0f )
 //	                                    ,	1.0f, 0.0f, 0.0f, 0.1f
 //	                                    , vec3( 0.0f, -1.0f, 0.0f ), 45.0f );
-	g_lights->addDirectionalLight( vec3( 0.0f, -1.0f, 0.0f )
-	                             , vec3( 1.5f,  1.5f, 1.5f ) );
+//	g_lights->addDirectionalLight( vec3( 0.0f, -1.0f, 0.0f )
+//	                             , vec3( 1.5f,  1.5f, 1.5f ) );
 //  lights->addSpotLight( vec3( 0.0f, 10.0f, 0.0f ), vec3( 1.0f, 1.0f, 1.0f )
 //                      , 1.0f, 0.0f, 0.0f, 0.05f, vec3( 0.0f, -1.0f, 0.0f ), 10.0f );
-	g_lights->getLights( g_light_array, g_num_of_lights );
+//	g_lights->getLights( g_light_array, g_num_of_lights );
 
 	// Camera to get model view and projection matices from. Amongst other things
 	g_cam = new Camera( vec3( 0.0f, 2.0f, 10.0f ), g_width, g_height );
@@ -429,11 +471,6 @@ int main()
 	///////////////////////////////////////////////////////////////////////////
 	//                           Main Rendering Loop                         //
 	///////////////////////////////////////////////////////////////////////////
-	float black[] =	{ 0, 0, 0 };
-	float lightPos[] =	{ 0, 10, 0 };
-	glClearBufferfv( GL_COLOR, 0, black );
-	glViewport( 0, 0, g_width, g_height );
-	uint fbo = txt->setupFBO( g_width, g_height );
 
 //	GLuint vao, vbo;
 //	glGenVertexArrays( 1, &vao );
@@ -449,12 +486,37 @@ int main()
 //	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 12, quad, GL_STATIC_DRAW);
 //	glBindVertexArray(0);
 
+	float black[] =	{ 0, 0, 0 };
+	float lightPos[] =	{ 0, 10, 0 };
+	glClearBufferfv( GL_COLOR, 0, black );
+	glViewport( 0, 0, g_width, g_height );
+	uint fbo = txt->setupFBO( g_width, g_height );
+	GLfloat ssaoKernel[3 * kernelSize];
+
+	srand(time(NULL));
+	for(int i = 0; i < kernelSize; i++) {
+		vec3 randVec = vec3( rand() * 2.0 - 1.0,
+				rand() * 2.0 - 1.0,
+				rand());
+
+		normalize(randVec);
+
+		float scale = float(i/3) / (float)kernelSize;
+		scale = 0.1 + scale*scale*0.9;
+
+		randVec *= scale;
+
+		ssaoKernel[i*3] = randVec.x;
+		ssaoKernel[i*3 + 1] = randVec.y;
+		ssaoKernel[i*3 + 2] = randVec.z;
+	}
+
 	while ( !glfwWindowShouldClose( window ) )
 	{
 		// load values into the uniform slots of the shader and draw
 		txt->activateFrameBuffer( fbo );
+
 		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-		//glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 
 		shader.use();
 			glUniform1i( shader("image"), 0 );
@@ -464,26 +526,32 @@ int main()
 					value_ptr( g_cam->getViewMatrix() ) );
 			glUniformMatrix4fv( shader( "projM" ), 1, GL_FALSE,
 					value_ptr( g_cam->getProjectionMatrix() ) );
+			glUniformMatrix4fv( shader( "viewP" ), 1, GL_FALSE,
+					value_ptr( g_cam->getPosition() ) );
 			glUniformMatrix3fv( shader( "normM" ), 1, GL_FALSE,
 					value_ptr( g_cam->getNormalMatrix() ) );
-			glUniform3fv( shader( "lightP" ), 1
-					, lightPos );
+			glUniform3fv( shader( "lightP" ), 1, lightPos );
+			glUniform1f( shader( "parallaxScale" ), parallaxScale );
+			glUniform1f( shader( "parallaxMinLayer" ), parallaxMinLayer );
+			glUniform1f( shader( "parallaxMaxLayer" ), parallaxMaxLayer );
 			geo->draw( table, 1 );
 		shader.unUse();
 		txt->activateTexturesFB( fbo );
-		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
-//		glBindVertexArray( vao );
+		glClear( GL_DEPTH_BUFFER_BIT );
+
 		shader2.use();
 			glUniform1i( shader2("depth"), 0 );
 			glUniform1i( shader2("colour"), 1 );
 			glUniform1i( shader2("normal"), 2 );
 			glUniform1i( shader2("eye"), 3 );
-//			glBindVertexArray(vao);
+			glUniform1i( shader2("aoRight"), aoRight );
+			glUniform3fv( shader2("kernel"), kernelSize, ssaoKernel);
+			glUniform2f( shader2("pixelSize"), 1.0/g_width, 1.0/g_height);
 			glDrawArrays(GL_POINTS, 0, 1);
 		shader2.unUse();
 
-		txt->deactivateTexturesFB();
+		//txt->deactivateTexturesFB();
 
 		// make sure the camera rotations, position and matrices are updated
 		g_cam->update();
