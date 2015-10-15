@@ -132,6 +132,9 @@ void main()
     // Dot product gives us diffuse intensity
     float diff = max(0.0, dot(normalize(vNormal), vLightDir)) * 4;
 
+    // Multiply intensity by diffuse color, force alpha to 1.0 and add in ambient light
+    colour = max( diff, 0.05 ) * texture( image, vUV ) + vec4(0.3,0.3,0.3,1);
+
     // Specular Light
     vec3 halfway = normalize(vLightDir - normalize(vView));
 

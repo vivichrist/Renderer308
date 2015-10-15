@@ -225,7 +225,7 @@ GLuint Texture::setupFBO( uint width, uint height )
 	// Generate and bind the texture for the depth buffer
 	glGenTextures( 1, &fbo.depthID );
 	glBindTexture( GL_TEXTURE_2D, fbo.depthID );
-	glTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, width, height, 0
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, width, height, 0
 			, GL_DEPTH_COMPONENT, GL_FLOAT, 0 );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
@@ -302,7 +302,7 @@ GLuint Texture::setupEnvMap( uint resolution )
 	glBindTexture(target, e.depthCMID);
 	for(int face = 0; face < 6; ++face)
 		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, 0,
-					 GL_DEPTH_COMPONENT24, e.res, e.res, 0,
+					 GL_DEPTH_COMPONENT32, e.res, e.res, 0,
 					 GL_DEPTH_COMPONENT, GL_FLOAT, 0);
 	// setting up texture parameters
 	glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
