@@ -375,10 +375,6 @@ int main()
 		shader.addUniform("eMap");
 		shader.addUniform("normalmap");
 		shader.addUniform("heightmap");
-
-
-
-	//shader.addUniform("eMap");
 	shader.unUse();
 	// print debugging info
 	shader.printActiveUniforms();
@@ -394,7 +390,7 @@ int main()
 	/****************************************************************************
 	 * Setup Lighting
 	 ***************************************************************************/
-	g_spotlight_pos = vec3( 0.0f, 7.0f, 0.0f );
+	g_spotlight_pos = vec3( 0.0f, 7.0f, 5.0f );
 	Geometry *geo = Geometry::getInstance();
 	uint texture0 = shader("image");
 	uint texture1 = shader("eMap");
@@ -419,7 +415,7 @@ int main()
 	//geo->bindNMTexure( "res/textures/normalMap.jpg", table );
 	//geo->bindNMTexure( "res/textures/brick2_normal.jpg", sphere );
 	//geo->bindCMTexure( "res/textures/cubeMap.jpg", teapot );
-	geo->bindTexure( "res/textures/test.jpg", table );
+	geo->bindTexure( "res/textures/brick2.jpg", table );
 	geo->bindNMTexure( "res/textures/test_normal.jpg", table );
 	geo->bindHMTexure( "res/textures/test_height.jpg", table );
 	//geo->bindTexure( "res/textures/brick2.jpg", box );
@@ -431,7 +427,7 @@ int main()
 	g_spotlight = g_lights->addSpotLight( g_spotlight_pos
 	                                    , vec3( 1.0f, 1.0f, 1.0f )
 	                                    ,	1.0f, 0.0f, 0.0f, 0.1f
-	                                    , vec3( 0.0f, -1.0f, 0.0f ), 45.0f );
+	                                    , vec3( 0.0f, -1.0f, -0.5f ), 45.0f );
 	/*g_lights->addDirectionalLight( vec3( 0.0f, -1.0f, 0.0f )
 	                             , vec3( 0.9f,  0.9f, 0.9f ) );*/
 //  lights->addSpotLight( vec3( 0.0f, 10.0f, 0.0f ), vec3( 1.0f, 1.0f, 1.0f )

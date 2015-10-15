@@ -47,6 +47,8 @@ private:
 	std::vector<edge> m_lines;
 	std::vector<glm::vec2> m_uvs;		// Texture Coordinate list
 	std::vector<glm::vec3> m_normals;	// Normal list
+	std::vector<glm::vec3> m_tangents;	// Normal list
+	std::vector<glm::vec3> m_bitangents;	// Normal list
 	std::vector<triangle> m_triangles;		// Triangle/Face list
 public:
 	Loader();

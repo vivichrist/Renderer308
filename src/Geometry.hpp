@@ -22,7 +22,7 @@ namespace vogl
 enum LOC
 {
 	VertLoc, NormalLoc, TexCoordsLoc
-	, PositionLoc, ColourLoc // instance data
+	, PositionLoc, ColourLoc,TangentLoc, BitangentLoc // instance data
 };
 
 struct Varying
@@ -30,6 +30,9 @@ struct Varying
 	float vertex[3];
 	float VNs[3];
 	float UVs[2];
+	float UVs2[2];
+	float tangents[3];
+	float bitangents[3];
 };
 
 struct Buffer
@@ -58,6 +61,8 @@ public:
 	uint addBuffer( const std::string& load, const glm::vec3& pos );
 	uint addBuffer( const std::string& load, const glm::vec3& pos, const glm::vec3& col );
 	uint addBuffer( const std::string&, const float*, const float*, uint );
+	void computeTangentBasis( std::vector<glm::vec3> v,
+			std::vector<glm::vec3> u, std::vector<glm::vec3> n, std::vector<glm::vec3> *t,std::vector<glm::vec3> *b);
 	void bindTexure( const std::string&, GLuint );
 	void bindCMTexure( const std::string&, GLuint );
 	void bindNMTexure( const std::string&, GLuint );

@@ -121,15 +121,16 @@ uint Geometry::addSmoothSurfaceBuffer(const string& load, const float *pos,
 	checkGLError(113);
 
 	// set locations for the shader
-	glVertexAttribPointer(VertLoc, 3, b.vBuffType, GL_FALSE, sizeof(Varying),
-			(GLvoid *) 0);
+	glVertexAttribPointer(VertLoc, 3, b.vBuffType, GL_FALSE, sizeof(Varying),(GLvoid *) 0);
 	glEnableVertexAttribArray(VertLoc);
-	glVertexAttribPointer(NormalLoc, 3, b.vBuffType, GL_FALSE, sizeof(Varying),
-			(GLvoid *) (sizeof(float) * 3));
+	glVertexAttribPointer(NormalLoc, 3, b.vBuffType, GL_FALSE, sizeof(Varying),(GLvoid *) (sizeof(float) * 3));
 	glEnableVertexAttribArray(NormalLoc);
-	glVertexAttribPointer(TexCoordsLoc, 2, b.vBuffType, GL_FALSE,
-			sizeof(Varying), (GLvoid *) (sizeof(float) * 6));
+	glVertexAttribPointer(TexCoordsLoc, 2, b.vBuffType, GL_FALSE,sizeof(Varying), (GLvoid *) (sizeof(float) * 6));
 	glEnableVertexAttribArray(TexCoordsLoc);
+	glVertexAttribPointer(TangentLoc, 3, b.vBuffType, GL_FALSE, sizeof(Varying),(GLvoid *) 0);
+	glEnableVertexAttribArray(TangentLoc);
+	glVertexAttribPointer(BitangentLoc, 3, b.vBuffType, GL_FALSE, sizeof(Varying),(GLvoid *) 0);
+	glEnableVertexAttribArray(BitangentLoc);
 	checkGLError(134);
 	// instancing attributes
 	if (n > 0) // bypass if there are none
@@ -274,6 +275,12 @@ uint Geometry::addBuffer(const string& load, const vec3& pos, const vec3& col) {
 	return id;
 }
 
+/*void computeTangentBasis(vector<vec3> v,vector<vec2> u,vector<vec3> n, vector<vec3> *t,vector<vec3> *b){
+
+
+
+}*/
+
 /******************************************************************************
  * Fill a buffer with Vertices, Texture Coordinates and Vertex Normals ready for
  * rendering.
@@ -296,6 +303,9 @@ uint Geometry::addBuffer(const string& load, const float *pos, const float *col,
 	triangles.getNormals(vn);
 	vector<triangle> tris;
 	triangles.getTriIndices(tris);
+	vector<vec3> tangents;
+	vector<vec3> bitangents;
+	//computeTangentBasis(v,vt,vn,&tangents,&bitangents);
 	uint max = tris.size() * 3;
 	checkGLError(245);
 	if (!max) {
@@ -305,6 +315,25 @@ uint Geometry::addBuffer(const string& load, const float *pos, const float *col,
 	Varying buff[max];
 	uint i = 0;
 	for (triangle t : tris) { // load in the location data each possibly empty except points
+
+		// Edges of the triangle : position delta
+		vec3 deltaPos1 = v[t.v[1].p]-v[t.v[0].p];
+		vec3 deltaPos2 = v[t.v[2].p]-v[t.v[0].p];
+
+		//cerr << "DeltaPos 1: "<< deltaPos1.x << "," << deltaPos1.y << "," << deltaPos1.z << endl;
+		//cerr << "DeltaPos 2: "<< deltaPos2.x << "," << deltaPos2.y << "," << deltaPos2.z << endl;
+
+		// UV delta
+		vec2 deltaUV1 = vt[t.v[1].t]-vt[t.v[0].t];
+		vec2 deltaUV2 = vt[t.v[2].t]-vt[t.v[0].t];
+
+		float r = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV1.y * deltaUV2.x);
+		vec3 tangent = (deltaPos1 * deltaUV2.y   - deltaPos2 * deltaUV1.y)*r;
+		vec3 bitangent = (deltaPos2 * deltaUV1.x   - deltaPos1 * deltaUV2.x)*r;
+
+		tangent =
+
+		// Assign vertex properties
 		for (uint j = 0; j < 3; ++j) {
 			Varying b;
 			vertex &k = t.v[j];
@@ -318,8 +347,22 @@ uint Geometry::addBuffer(const string& load, const float *pos, const float *col,
 			// texture coordinates
 			b.UVs[0] = vt[k.t].x;
 			b.UVs[1] = vt[k.t].y;
+
+			// Set the same tangent for all three vertices of the triangle.
+			// They will be merged later, in vboindexer.cpp
+			b.tangents[0] = tangent.x;
+			b.tangents[1] = tangent.y;
+			b.tangents[2] = tangent.z;
+			//cerr << "Final Tangent: "<< tangent.x << "," << tangent.y << "," << tangent.z << endl;
+
+			// Same thing for binormals
+			b.bitangents[0] = bitangent.x;
+			b.bitangents[1] = bitangent.y;
+			b.bitangents[2] = bitangent.z;
+
 			buff[i + j] = b;
 		}
+
 		i += 3;
 	}
 	Buffer b;
@@ -333,19 +376,24 @@ uint Geometry::addBuffer(const string& load, const float *pos, const float *col,
 	glBindBuffer(b.type, b.vbo);
 	checkGLError(280);
 	uint isize = sizeof(float) * 3 * n;
-	glBufferData(b.type, b.bytesSize + (isize * 2), (GLvoid *) 0,
-			GL_STATIC_DRAW);
+	glBufferData(b.type, b.bytesSize + (isize * 2), (GLvoid *) 0,GL_STATIC_DRAW);
 	glBufferSubData(b.type, 0, b.bytesSize, &buff[0]);
 	checkGLError(284);
-	glVertexAttribPointer(VertLoc, 3, b.buffType, GL_FALSE, sizeof(Varying),
-			(GLvoid *) 0);
+	glVertexAttribPointer(VertLoc, 3, b.buffType, GL_FALSE, sizeof(Varying),(GLvoid *) 0);
 	glEnableVertexAttribArray(VertLoc);
-	glVertexAttribPointer(NormalLoc, 3, b.buffType, GL_FALSE, sizeof(Varying),
-			(GLvoid *) (sizeof(float) * 3));
+	glVertexAttribPointer(NormalLoc, 3, b.buffType, GL_FALSE, sizeof(Varying),(GLvoid *) (sizeof(float) * 3));
 	glEnableVertexAttribArray(NormalLoc);
-	glVertexAttribPointer(TexCoordsLoc, 2, b.buffType, GL_FALSE,
-			sizeof(Varying), (GLvoid *) (sizeof(float) * 6));
+	glVertexAttribPointer(TexCoordsLoc, 2, b.buffType, GL_FALSE,sizeof(Varying), (GLvoid *) (sizeof(float) * 6));
 	glEnableVertexAttribArray(TexCoordsLoc);
+
+	// Tangent
+	glVertexAttribPointer(TangentLoc, 3, b.buffType, GL_FALSE, sizeof(Varying),(GLvoid *) 0);
+	glEnableVertexAttribArray(TangentLoc);
+
+	// Bitangent
+	glVertexAttribPointer(BitangentLoc, 3, b.buffType, GL_FALSE, sizeof(Varying),(GLvoid *) 0);
+	glEnableVertexAttribArray(BitangentLoc);
+
 	// instancing attributes
 	if (n > 0) // bypass if there are none
 			{
@@ -354,12 +402,10 @@ uint Geometry::addBuffer(const string& load, const float *pos, const float *col,
 		for (uint i = 0; i < fs; ++i)
 			poscol[i] = (i < k) ? pos[i] : col[i - k];
 		glBufferSubData(b.type, b.bytesSize, isize * 2, &poscol[0]);
-		glVertexAttribPointer(PositionLoc, 3, b.buffType, GL_FALSE, 0,
-				(GLvoid *) b.bytesSize);
+		glVertexAttribPointer(PositionLoc, 3, b.buffType, GL_FALSE, 0,(GLvoid *) b.bytesSize);
 		glEnableVertexAttribArray(PositionLoc);
 		glVertexAttribDivisor(PositionLoc, 1);
-		glVertexAttribPointer(ColourLoc, 3, b.buffType, GL_FALSE, 0,
-				(GLvoid *) (b.bytesSize + isize));
+		glVertexAttribPointer(ColourLoc, 3, b.buffType, GL_FALSE, 0,(GLvoid *) (b.bytesSize + isize));
 		glEnableVertexAttribArray(ColourLoc);
 		glVertexAttribDivisor(ColourLoc, 1);
 	}

@@ -180,5 +180,5 @@ void main()
    float shadowMultiplier = parallaxSoftShadowMultiplier(L, T, parallaxHeight - 0.05);
 
    // calculate lighting
-   resultingColor = vec4(1.0,0.0,0.0,1.0);//normalMappingLighting(T, L, V, shadowMultiplier);
+   resultingColor = normalMappingLighting(T, L, V, shadowMultiplier);
 }
