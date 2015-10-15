@@ -15,7 +15,7 @@ void main()
     vec4 c = texture( colour, texcoord );
     vec4 n = texture( normal, texcoord );
     vec4 e = texture( eye, texcoord );
-    FBColor = e;
     //FBColor = d + c + n + p + e; 
+    FBColor = d + c + n + e;
     //FBColor = vec4(d.r,d.r,d.r,1);
 }
