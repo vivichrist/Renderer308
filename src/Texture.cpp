@@ -281,7 +281,7 @@ GLuint Texture::setupEnvMap( uint resolution )
 	glBindTexture(target, e.depthCMID);
 	for(int face = 0; face < 6; ++face)
 		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, 0,
-					 GL_DEPTH_COMPONENT24, e.res, e.res, 0,
+					 GL_DEPTH_COMPONENT32, e.res, e.res, 0,
 					 GL_DEPTH_COMPONENT, GL_FLOAT, 0);
 	// setting up texture parameters
 	glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
