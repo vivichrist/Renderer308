@@ -161,12 +161,16 @@ void Texture::activateTexturesFB( uint fbID )
 	glBindFramebuffer( GL_FRAMEBUFFER, 0 ); // just in case
 	glActiveTexture( GL_TEXTURE0 );
 	glBindTexture( GL_TEXTURE_2D, fbo.depthID );
+//	glGenerateMipmap(GL_TEXTURE_2D);
 	glActiveTexture( GL_TEXTURE1 );
 	glBindTexture( GL_TEXTURE_2D, fbo.colorID0);
+//	glGenerateMipmap(GL_TEXTURE_2D);
 	glActiveTexture( GL_TEXTURE2 );
 	glBindTexture( GL_TEXTURE_2D, fbo.colorID1 );
+//	glGenerateMipmap(GL_TEXTURE_2D);
 	glActiveTexture( GL_TEXTURE3 );
 	glBindTexture( GL_TEXTURE_2D, fbo.colorID2 );
+//	glGenerateMipmap(GL_TEXTURE_2D);
 }
 
 void Texture::deactivateTexturesFB()

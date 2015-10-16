@@ -331,6 +331,7 @@ int main()
 	std::cout << "\tVersion: " << glGetString( GL_VERSION ) << std::endl;
 	std::cout << "\tGLSL:	" << glGetString( GL_SHADING_LANGUAGE_VERSION )
 			<< std::endl;
+	glfwSwapInterval( 2 );
 
 	glfwSetErrorCallback( error_callback );
 	glfwSetKeyCallback( window, key_callback );
@@ -387,11 +388,11 @@ int main()
 	Geometry *geo = Geometry::getInstance();
 	uint bunny = geo->addBuffer( "res/assets/bunny.obj"
 			, vec3( 0.0f, -1.5f, 0.0f )
-			, vec3( 0.50754f, 0.50754f, 0.50754f ) );
+			, vec3( 0.70754f, 0.70754f, 0.70754f ) );
 	uint sphere = geo->addBuffer( "res/assets/sphere.obj"
-            , vec3( 0.0f, 0.0f, 0.0f ) );
+            , vec3( 5.0f, 0.0f, 5.0f ) );
 	uint table = geo->addBuffer( "res/assets/table.obj"
-            , vec3( 0.0f, -1.0f, 0.0f ) );
+            , vec3( 0.0f, -2.0f, 0.0f ) );
 
 	if ( checkGLErrors( 375 ) ) exit(1);
 
@@ -418,7 +419,7 @@ int main()
 	//                           Main Rendering Loop                         //
 	///////////////////////////////////////////////////////////////////////////
 	float black[] =	{ 0, 0, 0 };
-	float lightPos[] =	{ 0, 10, 0 };
+	vec3 lightPos( 5, 2, 5 );
 	glClearBufferfv( GL_COLOR, 0, black );
 	glViewport( 0, 0, g_width, g_height );
 	fbo = txt->setupFBO( g_width, g_height );
@@ -469,14 +470,14 @@ int main()
 
 	glBindTexture(GL_TEXTURE_2D, noiseTex);
 	glActiveTexture(GL_TEXTURE0);
-
+	float lightRot = M_1_PI / 30;
 	while ( !glfwWindowShouldClose( window ) )
 	{
 		// load values into the uniform slots of the shader and draw
 		txt->activateFrameBuffer( fbo );
 
 		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-
+		glEnable( GL_DEPTH_TEST );
 		shader.use();
 			glUniform1i( shader("image"), 0 );
 			glUniformMatrix4fv( shader( "mvM" ), 1, GL_FALSE,
@@ -485,14 +486,16 @@ int main()
 					value_ptr( g_cam->getProjectionMatrix() ) );
 			glUniformMatrix3fv( shader( "normM" ), 1, GL_FALSE,
 					value_ptr( g_cam->getNormalMatrix() ) );
-			glUniform3fv( shader( "lightP" ), 1, lightPos );
+			glUniform3f( shader( "lightP" ), lightPos.x, lightPos.y, lightPos.z );
 			if (drawBunny) geo->draw( bunny, 1 );
 			else geo->draw( sphere, 1 );
-//			geo->draw( table, 1 );
+			geo->draw( table, 1 );
 		shader.unUse();
 		txt->activateTexturesFB( fbo );
+		lightPos = rotateY( lightPos, lightRot );
 
 		glClear( GL_DEPTH_BUFFER_BIT );
+		glDisable( GL_DEPTH_TEST );
 		postShader.use();
 			glUniform1i( postShader("depth"), 0 );
 			glUniform1i( postShader("colour"), 1 );

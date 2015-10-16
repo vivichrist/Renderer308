@@ -130,6 +130,6 @@ void main()
 		FBColor = max(multiplier, 0.2) * vec4(1,1,1,1);
 	}
 	else {
-		FBColor = max(multiplier, 0.2) * c;
+		FBColor = max(multiplier, 0.2) * c + e;
 	}
 }
