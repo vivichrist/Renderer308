@@ -161,16 +161,16 @@ void Texture::activateTexturesFB( uint fbID )
 	glBindFramebuffer( GL_FRAMEBUFFER, 0 ); // just in case
 	glActiveTexture( GL_TEXTURE0 );
 	glBindTexture( GL_TEXTURE_2D, fbo.depthID );
-//	glGenerateMipmap(GL_TEXTURE_2D);
+	glGenerateMipmap(GL_TEXTURE_2D);
 	glActiveTexture( GL_TEXTURE1 );
 	glBindTexture( GL_TEXTURE_2D, fbo.colorID0);
-//	glGenerateMipmap(GL_TEXTURE_2D);
+	glGenerateMipmap(GL_TEXTURE_2D);
 	glActiveTexture( GL_TEXTURE2 );
 	glBindTexture( GL_TEXTURE_2D, fbo.colorID1 );
-//	glGenerateMipmap(GL_TEXTURE_2D);
+	glGenerateMipmap(GL_TEXTURE_2D);
 	glActiveTexture( GL_TEXTURE3 );
 	glBindTexture( GL_TEXTURE_2D, fbo.colorID2 );
-//	glGenerateMipmap(GL_TEXTURE_2D);
+	glGenerateMipmap(GL_TEXTURE_2D);
 }
 
 void Texture::deactivateTexturesFB()
@@ -221,7 +221,7 @@ GLuint Texture::setupFBO( uint width, uint height )
 	glGenTextures( 1, &fbo.colorID0 );
 	glBindTexture( GL_TEXTURE_2D, fbo.colorID0 );
 	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA
-			, GL_UNSIGNED_BYTE, 0 );
+			, GL_FLOAT, 0 );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
@@ -229,11 +229,11 @@ GLuint Texture::setupFBO( uint width, uint height )
 	glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D
 			, fbo.colorID0, 0 );
 
-	// Generate and bind the texture for texture coordinates
+	// Generate and bind the texture for vertex normals
 	glGenTextures( 1, &fbo.colorID1 );
 	glBindTexture( GL_TEXTURE_2D, fbo.colorID1 );
-	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA
-			, GL_UNSIGNED_BYTE, 0 );
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA
+			, GL_FLOAT, 0 );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );

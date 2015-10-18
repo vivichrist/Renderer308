@@ -340,7 +340,6 @@ int main()
 	glfwSetCursorPosCallback( window, mousemotion_callback );
 	glfwSetFramebufferSizeCallback( window, resize_callback );
 	// tell GL to only draw onto a pixel if the shape is closer to the viewer
-	glEnable( GL_DEPTH_TEST );
 	glDepthFunc( GL_LEQUAL );
 	/************************************************************
 	 * Load up a shader from the given files.
@@ -388,9 +387,9 @@ int main()
 	Geometry *geo = Geometry::getInstance();
 	uint bunny = geo->addBuffer( "res/assets/bunny.obj"
 			, vec3( 0.0f, -1.5f, 0.0f )
-			, vec3( 0.70754f, 0.70754f, 0.70754f ) );
+			, vec3( 0.80754f, 0.90754f, 0.90754f ) );
 	uint sphere = geo->addBuffer( "res/assets/sphere.obj"
-            , vec3( 5.0f, 0.0f, 5.0f ) );
+            , vec3( 0.0f, 2.0f, 0.0f ) );
 	uint table = geo->addBuffer( "res/assets/table.obj"
             , vec3( 0.0f, -2.0f, 0.0f ) );
 
@@ -420,6 +419,14 @@ int main()
 	///////////////////////////////////////////////////////////////////////////
 	float black[] =	{ 0, 0, 0 };
 	vec3 lightPos( 5, 2, 5 );
+	float blur[] = {
+		  1, 4, 7, 4, 1
+		, 4, 16, 26, 16, 4
+		, 7, 26, 41, 26, 7
+		, 4, 16, 26, 16, 4
+		, 1, 4, 7, 4, 1
+	};
+	for ( float& f: blur ) f /= 273.0f;
 	glClearBufferfv( GL_COLOR, 0, black );
 	glViewport( 0, 0, g_width, g_height );
 	fbo = txt->setupFBO( g_width, g_height );
