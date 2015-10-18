@@ -1,14 +1,13 @@
 #version 330
 
 #define MAX_KERNEL_SIZE 128
-out vec4 FBColor;
+layout(location = 1) out vec4 FBColor;
 
 in vec2 texcoord;
 
 uniform sampler2D depth;
 uniform sampler2D colour;
 uniform sampler2D normal;
-uniform sampler2D eye;
 
 uniform vec2 pixelSize;
 uniform int aoMode;
@@ -21,7 +20,6 @@ uniform int kernelSize;
 uniform int kernelRadius;
 
 uniform float zoom;
-const float dof = 0.8;
 
 vec4 getViewSpacePosition( in vec2 uv ) {
     float x = uv.s * 2.0 - 1.0;
@@ -39,7 +37,6 @@ void main()
     float d = texture( depth, texcoord ).r;
     vec4 c = texture( colour, texcoord );
     vec4 n = texture( normal, texcoord );
-    vec4 e = texture( eye, texcoord );
     FBColor = c;
 //    int KernelSize = 32;
 //    int KernelRadius = 4;
@@ -85,10 +82,10 @@ void main()
 //	FBColor = vec4(vec3(occlusion), 1.0);
 
 	float d2 = d - 0.01;
-//	if (d == 1){
-//		FBColor = vec4(0,0,0,1);
-//		return;
-//	}
+	if (d == 1){
+		FBColor = vec4(0,0,0,1);
+		return;
+	}
 
 	float threshold = 1.0, range = 50.0, strength = 0.005, multiplier = threshold;
 	float end = (range*(1/zoom));
@@ -119,44 +116,14 @@ void main()
 			multiplier -= strength;
 		}
 	}
-	
-    // viv's code start
-	float occ = max(multiplier, 0.2);
-    float adjz = 0.091575092, cent = 0.15018315, comp = 1 - cent;
-    vec2 quads[8];
-    float dofOffset = abs( (dof - d)/(1 - dof) );
-    vec2 halfpix = pixelSize * 0.5;
-    vec4 composite = vec4(0);
-    vec4 bloom = vec4(0);
-    for ( float k = 0.0; k < 16.0; k+=1.0 )
-    {
-        float x = mod(k, 4.0) * pixelSize.x, y = floor( k * 0.25) * pixelSize.y;
-        vec2 pos = vec2( x - pixelSize.x * 1.5, y - pixelSize.y * 1.5 );
-        composite += textureLod( colour, texcoord.xy + pos, 4 );
-        composite += textureLod( colour, texcoord.xy + pos * 2.0, 8 );
-        composite += textureLod( colour, texcoord.xy + pos * 4.0, 12 );
-    }
-    for ( float k = 0.0; k < 16.0; k+=1.0 )
-    {
-        float x = mod(k, 4.0) * pixelSize.x, y = floor( k * 0.25) * pixelSize.y;
-        vec2 pos = vec2( x - pixelSize.x * 1.5, y - pixelSize.y * 1.5 );
-        bloom += textureLod( eye, texcoord.xy + pos, 4 );
-        bloom += textureLod( eye, texcoord.xy + pos * 2.0, 6 );
-        bloom += textureLod( eye, texcoord.xy + pos * 4.0, 8 );
-        bloom += textureLod( eye, texcoord.xy + pos * 6.0, 10 );
-        bloom += textureLod( eye, texcoord.xy + pos * 8.0, 12 );
-        bloom += textureLod( eye, texcoord.xy + pos * 10.0, 16 );
-    }
-    // viv's code end
 
 	if (aoMode == 1 && texcoord.x > 0.5){
-		FBColor = occ * vec4(1,1,1,1);
+		FBColor = (multiplier * 0.2) * vec4(1,1,1,1);
 	}
 	else if (aoMode == 2){
-		FBColor = occ * vec4(1,1,1,1);
+		FBColor = (multiplier * 0.2) * vec4(1,1,1,1);
 	}
 	else {
-		FBColor = vec4( (composite.xyz * 0.05) * dofOffset * occ + (bloom.xyz * 0.05)
-		              + ((1 - dofOffset) * c.xyz * occ), 1);
+		FBColor = vec4( (multiplier * 0.05) + c.xyz, 1);
 	}
 }

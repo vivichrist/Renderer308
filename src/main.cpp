@@ -26,6 +26,7 @@ Camera *g_cam = nullptr;
 Lights *g_lights = Lights::getInstance();
 uint g_spotlight, g_spotgeom;
 vec3 g_spotlight_pos;
+vec2 pixSize;
 mat4 g_spotlight_rot;
 float g_light_array[160];
 GLint g_num_of_lights;
@@ -35,7 +36,7 @@ const int kernelSize = 32;
 GLfloat noiseScale[2];
 GLfloat noise[3*kernelRadius*kernelRadius];
 GLuint noiseTex;
-uint fbo;
+uint fbo, stage1fbo;
 Texture* txt;
 
 int aoMode = 0;
@@ -248,8 +249,10 @@ void resize_callback( GLFWwindow * window, int newWidth, int newHeight )
 	g_height = newHeight;
 	g_height = g_height > 0 ? g_height : 1;
 	g_cam->setAspectRatio( g_width, g_height );
+	pixSize = vec2( 1.0f/g_width, 1.0f/g_height );
 	glViewport( 0, 0, g_width, g_height );
 	fbo = txt->setupFBO( g_width, g_height );
+	stage1fbo = txt->setupStage1FBO( g_width, g_height );
 }
 
 /******************************************************************************
@@ -368,7 +371,6 @@ int main()
 		postShader.addUniform( "depth" );
 		postShader.addUniform( "colour" );
 		postShader.addUniform( "normal" );
-		postShader.addUniform( "eye" );
 		postShader.addUniform( "pixelSize" );
 		postShader.addUniform( "aoMode" );
 		postShader.addUniform( "projMat" );
@@ -378,6 +380,21 @@ int main()
 		postShader.addUniform( "kernelRadius" );
 		postShader.addUniform( "zoom" );
 	postShader.unUse();
+	// print debugging info
+	shader.printActiveUniforms();
+
+	Shader ppShader;
+	ppShader.loadFromFile( GL_VERTEX_SHADER, "vertex_pdef.glsl" );
+	ppShader.loadFromFile( GL_GEOMETRY_SHADER, "geometry_pdef.glsl" );
+	ppShader.loadFromFile( GL_FRAGMENT_SHADER, "fragment_pp.glsl" );
+	ppShader.createAndLinkProgram();
+	ppShader.use();
+		ppShader.addUniform( "depth" );
+		ppShader.addUniform( "colour" );
+		ppShader.addUniform( "eye" );
+		ppShader.addUniform( "pixelSize" );
+		ppShader.addUniform( "dof" );
+	ppShader.unUse();
 	// print debugging info
 	shader.printActiveUniforms();
 	/****************************************************************************
@@ -430,6 +447,7 @@ int main()
 	glClearBufferfv( GL_COLOR, 0, black );
 	glViewport( 0, 0, g_width, g_height );
 	fbo = txt->setupFBO( g_width, g_height );
+	stage1fbo = txt->setupFBO( g_width, g_height );
 
     GLfloat ssaoKernel[3 * kernelSize];
 	srand(time(NULL));
@@ -460,6 +478,9 @@ int main()
 		noise[i*3 + 1] = randVec.y;
 		noise[i*3 + 2] = randVec.z;
 	}
+
+	pixSize.x = 1.0f/g_width;
+	pixSize.y = 1.0f/g_height;
 
 	noiseScale[0] = g_width / 4.0;
 	noiseScale[1] = g_height / 4.0;
@@ -501,25 +522,36 @@ int main()
 		txt->activateTexturesFB( fbo );
 		lightPos = rotateY( lightPos, lightRot );
 
+		txt->activateFrameBuffer( stage1fbo );
 		glClear( GL_DEPTH_BUFFER_BIT );
 		glDisable( GL_DEPTH_TEST );
 		postShader.use();
 			glUniform1i( postShader("depth"), 0 );
 			glUniform1i( postShader("colour"), 1 );
 			glUniform1i( postShader("normal"), 2 );
-			glUniform1i( postShader("eye"), 3 );
 			glUniform1i( postShader("noiseTexture"), 4 );
 			glUniform1i( postShader("aoMode"), aoMode );
 			glUniform3fv( postShader("kernel"), kernelSize, ssaoKernel);
 			glUniformMatrix4fv( postShader( "projMat" ), 1, GL_FALSE,
 					value_ptr( g_cam->getProjectionMatrix() ) );
-			glUniform2f( postShader("pixelSize"), 1.0/g_width, 1.0/g_height);
+			glUniform2f( postShader("pixelSize"), pixSize.x, pixSize.y);
 			glUniform2f( postShader("noiseScale"), noiseScale[0], noiseScale[1] );
 			glUniform1i( postShader("kernelSize"), kernelSize );
 			glUniform1i( postShader("kernelRadius"), kernelRadius );
 			glUniform1f( postShader("zoom"), glm::length(g_cam->getPosition())/10.0);
 			glDrawArrays(GL_POINTS, 0, 1);
 		postShader.unUse();
+		txt->activateTexturesFB( fbo );
+		txt->activateColourBFromFB( stage1fbo );
+		glClear( GL_DEPTH_BUFFER_BIT );
+		ppShader.use();
+			glUniform1i( ppShader("depth"), 0 );
+			glUniform1i( ppShader("colour"), 1 );
+			glUniform1i( ppShader("eye"), 3 );
+			glUniform1f( ppShader("dof"), 0.5f );
+			glUniform2f( ppShader("pixelSize"), pixSize.x, pixSize.y);
+			glDrawArrays(GL_POINTS, 0, 1);
+		ppShader.unUse();
 
 		//txt->deactivateTexturesFB();
 
