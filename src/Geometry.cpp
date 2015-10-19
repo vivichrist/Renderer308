@@ -320,6 +320,7 @@ uint Geometry::addBuffer(const string& load, const float *pos, const float *col,
 	vector<vec3> v;
 	triangles.getPoints(v);
 	vector<vec2> vt;
+	cerr << "a" << endl;
 	triangles.getUVs(vt);
 	vector<vec3> vn;
 	triangles.getNormals(vn);
@@ -331,20 +332,32 @@ uint Geometry::addBuffer(const string& load, const float *pos, const float *col,
 		cout << "No Vertices To Load!";
 		throw;
 	}
+	cerr << "b " << max << endl;
 	Varying buff[max];
+	cerr << "c " << endl;
 	uint i = 0;
 	for (triangle t : tris) { // load in the location data each possibly empty except points
 
 		// Edges of the triangle : position delta
-		vec3 edge1 = v[t.v[1].p]-v[t.v[0].p];
-		vec3 edge2 = v[t.v[2].p]-v[t.v[0].p];
+		vec3 edge1 = v[t.v[1].n]-v[t.v[0].n];
+		vec3 edge2 = v[t.v[2].n]-v[t.v[0].n];
 
 		//cerr << "DeltaPos 1: "<< deltaPos1.x << "," << deltaPos1.y << "," << deltaPos1.z << endl;
 		//cerr << "DeltaPos 2: "<< deltaPos2.x << "," << deltaPos2.y << "," << deltaPos2.z << endl;
 
 		// UV delta
-		vec2 deltaUV1 = vt[t.v[1].t]-vt[t.v[0].t];
-		vec2 deltaUV2 = vt[t.v[2].t]-vt[t.v[0].t];
+		vec2 deltaUV1;
+		vec2 deltaUV2;
+		if( vt.size() > 0 ){
+			//cerr << "Success " << vt.size() << endl;
+			deltaUV1 = vt[t.v[1].t]-vt[t.v[0].t];
+			deltaUV2 = vt[t.v[2].t]-vt[t.v[0].t];
+		}
+		else{
+			//cerr << "Failed" << endl;
+			deltaUV1 = vec2(0);
+			deltaUV2 = vec2(0);
+		}
 
 		for (uint j = 0; j < 3; ++j) {
 			Varying b;
