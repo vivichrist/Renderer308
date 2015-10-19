@@ -33,7 +33,7 @@ GLint g_num_of_lights;
 
 const int kernelRadius = 4;
 const int kernelSize = 32;
-GLfloat noiseScale[2];
+GLfloat noiseScale[2], g_dof;
 GLfloat noise[3*kernelRadius*kernelRadius];
 GLuint noiseTex;
 uint fbo, stage1fbo;
@@ -150,6 +150,15 @@ void key_callback( GLFWwindow * window, int key, int scancode
 		}
 	}
 
+	if (key == GLFW_KEY_KP_ADD && (action == GLFW_PRESS || action == GLFW_REPEAT) ){
+		g_dof += 0.01f;
+		g_dof = g_dof > 1.0f ? 1.0f : g_dof;
+	}
+
+	if (key == GLFW_KEY_KP_SUBTRACT && (action == GLFW_PRESS || action == GLFW_REPEAT) ){
+		g_dof -= 0.01f;
+		g_dof = g_dof < 0.0f ? 0.0f : g_dof;
+	}
 	if (key == GLFW_KEY_O && action == GLFW_PRESS ){
 		aoMode++;
 		aoMode %= 3;
@@ -226,8 +235,7 @@ void scroll_callback( GLFWwindow * window, double x, double y )
     }
     else
       // zoom in
-      g_cam->zoomIn();
-
+       g_cam->zoomIn();
 	}
 	else if ( y < 0 )
 	{
@@ -239,7 +247,6 @@ void scroll_callback( GLFWwindow * window, double x, double y )
 	  else
       // zoom out
       g_cam->zoomOut();
-
 	}
 }
 
@@ -429,6 +436,8 @@ int main()
 
 	// Camera to get model view and projection matices from. Amongst other things
 	g_cam = new Camera( vec3( 0.0f, 2.0f, 10.0f ), g_width, g_height );
+	g_cam->setupProjection( M_PI_4, (float) g_width / (float) g_height
+						, 0.5f, 100.0f );
 	g_cam->setLookCenter();
 
 	///////////////////////////////////////////////////////////////////////////
@@ -548,7 +557,7 @@ int main()
 			glUniform1i( ppShader("depth"), 0 );
 			glUniform1i( ppShader("colour"), 1 );
 			glUniform1i( ppShader("eye"), 3 );
-			glUniform1f( ppShader("dof"), 0.5f );
+			glUniform1f( ppShader("dof"), g_dof );
 			glUniform2f( ppShader("pixelSize"), pixSize.x, pixSize.y);
 			glDrawArrays(GL_POINTS, 0, 1);
 		ppShader.unUse();

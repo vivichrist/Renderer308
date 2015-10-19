@@ -19,7 +19,7 @@ const glm::vec3 Camera::UP( 0.0f, 1.0f, 0.0f );
  * are all currently in degrees.
  */
 Camera::Camera( const glm::vec3 &initpos, int width, int height )
-: yaw(0), pitch(0), roll(0), fov(M_PI/4.0f), z_near(1.0f), z_far(100.0f)
+: yaw(0), pitch(0), roll(0), fov(M_PI/4.0f), z_near(1.0f), z_far(1000.0f)
 , rotation_changed(true), movement_changed(true), view_changed(true)
 , forward(false), backward(false), sleft(false), sright(false), lift(false)
 , descent(false), speed(0.05)
