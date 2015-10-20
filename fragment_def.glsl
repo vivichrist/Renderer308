@@ -5,7 +5,7 @@
 
 layout(location = 1) out vec4 colour;
 layout(location = 2) out vec4 normal;
-layout(location = 3) out vec4 eye;
+layout(location = 3) out vec4 spec;
 
 smooth in vec2 vUV;
 smooth in vec3 vNormal;
@@ -215,6 +215,7 @@ void main()
 
     float spec = max(0.0, dot(n,halfway));
     eye = vec4(0);
+
 
     // If the diffuse light is zero, don’t even bother with the pow function
     if ( lightIntensity > 0 )
