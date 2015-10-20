@@ -33,8 +33,9 @@ GLint g_num_of_lights;
 
 // Ambient Occlusion
 int aoMode = 0;
+int noiseMode = 1;
 const int hemisphereRadius = 4;
-const int hemisphereSize = 128;
+const int hemisphereSize = 32;
 GLfloat noiseScale[2], g_dof = 0.5;
 GLfloat noise[3*hemisphereRadius*hemisphereRadius];
 GLuint noiseTex;
@@ -168,10 +169,13 @@ void key_callback( GLFWwindow * window, int key, int scancode
 		aoMode++;
 		aoMode %= 3;
 	}
-
 	if (key == GLFW_KEY_P && action == GLFW_PRESS ){
 		shape++;
 		shape %= 3;
+	}
+	if (key == GLFW_KEY_I && action == GLFW_PRESS ){
+		noiseMode ++;
+		noiseMode %= 2;
 	}
 }
 
@@ -395,6 +399,7 @@ int main()
 		postShader.addUniform( "aoMode" );
 		postShader.addUniform( "projMat" );
 		postShader.addUniform( "noiseScale" );
+		postShader.addUniform( "noiseMode" );
 		postShader.addUniform( "noiseTexture" );
 		postShader.addUniform( "hemisphere" );
 		postShader.addUniform( "hemisphereSize" );
@@ -571,6 +576,7 @@ int main()
 			glUniform1i( postShader("normal"), 2 );
 			glUniform1i( postShader("noiseTexture"), 8 );
 			glUniform1i( postShader("aoMode"), aoMode );
+			glUniform1i( postShader("noiseMode"), noiseMode );
 			glUniform3fv( postShader("hemisphere"), hemisphereSize, samplePoints);
 			glUniformMatrix4fv( postShader( "projMat" ), 1, GL_FALSE, value_ptr( g_cam->getProjectionMatrix() ) );
 			glUniform2f( postShader("noiseScale"), noiseScale[0], noiseScale[1] );
@@ -579,40 +585,37 @@ int main()
 			glDrawArrays(GL_POINTS, 0, 1);
 		postShader.unUse();
 
-//    glClear( GL_DEPTH_BUFFER_BIT );
-    ppShader.use();
-      glUniform1i( ppShader("colour"), 0 );
-      glUniform1i( ppShader("spec"), 1 );
-      glUniform2f( ppShader("pixelSize"), pixSize.x, pixSize.y);
+		ppShader.use();
+		  glUniform1i( ppShader("colour"), 0 );
+		  glUniform1i( ppShader("spec"), 1 );
+		  glUniform2f( ppShader("pixelSize"), pixSize.x, pixSize.y);
 
-      glUniform1i( ppShader("isVert"), 0 );
-      txt->activateStage2FB( stage1fbo, fbo, ppfbo[0] );
-      glDisable( GL_DEPTH_TEST );
-      //glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-      glDrawArrays(GL_POINTS, 0, 1);
+		  glUniform1i( ppShader("isVert"), 0 );
+		  txt->activateStage2FB( stage1fbo, fbo, ppfbo[0] );
+		  glDisable( GL_DEPTH_TEST );
+		  glDrawArrays(GL_POINTS, 0, 1);
 
-      for ( i = 0; i<9; ++i )
-      {
-        glUniform1i( ppShader("isVert"), i % 2 );
-        txt->swapPPFBO( ppfbo[(i + 1) % 2], ppfbo[i % 2] );
-        //glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-        glDrawArrays(GL_POINTS, 0, 1);
-	    }
-    ppShader.unUse();
+		  for ( i = 0; i<9; ++i )
+		  {
+			glUniform1i( ppShader("isVert"), i % 2 );
+			txt->swapPPFBO( ppfbo[(i + 1) % 2], ppfbo[i % 2] );
+			glDrawArrays(GL_POINTS, 0, 1);
+			}
+		ppShader.unUse();
 
-    // setup combine shader with the last shader as input
-		glBindFramebuffer( GL_FRAMEBUFFER, 0 );
-    txt->combineStage( fbo, stage1fbo, ppfbo[0] );
-		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-		glDisable( GL_DEPTH_TEST );
-    combine.use();
-      glUniform1i( combine("depth"), 0 );
-      glUniform1i( combine("colour"), 1 );
-      glUniform1i( combine("blurColour"), 2 );
-      glUniform1i( combine("blurSpec"), 3 );
-      glUniform1f( combine("dof"), g_dof );
-      glDrawArrays(GL_POINTS, 0, 1);
-    combine.unUse();
+		// setup combine shader with the last shader as input
+			glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+		txt->combineStage( fbo, stage1fbo, ppfbo[0] );
+			glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+			glDisable( GL_DEPTH_TEST );
+		combine.use();
+		  glUniform1i( combine("depth"), 0 );
+		  glUniform1i( combine("colour"), 1 );
+		  glUniform1i( combine("blurColour"), 2 );
+		  glUniform1i( combine("blurSpec"), 3 );
+		  glUniform1f( combine("dof"), g_dof );
+		  glDrawArrays(GL_POINTS, 0, 1);
+		combine.unUse();
 
 		txt->deactivateTexturesFB();
 

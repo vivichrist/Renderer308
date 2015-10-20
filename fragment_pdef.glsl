@@ -11,6 +11,7 @@ uniform sampler2D colour;
 uniform sampler2D normal;
 
 uniform int aoMode;
+uniform int noiseMode;
 uniform vec3 hemisphere[MAX_SAMPLE_POINTS];
 uniform mat4 projMat;
 
@@ -32,7 +33,10 @@ void main()
     vec3 norm = normalize(texture( normal, texcoord ).xyz);
 
 	vec4 viewSpacePosition = toViewSpace(texcoord);
-	vec4 randomSample = texture(noiseTexture, texcoord * noiseScale);
+	vec4 randomSample = vec4(1,1,0,0);
+	if (noiseMode == 1){
+		randomSample = texture(noiseTexture, texcoord * noiseScale);
+	}
     vec3 randomVec = normalize(randomSample.xyz);
 	vec3 tangent = normalize(randomVec - norm * dot(randomVec, norm));
 	mat3 transformationMatrix = mat3(tangent, cross(norm, tangent), norm);
