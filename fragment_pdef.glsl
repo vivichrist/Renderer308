@@ -38,41 +38,42 @@ void main()
     float d = texture( depth, texcoord ).r;
     vec4 c = texture( colour, texcoord );
     vec4 n = texture( normal, texcoord );
+	FBColor = c;//vec4(d,d,d,1);
 
-    vec3 normal = normalize(n.xyz);
-
-	// Caclulate view space position and normal
-	vec4 viewSpacePosition = getViewSpacePosition(texcoord);
-	vec4 randomSample = texture(noiseTexture, texcoord*noiseScale);
-    vec3 randomVec = normalize(randomSample.xyz);
-	vec3 tangent = normalize(randomVec - normal * dot(randomVec, normal));
-	vec3 bitangent = cross(normal, tangent);
-	mat3 transformationMatrix = mat3(tangent, bitangent, normal);
-
-	float occlusion = 0.0;
-	for(int i = 0; i < kernelSize; i++) {
-		// Get sample position
-		vec4 samplePoint = vec4(transformationMatrix * kernel[i], 0.0);
-		samplePoint = samplePoint * kernelRadius + viewSpacePosition;
-		float z = samplePoint.z;
-
-		// Project sample position;
-		samplePoint = projMat * samplePoint;
-		samplePoint /= samplePoint.w;
-		vec2 sampleTexCoord = samplePoint.xy;
-
-		// Get sample depth
-		float sampleDepth = texture(depth, sampleTexCoord).r;
-		float delta = samplePoint.z - sampleDepth;
-
-		// Get real depth and check if sample is within the kernel radius
-		float linearDepth = getViewSpacePosition(sampleTexCoord).z;
-		float rangeCheck = abs(viewSpacePosition.z - linearDepth) < kernelRadius ? 1.0 : 0.0;
-
-		// Contribute to occlusion if within radius and larger than a small number to prevent crazy artifacts
-		occlusion += (delta > 0.0000 ? 1.0 : 0.0) * rangeCheck;
-	}
-
-	occlusion = 1.0 - (occlusion / float(kernelSize));
-	FBColor = vec4(vec3(occlusion), 1.0);
+//    vec3 normal = normalize(n.xyz);
+//
+//	// Caclulate view space position and normal
+//	vec4 viewSpacePosition = getViewSpacePosition(texcoord);
+//	vec4 randomSample = texture(noiseTexture, texcoord*noiseScale);
+//    vec3 randomVec = normalize(randomSample.xyz);
+//	vec3 tangent = normalize(randomVec - normal * dot(randomVec, normal));
+//	vec3 bitangent = cross(normal, tangent);
+//	mat3 transformationMatrix = mat3(tangent, bitangent, normal);
+//
+//	float occlusion = 0.0;
+//	for(int i = 0; i < kernelSize; i++) {
+//		// Get sample position
+//		vec4 samplePoint = vec4(transformationMatrix * kernel[i], 0.0);
+//		samplePoint = samplePoint * kernelRadius + viewSpacePosition;
+//		float z = samplePoint.z;
+//
+//		// Project sample position;
+//		samplePoint = projMat * samplePoint;
+//		samplePoint /= samplePoint.w;
+//		vec2 sampleTexCoord = samplePoint.xy;
+//
+//		// Get sample depth
+//		float sampleDepth = texture(depth, sampleTexCoord).r;
+//		float delta = samplePoint.z - sampleDepth;
+//
+//		// Get real depth and check if sample is within the kernel radius
+//		float linearDepth = getViewSpacePosition(sampleTexCoord).z;
+//		float rangeCheck = abs(viewSpacePosition.z - linearDepth) < kernelRadius ? 1.0 : 0.0;
+//
+//		// Contribute to occlusion if within radius and larger than a small number to prevent crazy artifacts
+//		occlusion += (delta > 0.0000 ? 1.0 : 0.0) * rangeCheck;
+//	}
+//
+//	occlusion = 1.0 - (occlusion / float(kernelSize));
+//	FBColor = vec4(vec3(occlusion), 1.0);
 }

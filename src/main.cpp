@@ -436,6 +436,7 @@ int main()
 		shader.addUniform( "image" );
 		shader.addUniform( "normalmap" );
 		shader.addUniform( "heightmap" );
+		shader.addUniform( "depth" );
 		shader.addUniform( "parallaxScale" );
 		shader.addUniform( "parallaxMinLayer" );
 		shader.addUniform( "parallaxMaxLayer" );
@@ -498,11 +499,11 @@ int main()
 	 ***************************************************************************/
 	//g_spotlight_pos = vec3( 0.0f, 7.0f, 0.0f );
 	Geometry *geo = Geometry::getInstance();
-	uint bunny = geo->addBuffer( "res/assets/bunny.obj"
+	/*uint bunny = geo->addBuffer( "res/assets/dragon.obj"
 			, vec3( 0.0f, -1.5f, 0.0f )
-			, vec3( 0.80754f, 0.90754f, 0.90754f ) );
-	uint sphere = geo->addBuffer( "res/assets/sphere.obj"
-            , vec3( 0.0f, 2.0f, 0.0f ) );
+			, vec3( 0.80754f, 0.90754f, 0.90754f ) );*/
+	uint sphere = geo->addBuffer( "res/assets/teapot.obj"
+            , vec3( 0.0f, -1.5f, 0.0f ) );
 
 	uint table = geo->addBuffer( "res/assets/table.obj"
             , vec3( 0.0f, -2.0f, 0.0f ) );
@@ -512,12 +513,11 @@ int main()
 	txt = Texture::getInstance();
 
 
-	geo->bindTexure( "res/textures/brick2.jpg", box );
-	geo->bindNMTexure( "res/textures/brick2_normal.jpg", box );
-	geo->bindHMTexure( "res/textures/brick2_height.jpg", box );
+	geo->bindTexure( "res/textures/test.jpg", table );
+	geo->bindNMTexure( "res/textures/test_normal.jpg", table );
+	geo->bindHMTexure( "res/textures/test_height.jpg", table );
 
 	geo->bindTexure( "res/textures/brick.jpg", sphere );
-	geo->bindTexure( "res/textures/brick.jpg", table );
 
 	/****************************************************************************
 	 * Setup Lighting
@@ -631,16 +631,13 @@ int main()
 			glUniform1f( shader( "parallaxScale" ), parallaxScale );
 			glUniform1f( shader( "parallaxMinLayer" ), parallaxMinLayer );
 			glUniform1f( shader( "parallaxMaxLayer" ), parallaxMaxLayer );
-			//if (drawBunny) geo->draw( bunny, 1 );
-			//else geo->draw( sphere, 1 );
-			//geo->draw( table, 1 );
-			geo->draw( box, 1 );
 
 			//geo->draw( sphere, 1 );
-			glUniform3f( shader( "lightP" ), lightPos.x, lightPos.y, lightPos.z );
-			if (drawBunny) geo->draw( bunny, 1 );
-			else geo->draw( sphere, 1 );
+			//glUniform3f( shader( "lightP" ), lightPos.x, lightPos.y, lightPos.z );
+			//if (drawBunny) geo->draw( bunny, 1 );
+			//else geo->draw( sphere, 1 );
 			geo->draw( table, 1 );
+			//geo->draw( sphere, 1 );
 		shader.unUse();
 		txt->activateTexturesFB( fbo );
 		lightPos = rotateY( lightPos, lightRot );
@@ -672,20 +669,20 @@ int main()
 			glDrawArrays(GL_POINTS, 0, 1);
 		postShader.unUse();
 
-		txt->activateStage2FB( fbo, stage1fbo );
+		//txt->activateStage2FB( fbo, stage1fbo );
 		//glBindFramebuffer( GL_FRAMEBUFFER, 0 );
-    ppShader.use();
-      glUniform1i( ppShader("colour"), 0 );
-      glUniform1i( ppShader("spec"), 1 );
-      glUniform2f( ppShader("pixelSize"), pixSize.x, pixSize.y);
-      for ( i = 0; i<4; ++i )
-      {
-        glUniform1i( ppShader("isVert"), i % 2 );
-        glClear( GL_DEPTH_BUFFER_BIT );
-        glDrawArrays(GL_POINTS, 0, 1);
-        txt->swapPPFBO( ppfbo[(i + 1) % 2], ppfbo[i % 2] );
-      }
-    ppShader.unUse();
+//    ppShader.use();
+//      glUniform1i( ppShader("colour"), 0 );
+//      glUniform1i( ppShader("spec"), 1 );
+//      glUniform2f( ppShader("pixelSize"), pixSize.x, pixSize.y);
+//      for ( i = 0; i<4; ++i )
+//      {
+//        glUniform1i( ppShader("isVert"), i % 2 );
+//        glClear( GL_DEPTH_BUFFER_BIT );
+//        glDrawArrays(GL_POINTS, 0, 1);
+//        txt->swapPPFBO( ppfbo[(i + 1) % 2], ppfbo[i % 2] );
+//      }
+//    ppShader.unUse();
 
     // setup combine shader with the last shader as input
 //    txt->combineStage( stage1fbo, ppfbo[(i - 1) % 2] );

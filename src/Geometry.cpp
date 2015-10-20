@@ -353,8 +353,8 @@ uint Geometry::addBuffer(const string& load, const float *pos, const float *col,
 	for (triangle t : tris) { // load in the location data each possibly empty except points
 
 		// Edges of the triangle : position delta
-		vec3 edge1 = v[t.v[1].p]-v[t.v[0].p];
-		vec3 edge2 = v[t.v[2].p]-v[t.v[0].p];
+		vec3 edge1 = v[t.v[2].p]-v[t.v[1].p];
+		vec3 edge2 = v[t.v[0].p]-v[t.v[1].p];
 
 		//cerr << "DeltaPos 1: "<< deltaPos1.x << "," << deltaPos1.y << "," << deltaPos1.z << endl;
 		//cerr << "DeltaPos 2: "<< deltaPos2.x << "," << deltaPos2.y << "," << deltaPos2.z << endl;
@@ -407,6 +407,7 @@ uint Geometry::addBuffer(const string& load, const float *pos, const float *col,
 			bitangent.y = f * (-deltaUV2.x * edge1.y + deltaUV1.x * edge2.y);
 			bitangent.z = f * (-deltaUV2.x * edge1.z + deltaUV1.x * edge2.z);
 			bitangent = normalize(bitangent);
+			bitangent = normalize(cross(vn[k.n],tangent));
 
 			b.bitangent[0] = bitangent.x;
 			b.bitangent[1] = bitangent.y;
