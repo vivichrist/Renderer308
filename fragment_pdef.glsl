@@ -10,7 +10,6 @@ uniform sampler2D depth;
 uniform sampler2D colour;
 uniform sampler2D normal;
 
-uniform vec2 pixelSize;
 uniform int aoMode;
 uniform vec3 hemisphere[MAX_SAMPLE_POINTS];
 uniform mat4 projMat;
@@ -19,8 +18,6 @@ uniform vec2 noiseScale;
 uniform sampler2D noiseTexture;
 uniform int hemisphereSize;
 uniform int hemisphereRadius;
-
-uniform float zoom;
 
 vec4 toViewSpace( in vec2 uv ) {
     float x = uv.s;
@@ -35,12 +32,11 @@ vec4 toViewSpace( in vec2 uv ) {
 
 void main()
 {
-    float d = texture( depth, texcoord ).r;
     vec4 c = texture( colour, texcoord );
     vec3 norm = normalize(texture( normal, texcoord ).xyz);
 
 	vec4 viewSpacePosition = toViewSpace(texcoord);
-	vec4 randomSample = texture(noiseTexture, texcoord * noiseScale);
+	vec4 randomSample = texture(noiseTexture, texcoord * (noiseScale * 3));
     vec3 randomVec = normalize(randomSample.xyz);
 	vec3 tangent = normalize(randomVec - norm * dot(randomVec, norm));
 	mat3 transformationMatrix = mat3(tangent, cross(norm, tangent), norm);
