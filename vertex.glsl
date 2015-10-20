@@ -22,7 +22,7 @@ smooth out vec3 vLightDir;
 void main(void)
 {
     // Get surface normal in eye coordinates
-    vNormal = normalize(normM * normal);
+    vNormal = normalize( normM * normal );
 
     vUV = texCoord;
 

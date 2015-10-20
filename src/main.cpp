@@ -26,22 +26,23 @@ Camera *g_cam = nullptr;
 Lights *g_lights = Lights::getInstance();
 uint g_spotlight, g_spotgeom;
 vec3 g_spotlight_pos;
+vec2 pixSize;
 mat4 g_spotlight_rot;
 float g_light_array[160];
 GLint g_num_of_lights;
 
 const int kernelRadius = 4;
 const int kernelSize = 32;
-GLfloat noiseScale[2];
+GLfloat noiseScale[2], g_dof;
 GLfloat noise[3*kernelRadius*kernelRadius];
 GLuint noiseTex;
-uint fbo;
+uint fbo, stage1fbo, ppfbo[2];
 Texture* txt;
 
 int aoMode = 0;
 int drawBunny = 1;
 
-int g_width = 800, g_height = 600;
+int g_width = 1024, g_height = 768;
 
 void error_callback( int error, const char * description )
 {
@@ -149,6 +150,17 @@ void key_callback( GLFWwindow * window, int key, int scancode
 		}
 	}
 
+	if (key == GLFW_KEY_KP_ADD && (action == GLFW_PRESS || action == GLFW_REPEAT) ){
+		g_dof += 0.01f;
+		g_dof = g_dof > 1.0f ? 1.0f : g_dof;
+		cout << "DOF increase: " << g_dof << "\n";
+	}
+
+	if (key == GLFW_KEY_KP_SUBTRACT && (action == GLFW_PRESS || action == GLFW_REPEAT) ){
+		g_dof -= 0.01f;
+		g_dof = g_dof < 0.0f ? 0.0f : g_dof;
+		cout << "DOF decrease: " << g_dof << "\n";
+	}
 	if (key == GLFW_KEY_O && action == GLFW_PRESS ){
 		aoMode++;
 		aoMode %= 3;
@@ -225,8 +237,7 @@ void scroll_callback( GLFWwindow * window, double x, double y )
     }
     else
       // zoom in
-      g_cam->zoomIn();
-
+       g_cam->zoomIn();
 	}
 	else if ( y < 0 )
 	{
@@ -238,7 +249,6 @@ void scroll_callback( GLFWwindow * window, double x, double y )
 	  else
       // zoom out
       g_cam->zoomOut();
-
 	}
 }
 
@@ -248,8 +258,10 @@ void resize_callback( GLFWwindow * window, int newWidth, int newHeight )
 	g_height = newHeight;
 	g_height = g_height > 0 ? g_height : 1;
 	g_cam->setAspectRatio( g_width, g_height );
+	pixSize = vec2( 1.0f/g_width, 1.0f/g_height );
 	glViewport( 0, 0, g_width, g_height );
 	fbo = txt->setupFBO( g_width, g_height );
+	stage1fbo = txt->setupStage1FBO( g_width, g_height );
 }
 
 /******************************************************************************
@@ -269,6 +281,13 @@ int checkGLErrors( int where )
 	}
 
 	return errCount;
+}
+
+float randomFloat(float a, float b) {
+    float random = ((float) rand()) / (float) RAND_MAX;
+    float diff = b - a;
+    float r = random * diff;
+    return a + r;
 }
 
 int main()
@@ -331,6 +350,7 @@ int main()
 	std::cout << "\tVersion: " << glGetString( GL_VERSION ) << std::endl;
 	std::cout << "\tGLSL:	" << glGetString( GL_SHADING_LANGUAGE_VERSION )
 			<< std::endl;
+	glfwSwapInterval( 2 );
 
 	glfwSetErrorCallback( error_callback );
 	glfwSetKeyCallback( window, key_callback );
@@ -339,7 +359,6 @@ int main()
 	glfwSetCursorPosCallback( window, mousemotion_callback );
 	glfwSetFramebufferSizeCallback( window, resize_callback );
 	// tell GL to only draw onto a pixel if the shape is closer to the viewer
-	glEnable( GL_DEPTH_TEST );
 	glDepthFunc( GL_LEQUAL );
 	/************************************************************
 	 * Load up a shader from the given files.
@@ -368,18 +387,47 @@ int main()
 		postShader.addUniform( "depth" );
 		postShader.addUniform( "colour" );
 		postShader.addUniform( "normal" );
-		postShader.addUniform( "eye" );
 		postShader.addUniform( "pixelSize" );
 		postShader.addUniform( "aoMode" );
 		postShader.addUniform( "projMat" );
 		postShader.addUniform( "noiseScale" );
 		postShader.addUniform( "noiseTexture" );
+		postShader.addUniform( "kernel" );
 		postShader.addUniform( "kernelSize" );
 		postShader.addUniform( "kernelRadius" );
 		postShader.addUniform( "zoom" );
 	postShader.unUse();
 	// print debugging info
 	shader.printActiveUniforms();
+
+	Shader ppShader;
+	ppShader.loadFromFile( GL_VERTEX_SHADER, "vertex_pdef.glsl" );
+	ppShader.loadFromFile( GL_GEOMETRY_SHADER, "geometry_pdef.glsl" );
+	ppShader.loadFromFile( GL_FRAGMENT_SHADER, "fragment_pp.glsl" );
+	ppShader.createAndLinkProgram();
+	ppShader.use();
+		ppShader.addUniform( "colour" );
+		ppShader.addUniform( "spec" );
+		ppShader.addUniform( "pixelSize" );
+		ppShader.addUniform( "isVert" );
+	ppShader.unUse();
+	// print debugging info
+	ppShader.printActiveUniforms();
+
+	Shader combine;
+  combine.loadFromFile( GL_VERTEX_SHADER, "vertex_pdef.glsl" );
+  combine.loadFromFile( GL_GEOMETRY_SHADER, "geometry_pdef.glsl" );
+  combine.loadFromFile( GL_FRAGMENT_SHADER, "fragment_combine.glsl" );
+  combine.createAndLinkProgram();
+  combine.use();
+    combine.addUniform( "depth" );
+    combine.addUniform( "colour" );
+    combine.addUniform( "blurColour" );
+    combine.addUniform( "blurSpec" );
+    combine.addUniform( "dof" );
+  combine.unUse();
+  // print debugging info
+  combine.printActiveUniforms();
 	/****************************************************************************
 	 * Setup Geometry
 	 ***************************************************************************/
@@ -387,11 +435,11 @@ int main()
 	Geometry *geo = Geometry::getInstance();
 	uint bunny = geo->addBuffer( "res/assets/bunny.obj"
 			, vec3( 0.0f, -1.5f, 0.0f )
-			, vec3( 0.50754f, 0.50754f, 0.50754f ) );
+			, vec3( 0.80754f, 0.90754f, 0.90754f ) );
 	uint sphere = geo->addBuffer( "res/assets/sphere.obj"
-            , vec3( 0.0f, 0.0f, 0.0f ) );
+            , vec3( 0.0f, 2.0f, 0.0f ) );
 	uint table = geo->addBuffer( "res/assets/table.obj"
-            , vec3( 0.0f, -1.0f, 0.0f ) );
+            , vec3( 0.0f, -2.0f, 0.0f ) );
 
 	if ( checkGLErrors( 375 ) ) exit(1);
 
@@ -412,25 +460,37 @@ int main()
 
 	// Camera to get model view and projection matices from. Amongst other things
 	g_cam = new Camera( vec3( 0.0f, 2.0f, 10.0f ), g_width, g_height );
+	g_cam->setupProjection( M_PI_4, (float) g_width / (float) g_height
+						, 0.5f, 100.0f );
 	g_cam->setLookCenter();
 
 	///////////////////////////////////////////////////////////////////////////
 	//                           Main Rendering Loop                         //
 	///////////////////////////////////////////////////////////////////////////
 	float black[] =	{ 0, 0, 0 };
-	float lightPos[] =	{ 0, 10, 0 };
+	vec3 lightPos( 5, 2, 5 );
+	float blur[] = {
+		  1, 4, 7, 4, 1
+		, 4, 16, 26, 16, 4
+		, 7, 26, 41, 26, 7
+		, 4, 16, 26, 16, 4
+		, 1, 4, 7, 4, 1
+	};
+	for ( float& f: blur ) f /= 273.0f;
 	glClearBufferfv( GL_COLOR, 0, black );
 	glViewport( 0, 0, g_width, g_height );
 	fbo = txt->setupFBO( g_width, g_height );
+	stage1fbo = txt->setupStage1FBO( g_width, g_height );
+	txt->setupPinPongFBO( g_width, g_height, ppfbo[0], ppfbo[1] );
 
     GLfloat ssaoKernel[3 * kernelSize];
 	srand(time(NULL));
 	for(int i = 0; i < kernelSize; i++) {
-		vec3 randVec = vec3( (rand()/(float)RAND_MAX) * 2.0 - 1.0,
-				(rand()/(float)RAND_MAX) * 2.0 - 1.0,
-				(rand()/(float)RAND_MAX));
+		vec3 randVec = vec3( randomFloat(0.0, 1.0),
+				   randomFloat(0.0, 1.0),
+				   randomFloat(0.0, 1.0));
 
-		normalize(randVec);
+		randVec = normalize(randVec);
 
 		float scale = float(i/3) / (float)kernelSize;
 		scale = 0.1 + scale*scale*0.9;
@@ -443,20 +503,26 @@ int main()
 	}
 
 	for(unsigned int i = 0; i < kernelRadius*kernelRadius; i++) {
-		vec3 randVec = glm::vec3( (rand()/(float)RAND_MAX) * 2.0 - 1.0,
-				(rand()/(float)RAND_MAX) * 2.0 - 1.0,
-				0.0);
-		normalize(randVec);
+		vec3 randVec = glm::vec3(randomFloat(0.0, 1.0),
+		   		   randomFloat(0.0, 1.0),
+		   		   0.0);
+
+		randVec = normalize(randVec);
 
 		noise[i*3] = randVec.x;
 		noise[i*3 + 1] = randVec.y;
 		noise[i*3 + 2] = randVec.z;
 	}
 
+	pixSize.x = 1.0f/g_width;
+	pixSize.y = 1.0f/g_height;
+
 	noiseScale[0] = g_width / 4.0;
 	noiseScale[1] = g_height / 4.0;
 
-	glActiveTexture(GL_TEXTURE4);
+	cout << noise[0] << " " << noise[1] << " " << noise[2] << endl;
+
+	glActiveTexture(GL_TEXTURE8);
 	// Create SSAO rotation noise texture
 	glGenTextures(1, &noiseTex);
 	glBindTexture(GL_TEXTURE_2D, noiseTex);
@@ -466,17 +532,16 @@ int main()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	glBindTexture(GL_TEXTURE_2D, 0);
-
-	glBindTexture(GL_TEXTURE_2D, noiseTex);
 	glActiveTexture(GL_TEXTURE0);
-
+	float lightRot = M_1_PI / 30;
+	int i;
 	while ( !glfwWindowShouldClose( window ) )
 	{
 		// load values into the uniform slots of the shader and draw
 		txt->activateFrameBuffer( fbo );
 
 		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-
+		glEnable( GL_DEPTH_TEST );
 		shader.use();
 			glUniform1i( shader("image"), 0 );
 			glUniformMatrix4fv( shader( "mvM" ), 1, GL_FALSE,
@@ -485,25 +550,34 @@ int main()
 					value_ptr( g_cam->getProjectionMatrix() ) );
 			glUniformMatrix3fv( shader( "normM" ), 1, GL_FALSE,
 					value_ptr( g_cam->getNormalMatrix() ) );
-			glUniform3fv( shader( "lightP" ), 1, lightPos );
+			glUniform3f( shader( "lightP" ), lightPos.x, lightPos.y, lightPos.z );
 			if (drawBunny) geo->draw( bunny, 1 );
 			else geo->draw( sphere, 1 );
-//			geo->draw( table, 1 );
+			geo->draw( table, 1 );
 		shader.unUse();
 		txt->activateTexturesFB( fbo );
+		lightPos = rotateY( lightPos, lightRot );
 
+		glActiveTexture(GL_TEXTURE8);
+		glBindTexture(GL_TEXTURE_2D, noiseTex);
+		glActiveTexture(GL_TEXTURE0);
+//		for(int i = 0; i < kernelSize; i++) {
+//			cout << ssaoKernel[i*3] << " " << ssaoKernel[i*3 + 1] << " " << ssaoKernel[i*3 + 2] << endl;
+//		}
+		//txt->activateFrameBuffer( stage1fbo );
+		//glBindFramebuffer( GL_FRAMEBUFFER, 0 );
 		glClear( GL_DEPTH_BUFFER_BIT );
+		glDisable( GL_DEPTH_TEST );
+
 		postShader.use();
 			glUniform1i( postShader("depth"), 0 );
 			glUniform1i( postShader("colour"), 1 );
 			glUniform1i( postShader("normal"), 2 );
-			glUniform1i( postShader("eye"), 3 );
-			glUniform1i( postShader("noiseTexture"), 4 );
+			glUniform1i( postShader("noiseTexture"), 8 );
 			glUniform1i( postShader("aoMode"), aoMode );
 			glUniform3fv( postShader("kernel"), kernelSize, ssaoKernel);
-			glUniformMatrix4fv( postShader( "projMat" ), 1, GL_FALSE,
-					value_ptr( g_cam->getProjectionMatrix() ) );
-			glUniform2f( postShader("pixelSize"), 1.0/g_width, 1.0/g_height);
+			glUniformMatrix4fv( postShader( "projMat" ), 1, GL_FALSE, value_ptr( g_cam->getProjectionMatrix() ) );
+			glUniform2f( postShader("pixelSize"), pixSize.x, pixSize.y);
 			glUniform2f( postShader("noiseScale"), noiseScale[0], noiseScale[1] );
 			glUniform1i( postShader("kernelSize"), kernelSize );
 			glUniform1i( postShader("kernelRadius"), kernelRadius );
@@ -511,7 +585,33 @@ int main()
 			glDrawArrays(GL_POINTS, 0, 1);
 		postShader.unUse();
 
-		//txt->deactivateTexturesFB();
+		txt->activateStage2FB( fbo, stage1fbo );
+		//glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+    ppShader.use();
+      glUniform1i( ppShader("colour"), 0 );
+      glUniform1i( ppShader("spec"), 1 );
+      glUniform2f( ppShader("pixelSize"), pixSize.x, pixSize.y);
+      for ( i = 0; i<4; ++i )
+      {
+        glUniform1i( ppShader("isVert"), i % 2 );
+        glClear( GL_DEPTH_BUFFER_BIT );
+        glDrawArrays(GL_POINTS, 0, 1);
+        txt->swapPPFBO( ppfbo[(i + 1) % 2], ppfbo[i % 2] );
+      }
+    ppShader.unUse();
+
+    // setup combine shader with the last shader as input
+//    txt->combineStage( stage1fbo, ppfbo[(i - 1) % 2] );
+//    combine.use();
+//      glUniform1i( combine("depth"), 0 );
+//      glUniform1i( combine("colour"), 1 );
+//      glUniform1i( combine("blurColour"), 2 );
+//      glUniform1i( combine("blurSpec"), 3 );
+//      glUniform1f( combine("dof"), g_dof );
+//      glDrawArrays(GL_POINTS, 0, 1);
+//    combine.unUse();
+
+		txt->deactivateTexturesFB();
 
 		// make sure the camera rotations, position and matrices are updated
 		g_cam->update();

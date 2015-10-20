@@ -169,6 +169,16 @@ void Texture::activateTexturesFB( uint fbID )
 	glBindTexture( GL_TEXTURE_2D, fbo.colorID2 );
 }
 
+void Texture::activateStage2FB( uint s1fb, uint s2fb )
+{
+	FBObj& fbo1 = framebuffer[s1fb];
+	FBObj& fbo2 = framebuffer[s2fb];
+	glActiveTexture( GL_TEXTURE0 );
+	glBindTexture( GL_TEXTURE_2D, fbo2.colorID0);
+	glActiveTexture( GL_TEXTURE1 );
+	glBindTexture( GL_TEXTURE_2D, fbo1.colorID2 );
+}
+
 void Texture::deactivateTexturesFB()
 {
 	glBindFramebuffer( GL_FRAMEBUFFER, 0 ); // just in case
@@ -182,17 +192,185 @@ void Texture::deactivateTexturesFB()
 	glBindTexture( GL_TEXTURE_2D, 0 );
 }
 
+void Texture::combineStage( uint fbID1, uint fbID2 )
+{
+  FBObj& fbo1 = framebuffer[fbID1], fbo2 = framebuffer[fbID2];
+  glBindFramebuffer( GL_FRAMEBUFFER, 0 ); // just in case
+  glActiveTexture( GL_TEXTURE0 );
+  glBindTexture( GL_TEXTURE_2D, fbo1.depthID ); // old depthBuffer
+  glActiveTexture( GL_TEXTURE1 );
+  glBindTexture( GL_TEXTURE_2D, fbo1.colorID0); // colour
+  glActiveTexture( GL_TEXTURE2 );
+  glBindTexture( GL_TEXTURE_2D, fbo2.colorID0); // blurColour
+  glActiveTexture( GL_TEXTURE3 );
+  glBindTexture( GL_TEXTURE_2D, fbo2.colorID1 ); // blurSpec
+}
+
 void Texture::activateFrameBuffer( uint fbID )
 {
 	glBindFramebuffer( GL_FRAMEBUFFER, fbID );
 	GLenum drawBuffers[] =
+  {
+      GL_COLOR_ATTACHMENT0
+    , GL_COLOR_ATTACHMENT1
+    , GL_COLOR_ATTACHMENT2
+    , GL_COLOR_ATTACHMENT3
+  };
+  glDrawBuffers(4, drawBuffers);
+}
+
+GLuint Texture::setupStage1FBO( uint width, uint height )
+{
+	FBObj fbo;
+	glGenFramebuffers( 1, &fbo.fboID );
+	glBindFramebuffer( GL_FRAMEBUFFER, fbo.fboID );
+
+	// Generate and bind the texture for the depth buffer
+	glGenTextures( 1, &fbo.depthID );
+	glBindTexture( GL_TEXTURE_2D, fbo.depthID );
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32, width, height, 0
+			, GL_DEPTH_COMPONENT, GL_FLOAT, 0 );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+	glFramebufferTexture( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT
+			, fbo.depthID, 0 );
+
+	// Generate and bind the texture for diffuse
+	glGenTextures( 1, &fbo.colorID0 );
+	glBindTexture( GL_TEXTURE_2D, fbo.colorID0 );
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA
+			, GL_FLOAT, 0 );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+	glFramebufferTexture( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1
+			, fbo.colorID0, 0 );
+	// Bind the FBO so that the next operations will be bound to it.
+	// Attach the texture to the FBO
+
+	GLenum fboStatus = glCheckFramebufferStatus( GL_FRAMEBUFFER );
+	if ( fboStatus != GL_FRAMEBUFFER_COMPLETE )
 	{
-		  GL_COLOR_ATTACHMENT0
-		, GL_COLOR_ATTACHMENT1
-		, GL_COLOR_ATTACHMENT2
-		, GL_COLOR_ATTACHMENT3
-	};
-	glDrawBuffers(4, drawBuffers);
+		printf( "DeferredLighting::Init: FrameBuffer incomplete: 0x%x\n",
+				fboStatus );
+		exit( 1 );
+	}
+
+	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+	framebuffer[ fbo.fboID ] = fbo;
+	return fbo.fboID;
+}
+
+void Texture::swapPPFBO( uint fb1, uint fb2 )
+{
+  FBObj& fbo = framebuffer[fb2];
+  glActiveTexture( GL_TEXTURE0 );
+  glBindTexture( GL_TEXTURE_2D, fbo.colorID0);
+  glActiveTexture( GL_TEXTURE1 );
+  glBindTexture( GL_TEXTURE_2D, fbo.colorID1 );
+  glBindFramebuffer( GL_FRAMEBUFFER, fb1 );
+  GLenum drawBuffers[] =
+  {
+      GL_COLOR_ATTACHMENT0
+    , GL_COLOR_ATTACHMENT1
+    , GL_COLOR_ATTACHMENT2
+  };
+  glDrawBuffers(3, drawBuffers);
+}
+
+void Texture::setupPinPongFBO( uint width, uint height, uint& fb1, uint& fb2 )
+{
+  FBObj fbo2, fbo1;
+  glGenFramebuffers( 1, &fbo1.fboID );
+  glGenFramebuffers( 1, &fbo2.fboID );
+
+  // Generate and bind the texture for the depth buffer
+  glGenTextures( 1, &fbo1.depthID );
+  fbo2.depthID = fbo1.depthID;
+  glBindTexture( GL_TEXTURE_2D, fbo1.depthID );
+  glTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, width, height, 0
+      , GL_DEPTH_COMPONENT, GL_FLOAT, 0 );
+  glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+  glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+  glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+  glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+  glBindFramebuffer( GL_FRAMEBUFFER, fbo1.fboID );
+  glFramebufferTexture2D( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D
+      , fbo1.depthID, 0 );
+  glBindFramebuffer( GL_FRAMEBUFFER, fbo2.fboID );
+  glFramebufferTexture2D( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D
+      , fbo2.depthID, 0 );
+  // Generate and bind the texture for fbo1 diffuse
+  glGenTextures( 1, &fbo1.colorID0 );
+  glBindTexture( GL_TEXTURE_2D, fbo1.colorID0 );
+  glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA
+      , GL_FLOAT, 0 );
+  glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+  glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+  glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+  glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+  glBindFramebuffer( GL_FRAMEBUFFER, fbo1.fboID );
+  glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D
+      , fbo1.colorID0, 0 );
+  // Generate and bind the texture for fbo1 highlights
+  glGenTextures( 1, &fbo1.colorID1 );
+  glBindTexture( GL_TEXTURE_2D, fbo1.colorID1 );
+  glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA
+      , GL_FLOAT, 0 );
+  glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+  glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+  glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+  glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+  glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D
+      , fbo1.colorID1, 0 );
+
+  GLenum fboStatus = glCheckFramebufferStatus( GL_FRAMEBUFFER );
+  if ( fboStatus != GL_FRAMEBUFFER_COMPLETE )
+  {
+    printf( "setupPinPongFBO FrameBuffer1 incomplete: 0x%x\n",
+        fboStatus );
+    exit( 1 );
+  }
+  // Generate and bind the texture for fbo2 diffuse
+  glGenTextures( 1, &fbo2.colorID0 );
+  glBindTexture( GL_TEXTURE_2D, fbo2.colorID0 );
+  glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA
+      , GL_FLOAT, 0 );
+  glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+  glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+  glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+  glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+  glBindFramebuffer( GL_FRAMEBUFFER, fbo2.fboID );
+  glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D
+      , fbo2.colorID0, 0 );
+  // Generate and bind the texture for fbo2 highlights
+  glGenTextures( 1, &fbo2.colorID1 );
+  glBindTexture( GL_TEXTURE_2D, fbo2.colorID1 );
+  glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA
+      , GL_FLOAT, 0 );
+  glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+  glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+  glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+  glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+  glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D
+      , fbo2.colorID1, 0 );
+
+  fboStatus = glCheckFramebufferStatus( GL_FRAMEBUFFER );
+  if ( fboStatus != GL_FRAMEBUFFER_COMPLETE )
+  {
+    printf( "setupPinPongFBO FrameBuffer2 incomplete: 0x%x\n",
+        fboStatus );
+    exit( 1 );
+  }
+
+  glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+  framebuffer[ fbo1.fboID ] = fbo1;
+  framebuffer[ fbo2.fboID ] = fbo2;
+  fb1 = fbo1.fboID;
+  fb2 = fbo2.fboID;
 }
 
 GLuint Texture::setupFBO( uint width, uint height )
@@ -216,8 +394,8 @@ GLuint Texture::setupFBO( uint width, uint height )
 	// Generate and bind the texture for diffuse
 	glGenTextures( 1, &fbo.colorID0 );
 	glBindTexture( GL_TEXTURE_2D, fbo.colorID0 );
-	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA
-			, GL_UNSIGNED_BYTE, 0 );
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA
+			, GL_FLOAT, 0 );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
@@ -225,11 +403,11 @@ GLuint Texture::setupFBO( uint width, uint height )
 	glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D
 			, fbo.colorID0, 0 );
 
-	// Generate and bind the texture for texture coordinates
+	// Generate and bind the texture for vertex normals
 	glGenTextures( 1, &fbo.colorID1 );
 	glBindTexture( GL_TEXTURE_2D, fbo.colorID1 );
-	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA
-			, GL_UNSIGNED_BYTE, 0 );
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA
+			, GL_FLOAT, 0 );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
@@ -237,10 +415,10 @@ GLuint Texture::setupFBO( uint width, uint height )
 	glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D
 			, fbo.colorID1, 0 );
 
-	// Generate and bind the texture for eye positions
+	// Generate and bind the texture for specular highlights
 	glGenTextures( 1, &fbo.colorID2 );
 	glBindTexture( GL_TEXTURE_2D, fbo.colorID2 );
-	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA
 			, GL_FLOAT,	0 );
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -388,6 +566,16 @@ Texture::~Texture()
 		glDeleteTextures( 1, &e.second.depthCMID );
 		glDeleteTextures( 1, &e.second.colorCMID );
 		glDeleteFramebuffers( 1, &e.second.fboID );
+	}
+	for ( auto fb : framebuffer )
+	{
+		glDeleteTextures( 1, &fb.second.depthID );
+		glDeleteTextures( 1, &fb.second.colorID0 );
+		glDeleteTextures( 1, &fb.second.colorID1 );
+		glDeleteTextures( 1, &fb.second.colorID2 );
+		glDeleteTextures( 1, &fb.second.colorID3 );
+		glDeleteTextures( 1, &fb.second.colorID4 );
+		glDeleteFramebuffers( 1, &fb.second.fboID );
 	}
 }
 
