@@ -31,15 +31,18 @@ mat4 g_spotlight_rot;
 float g_light_array[160];
 GLint g_num_of_lights;
 
-const int kernelRadius = 4;
-const int kernelSize = 32;
+// Ambient Occlusion
+int aoMode = 0;
+const int hemisphereRadius = 4;
+const int hemisphereSize = 32;
 GLfloat noiseScale[2], g_dof;
-GLfloat noise[3*kernelRadius*kernelRadius];
+GLfloat noise[3*hemisphereRadius*hemisphereRadius];
 GLuint noiseTex;
+
+// Frame Buffers
 uint fbo, stage1fbo, ppfbo[2];
 Texture* txt;
 
-int aoMode = 0;
 int drawBunny = 1;
 
 int g_width = 1024, g_height = 768;
@@ -392,9 +395,9 @@ int main()
 		postShader.addUniform( "projMat" );
 		postShader.addUniform( "noiseScale" );
 		postShader.addUniform( "noiseTexture" );
-		postShader.addUniform( "kernel" );
-		postShader.addUniform( "kernelSize" );
-		postShader.addUniform( "kernelRadius" );
+		postShader.addUniform( "hemisphere" );
+		postShader.addUniform( "hemisphereSize" );
+		postShader.addUniform( "hemisphereRadius" );
 		postShader.addUniform( "zoom" );
 	postShader.unUse();
 	// print debugging info
@@ -483,26 +486,26 @@ int main()
 	stage1fbo = txt->setupStage1FBO( g_width, g_height );
 	txt->setupPinPongFBO( g_width, g_height, ppfbo[0], ppfbo[1] );
 
-    GLfloat ssaoKernel[3 * kernelSize];
+    GLfloat samplePoints[3 * hemisphereSize];
 	srand(time(NULL));
-	for(int i = 0; i < kernelSize; i++) {
+	for(int i = 0; i < hemisphereSize; i++) {
 		vec3 randVec = vec3( randomFloat(0.0, 1.0),
 				   randomFloat(0.0, 1.0),
 				   randomFloat(0.0, 1.0));
 
 		randVec = normalize(randVec);
 
-		float scale = float(i/3) / (float)kernelSize;
+		float scale = float(i/3) / (float)hemisphereSize;
 		scale = 0.1 + scale*scale*0.9;
 
 		randVec *= scale;
 
-		ssaoKernel[i*3] = randVec.x;
-		ssaoKernel[i*3 + 1] = randVec.y;
-		ssaoKernel[i*3 + 2] = randVec.z;
+		samplePoints[i*3] = randVec.x;
+		samplePoints[i*3 + 1] = randVec.y;
+		samplePoints[i*3 + 2] = randVec.z;
 	}
 
-	for(unsigned int i = 0; i < kernelRadius*kernelRadius; i++) {
+	for(unsigned int i = 0; i < hemisphereRadius*hemisphereRadius; i++) {
 		vec3 randVec = glm::vec3(randomFloat(0.0, 1.0),
 		   		   randomFloat(0.0, 1.0),
 		   		   0.0);
@@ -520,19 +523,17 @@ int main()
 	noiseScale[0] = g_width / 4.0;
 	noiseScale[1] = g_height / 4.0;
 
-	cout << noise[0] << " " << noise[1] << " " << noise[2] << endl;
-
 	glActiveTexture(GL_TEXTURE8);
-	// Create SSAO rotation noise texture
 	glGenTextures(1, &noiseTex);
 	glBindTexture(GL_TEXTURE_2D, noiseTex);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, kernelRadius, kernelRadius, 0, GL_RGB, GL_FLOAT, noise);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, hemisphereRadius, hemisphereRadius, 0, GL_RGB, GL_FLOAT, noise);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glActiveTexture(GL_TEXTURE0);
+
 	float lightRot = M_1_PI / 30;
 	int i;
 	while ( !glfwWindowShouldClose( window ) )
@@ -544,12 +545,9 @@ int main()
 		glEnable( GL_DEPTH_TEST );
 		shader.use();
 			glUniform1i( shader("image"), 0 );
-			glUniformMatrix4fv( shader( "mvM" ), 1, GL_FALSE,
-					value_ptr( g_cam->getViewMatrix() ) );
-			glUniformMatrix4fv( shader( "projM" ), 1, GL_FALSE,
-					value_ptr( g_cam->getProjectionMatrix() ) );
-			glUniformMatrix3fv( shader( "normM" ), 1, GL_FALSE,
-					value_ptr( g_cam->getNormalMatrix() ) );
+			glUniformMatrix4fv( shader( "mvM" ), 1, GL_FALSE, value_ptr( g_cam->getViewMatrix() ) );
+			glUniformMatrix4fv( shader( "projM" ), 1, GL_FALSE,	value_ptr( g_cam->getProjectionMatrix() ) );
+			glUniformMatrix3fv( shader( "normM" ), 1, GL_FALSE,	value_ptr( g_cam->getNormalMatrix() ) );
 			glUniform3f( shader( "lightP" ), lightPos.x, lightPos.y, lightPos.z );
 			if (drawBunny) geo->draw( bunny, 1 );
 			else geo->draw( sphere, 1 );
@@ -561,9 +559,7 @@ int main()
 		glActiveTexture(GL_TEXTURE8);
 		glBindTexture(GL_TEXTURE_2D, noiseTex);
 		glActiveTexture(GL_TEXTURE0);
-//		for(int i = 0; i < kernelSize; i++) {
-//			cout << ssaoKernel[i*3] << " " << ssaoKernel[i*3 + 1] << " " << ssaoKernel[i*3 + 2] << endl;
-//		}
+
 		//txt->activateFrameBuffer( stage1fbo );
 		//glBindFramebuffer( GL_FRAMEBUFFER, 0 );
 		glClear( GL_DEPTH_BUFFER_BIT );
@@ -575,12 +571,12 @@ int main()
 			glUniform1i( postShader("normal"), 2 );
 			glUniform1i( postShader("noiseTexture"), 8 );
 			glUniform1i( postShader("aoMode"), aoMode );
-			glUniform3fv( postShader("kernel"), kernelSize, ssaoKernel);
+			glUniform3fv( postShader("hemisphere"), hemisphereSize, samplePoints);
 			glUniformMatrix4fv( postShader( "projMat" ), 1, GL_FALSE, value_ptr( g_cam->getProjectionMatrix() ) );
 			glUniform2f( postShader("pixelSize"), pixSize.x, pixSize.y);
 			glUniform2f( postShader("noiseScale"), noiseScale[0], noiseScale[1] );
-			glUniform1i( postShader("kernelSize"), kernelSize );
-			glUniform1i( postShader("kernelRadius"), kernelRadius );
+			glUniform1i( postShader("hemisphereSize"), hemisphereSize );
+			glUniform1i( postShader("hemisphereRadius"), hemisphereRadius );
 			glUniform1f( postShader("zoom"), glm::length(g_cam->getPosition())/10.0);
 			glDrawArrays(GL_POINTS, 0, 1);
 		postShader.unUse();
