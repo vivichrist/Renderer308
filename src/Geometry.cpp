@@ -79,20 +79,32 @@ uint Geometry::addSmoothSurfaceBuffer(const string& load, const float *pos,
 	vector<Varying> buff(max);
 	vector<GLuint> indices;
 	for (triangle t : tris) { // load in the location data each possibly empty except points
+
 		// Edges of the triangle : position delta
 		vec3 edge1 = v[t.v[1].p]-v[t.v[0].p];
 		vec3 edge2 = v[t.v[2].p]-v[t.v[0].p];
-
-		//cerr << "DeltaPos 1: "<< deltaPos1.x << "," << deltaPos1.y << "," << deltaPos1.z << endl;
-		//cerr << "DeltaPos 2: "<< deltaPos2.x << "," << deltaPos2.y << "," << deltaPos2.z << endl;
 
 		// UV delta
 		vec2 deltaUV1 = vt[t.v[1].t]-vt[t.v[0].t];
 		vec2 deltaUV2 = vt[t.v[2].t]-vt[t.v[0].t];
 
-		float r = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV1.y * deltaUV2.x);
-		vec3 tangent = (edge1 * deltaUV2.y   - edge2 * deltaUV1.y)*r;
-		vec3 bitangent = (edge2 * deltaUV1.x   - edge1 * deltaUV2.x)*r;
+//		float r = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV1.y * deltaUV2.x);
+//		vec3 tangent = normalize((edge1 * deltaUV2.y   - edge2 * deltaUV1.y)*r);
+//		vec3 bitangent = normalize((edge2 * deltaUV1.x - edge1 * deltaUV2.x)*r);
+
+		GLfloat f = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
+
+		vec3 tangent = vec3(0);
+		tangent.x = f * (deltaUV2.y * edge1.x - deltaUV1.y * edge2.x);
+		tangent.y = f * (deltaUV2.y * edge1.y - deltaUV1.y * edge2.y);
+		tangent.z = f * (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z);
+		tangent = glm::normalize(tangent);
+
+		vec3 bitangent = vec3(0);
+		bitangent.x = f * (-deltaUV2.x * edge1.x + deltaUV1.x * edge2.x);
+		bitangent.y = f * (-deltaUV2.x * edge1.y + deltaUV1.x * edge2.y);
+		bitangent.z = f * (-deltaUV2.x * edge1.z + deltaUV1.x * edge2.z);
+		bitangent = glm::normalize(bitangent);
 
 		for (uint j = 0; j < 3; ++j) {
 			indices.push_back(t.v[j].p);
@@ -110,10 +122,12 @@ uint Geometry::addSmoothSurfaceBuffer(const string& load, const float *pos,
 			// texture coodinates
 			b.UVs[0] = vt[k.t].x;
 			b.UVs[1] = vt[k.t].y;
+
 			// tangent
 			b.tangent[0] = tangent.x;
 			b.tangent[1] = tangent.y;
 			b.tangent[2] = tangent.z;
+
 			// bitangent
 			b.bitangent[0] = bitangent.x;
 			b.bitangent[1] = bitangent.y;
@@ -339,8 +353,8 @@ uint Geometry::addBuffer(const string& load, const float *pos, const float *col,
 	for (triangle t : tris) { // load in the location data each possibly empty except points
 
 		// Edges of the triangle : position delta
-		vec3 edge1 = v[t.v[1].n]-v[t.v[0].n];
-		vec3 edge2 = v[t.v[2].n]-v[t.v[0].n];
+		vec3 edge1 = v[t.v[1].p]-v[t.v[0].p];
+		vec3 edge2 = v[t.v[2].p]-v[t.v[0].p];
 
 		//cerr << "DeltaPos 1: "<< deltaPos1.x << "," << deltaPos1.y << "," << deltaPos1.z << endl;
 		//cerr << "DeltaPos 2: "<< deltaPos2.x << "," << deltaPos2.y << "," << deltaPos2.z << endl;
@@ -352,11 +366,13 @@ uint Geometry::addBuffer(const string& load, const float *pos, const float *col,
 			//cerr << "Success " << vt.size() << endl;
 			deltaUV1 = vt[t.v[1].t]-vt[t.v[0].t];
 			deltaUV2 = vt[t.v[2].t]-vt[t.v[0].t];
+			//cerr << "deltaUV 1: "<< deltaUV1.x << "," << deltaUV1.y << endl;
+			//cerr << "deltaUV 2: "<< deltaUV2.x << "," << deltaUV2.y << endl;
 		}
 		else{
-			//cerr << "Failed" << endl;
-			deltaUV1 = vec2(0);
-			deltaUV2 = vec2(0);
+			//cerr << "Failed to obtain UV" << endl;
+			deltaUV1 = vec2(1);
+			deltaUV2 = vec2(1);
 		}
 
 		for (uint j = 0; j < 3; ++j) {
@@ -391,6 +407,7 @@ uint Geometry::addBuffer(const string& load, const float *pos, const float *col,
 			bitangent.y = f * (-deltaUV2.x * edge1.y + deltaUV1.x * edge2.y);
 			bitangent.z = f * (-deltaUV2.x * edge1.z + deltaUV1.x * edge2.z);
 			bitangent = normalize(bitangent);
+
 			b.bitangent[0] = bitangent.x;
 			b.bitangent[1] = bitangent.y;
 			b.bitangent[2] = bitangent.z;

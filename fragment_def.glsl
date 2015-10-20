@@ -10,11 +10,13 @@ layout(location = 3) out vec4 eye;
 smooth in vec2 vUV;
 smooth in vec3 vNormal;
 smooth in vec3 vView;
-smooth in vec3 vLightDir;
+smooth in vec3 vTangentLightPos;
 smooth in vec3 vTangentFragPos;
 smooth in vec3 vTangentView;
+smooth in vec3 vTangentNormal;
 
 uniform mat4 mvM;
+uniform mat3 light;
 uniform float parallaxScale;
 uniform float parallaxMinLayer;
 uniform float parallaxMaxLayer;
@@ -22,33 +24,27 @@ uniform sampler2D image;
 uniform sampler2D normalmap;
 uniform sampler2D heightmap;
 
-// Converts v to tangent space
-/*vec3 tangent3(in vec3 v, in vec3 normal){
+//gl_FragDepth
 
-	vec3 n = normalize(normal*vNormal);
-	vec3 t = normalize(normal*vtangent);
-	vec3 b = cross(t,n);
-	mat3 mat = transpose(mat3(t,b,n));//t.x,b.x,n.x,t.y,b.y,n.y,t.z,b.z,n.z);
-
-	return mat*v;
-}*/
 
 // Gets the UV Coordinate of the given vector that is in tangent space. Against the given Texture coordinate
 // Outputs the given parallaxHeight of the pixel to the parallaxHeight variable
-vec2 parallaxMapping(in vec3 V, in vec2 T, out float parallaxHeight){
+vec2 parallaxMapping(in vec3 view, in vec2 texCoords, out float parallaxHeight){
 
    // determine number of layers from angle between V and N
-   float numLayers = mix(parallaxMaxLayer, parallaxMinLayer, abs(dot(vec3(0.0, 0.0, 1.0), V)));
+   float numLayers = mix(parallaxMaxLayer, parallaxMinLayer, abs(dot(vec3(0.0, 0.0, 1.0), view)));
 
    // height of each layer
    float layerHeight = 1.0 / numLayers;
+
    // depth of current layer
    float currentLayerHeight = 0;
+
    // shift of texture coordinates for each iteration
-   vec2 dtex = V.xy / -V.z / numLayers*parallaxScale;
+   vec2 dtex = view.xy / -view.z / numLayers*parallaxScale;
 
    // current texture coordinates
-   vec2 currentTextureCoords = T;
+   vec2 currentTextureCoords = texCoords;
 
    // get first depth from heightmap
    float heightFromTexture = texture(heightmap, currentTextureCoords).r;
@@ -78,7 +74,7 @@ vec2 parallaxMapping(in vec3 V, in vec2 T, out float parallaxHeight){
 vec2 ParallaxMapping2(vec2 texCoords, vec3 viewDir)
 {
 	// number of depth layers
-	const float height_scale = 1;
+	float height_scale = parallaxScale;
 	// number of depth layers
 	const float minLayers = 1;
 	const float maxLayers = 1;
@@ -114,49 +110,128 @@ vec2 getUVCoordinate(out float parallaxHeight){
 	// Get UV of the current pixel
 	vec2 uv = (vUV*4-50)+vec2(1.5,1); // Added offset to fix table texture on the screen
 
-	// Get parallax' offset of this pixel
-	vec3 viewDir = normalize(vTangentView - vTangentFragPos);
-	//vec2 uvP = ParallaxMapping2(uv, viewDir);
-	vec2 uvP = parallaxMapping(viewDir, uv, parallaxHeight);
+	if( parallaxScale != 0.0 ){
+		// Get parallax' offset of this pixel
+		vec3 viewDir = normalize(vTangentView - vTangentFragPos);
+		uv = parallaxMapping(viewDir, uv, parallaxHeight);
+	}
 
 	// Don't draw if it's out of bounds
 	//if(uvP.x > 1.0 || uvP.y > 1.0 || uvP.x < 0.0 || uvP.y < 0.0)
 	  //  discard;
 
-	return uvP;
+	return uv;
 
+}
+
+float parallaxSoftShadowMultiplier(in vec3 L, in vec2 initialTexCoord,
+                                       in float initialHeight)
+{
+   float shadowMultiplier = 1;
+
+   // calculate lighting only for surface oriented to the light source
+   if(dot(vec3(0, 0, 1), L) > 0)
+   {
+      // calculate initial parameters
+      float numSamplesUnderSurface	= 0;
+      shadowMultiplier	= 0;
+      float numLayers	= mix(parallaxMaxLayer, parallaxMinLayer, abs(dot(vec3(0, 0, 1), L)));
+      float layerHeight	= initialHeight / numLayers;
+      vec2 texStep	= parallaxScale * L.xy / L.z / numLayers;
+
+      // current parameters
+      float currentLayerHeight	= initialHeight - layerHeight;
+      vec2 currentTextureCoords	= initialTexCoord + texStep;
+      float heightFromTexture	= texture(heightmap, currentTextureCoords).r;
+      int stepIndex	= 1;
+
+      // while point is below depth 0.0 )
+      while(currentLayerHeight > 0)
+      {
+         // if point is under the surface
+         if(heightFromTexture < currentLayerHeight)
+         {
+            // calculate partial shadowing factor
+            numSamplesUnderSurface	+= 1;
+            float newShadowMultiplier	= (currentLayerHeight - heightFromTexture) *
+                                             (1.0 - stepIndex / numLayers);
+            shadowMultiplier	= max(shadowMultiplier, newShadowMultiplier);
+         }
+
+         // offset to the next layer
+         stepIndex	+= 1;
+         currentLayerHeight	-= layerHeight;
+         currentTextureCoords	+= texStep;
+         heightFromTexture	= texture(heightmap, currentTextureCoords).r;
+      }
+
+      // Shadowing factor should be 1 if there were no points under the surface
+      if(numSamplesUnderSurface < 1)
+      {
+         shadowMultiplier = 1;
+      }
+      else
+      {
+         shadowMultiplier = 1.0 - shadowMultiplier;
+      }
+   }
+   return shadowMultiplier;
 }
 
 void main()
 {
+	// Multiply intensity by diffuSse color, force alpha to 1.0 and add in ambient light
+	float parallaxHeight = 0;
+	vec2 uv = getUVCoordinate(parallaxHeight);
+
+	// Normal
+	vec3 n = texture(normalmap, uv).rgb*2-1;
+	n = normalize(n);
+
     // Dot product gives us diffuse intensity
-    float diff = max(0.0, dot(normalize(vNormal), vLightDir)) * 4;
+	vec4 lightPos = mvM*vec4(light[0],1); // w=1 point light
+    vec3 lightDir = normalize(lightPos.xyz - vView);
+    vec3 tangentLightDir = normalize(vTangentLightPos - vTangentFragPos);
+    float lightIntensity;
+
+    colour = vec4(0);
+    if( parallaxScale != 0.0 ){
+    	lightIntensity = parallaxSoftShadowMultiplier(tangentLightDir.xyz,uv,parallaxHeight);
+    	//colour = vec4(f,f,f,1);
+    }
+    else{
+    	// Dot product gives us diffuse intensity
+		vec4 lightPos = mvM*vec4(light[0],1); // w=1 point light
+		vec3 lightDir = normalize(lightPos.xyz - vView);
+		vec3 tangentLightDir = normalize(vTangentLightPos - vTangentFragPos);
+		lightIntensity = max(0.0, dot(lightDir,vNormal));
+    }
 
     // Multiply intensity by diffuse color, force alpha to 1.0 and add in ambient light
-    colour = max( diff, 0.05 ) * texture( image, vUV ) + vec4(0.3,0.3,0.3,1);
+    colour += vec4(light[1],1)*lightIntensity * texture( image, uv ) + vec4(0,0,0,0);
 
     // Specular Light
-    vec3 halfway = normalize(vLightDir - normalize(vView));
+    vec3 halfway = normalize(lightDir - normalize(vView));
 
-    float spec = max(0.0, dot(normalize(vNormal), halfway));
+    float spec = max(0.0, dot(n,halfway));
     eye = vec4(0);
+
     // If the diffuse light is zero, don’t even bother with the pow function
-    if ( diff > 0 )
+    if ( lightIntensity > 0 )
     {
         float fSpec = pow(spec, 128.0);
         colour.rgb += vec3(fSpec, fSpec, fSpec);
         eye = vec4(fSpec, fSpec, fSpec, 1);
     }
 
-    normal = vec4( vNormal, 1 );
 
     //
     // getUVCoordinate Has to be after all the outs are assigned!!
     //
 
     // Multiply intensity by diffuse color, force alpha to 1.0 and add in ambient light
-    float parallaxHeight;
-    vec2 uv = getUVCoordinate(parallaxHeight);
-    colour = texture( image, uv )-parallaxHeight/2*(1-(parallaxScale));
+    //float parallaxHeight;
+    //vUV = getUVCoordinate(parallaxHeight);
+    //colour = (vec4(light[1]*lightIntensity,0))*texture( image, uv );//-parallaxHeight/2*(1-(parallaxScale));
 
 }
