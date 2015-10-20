@@ -43,7 +43,7 @@ GLuint noiseTex;
 uint fbo, stage1fbo, ppfbo[2];
 Texture* txt;
 
-int drawBunny = 1;
+int shape = 0;
 
 int g_width = 1024, g_height = 768;
 
@@ -170,8 +170,8 @@ void key_callback( GLFWwindow * window, int key, int scancode
 	}
 
 	if (key == GLFW_KEY_P && action == GLFW_PRESS ){
-		drawBunny++;
-		drawBunny %=2;
+		shape++;
+		shape %= 3;
 	}
 }
 
@@ -287,11 +287,8 @@ int checkGLErrors( int where )
 	return errCount;
 }
 
-float randomFloat(float a, float b) {
-    float random = ((float) rand()) / (float) RAND_MAX;
-    float diff = b - a;
-    float r = random * diff;
-    return a + r;
+float randPoint() {
+    return ((float) rand()) / (float) RAND_MAX;
 }
 
 int main()
@@ -364,6 +361,9 @@ int main()
 	glfwSetFramebufferSizeCallback( window, resize_callback );
 	// tell GL to only draw onto a pixel if the shape is closer to the viewer
 	glDepthFunc( GL_LEQUAL );
+
+	srand(time(NULL));
+
 	/************************************************************
 	 * Load up a shader from the given files.
 	 *******************************************************//**/
@@ -399,7 +399,6 @@ int main()
 		postShader.addUniform( "hemisphere" );
 		postShader.addUniform( "hemisphereSize" );
 		postShader.addUniform( "hemisphereRadius" );
-		postShader.addUniform( "zoom" );
 	postShader.unUse();
 	// print debugging info
 	shader.printActiveUniforms();
@@ -419,19 +418,19 @@ int main()
 	ppShader.printActiveUniforms();
 
 	Shader combine;
-  combine.loadFromFile( GL_VERTEX_SHADER, "vertex_pdef.glsl" );
-  combine.loadFromFile( GL_GEOMETRY_SHADER, "geometry_pdef.glsl" );
-  combine.loadFromFile( GL_FRAGMENT_SHADER, "fragment_combine.glsl" );
-  combine.createAndLinkProgram();
-  combine.use();
+	combine.loadFromFile( GL_VERTEX_SHADER, "vertex_pdef.glsl" );
+	combine.loadFromFile( GL_GEOMETRY_SHADER, "geometry_pdef.glsl" );
+	combine.loadFromFile( GL_FRAGMENT_SHADER, "fragment_combine.glsl" );
+	combine.createAndLinkProgram();
+	combine.use();
     combine.addUniform( "depth" );
     combine.addUniform( "colour" );
     combine.addUniform( "blurColour" );
     combine.addUniform( "blurSpec" );
     combine.addUniform( "dof" );
-  combine.unUse();
-  // print debugging info
-  combine.printActiveUniforms();
+	combine.unUse();
+	// print debugging info
+	combine.printActiveUniforms();
 	/****************************************************************************
 	 * Setup Geometry
 	 ***************************************************************************/
@@ -439,6 +438,12 @@ int main()
 	Geometry *geo = Geometry::getInstance();
 	uint bunny = geo->addBuffer( "res/assets/bunny.obj"
 			, vec3( 0.0f, -1.5f, 0.0f )
+			, vec3( 0.80754f, 0.90754f, 0.90754f ) );
+	uint teapot = geo->addBuffer( "res/assets/teapot.obj"
+			, vec3( 0.0f, -1.5f, 0.0f )
+			, vec3( 0.80754f, 0.90754f, 0.90754f ) );
+	uint torus = geo->addBuffer( "res/assets/torus.obj"
+			, vec3( 0.0f, -1.0f, 0.0f )
 			, vec3( 0.80754f, 0.90754f, 0.90754f ) );
 	uint sphere = geo->addBuffer( "res/assets/sphere.obj"
             , vec3( 0.0f, 2.0f, 0.0f ) );
@@ -488,34 +493,25 @@ int main()
 	txt->setupPinPongFBO( g_width, g_height, ppfbo[0], ppfbo[1] );
 
     GLfloat samplePoints[3 * hemisphereSize];
-	srand(time(NULL));
 	for(int i = 0; i < hemisphereSize; i++) {
-		vec3 randVec = vec3( randomFloat(0.0, 1.0),
-				   randomFloat(0.0, 1.0),
-				   randomFloat(0.0, 1.0));
-
-		randVec = normalize(randVec);
+		vec3 random = normalize(vec3( randPoint(), randPoint(), randPoint()));
 
 		float scale = float(i/3) / (float)hemisphereSize;
 		scale = 0.1 + scale*scale*0.9;
 
-		randVec *= scale;
+		random *= scale;
 
-		samplePoints[i*3] = randVec.x;
-		samplePoints[i*3 + 1] = randVec.y;
-		samplePoints[i*3 + 2] = randVec.z;
+		samplePoints[i*3] = random.x;
+		samplePoints[i*3 + 1] = random.y;
+		samplePoints[i*3 + 2] = random.z;
 	}
 
-	for(unsigned int i = 0; i < hemisphereRadius*hemisphereRadius; i++) {
-		vec3 randVec = glm::vec3(randomFloat(0.0, 1.0),
-		   		   randomFloat(0.0, 1.0),
-		   		   0.0);
+	for(int i = 0; i < hemisphereRadius*hemisphereRadius; i++) {
+		vec3 random = normalize(vec3(randPoint(), randPoint(), 0.0));
 
-		randVec = normalize(randVec);
-
-		noise[i*3] = randVec.x;
-		noise[i*3 + 1] = randVec.y;
-		noise[i*3 + 2] = randVec.z;
+		noise[i*3] = random.x;
+		noise[i*3 + 1] = random.y;
+		noise[i*3 + 2] = random.z;
 	}
 
 	pixSize.x = 1.0f/g_width;
@@ -550,8 +546,12 @@ int main()
 			glUniformMatrix4fv( shader( "projM" ), 1, GL_FALSE,	value_ptr( g_cam->getProjectionMatrix() ) );
 			glUniformMatrix3fv( shader( "normM" ), 1, GL_FALSE,	value_ptr( g_cam->getNormalMatrix() ) );
 			glUniform3f( shader( "lightP" ), lightPos.x, lightPos.y, lightPos.z );
-			if (drawBunny) geo->draw( bunny, 1 );
-			else geo->draw( sphere, 1 );
+
+			if (shape == 0) geo->draw( bunny, 1 );
+			else if (shape == 1) geo->draw( sphere, 1 );
+			else if (shape == 2) geo->draw( torus, 1 );
+			else geo->draw( teapot, 1 );
+
 			geo->draw( table, 1 );
 		shader.unUse();
 		txt->activateTexturesFB( fbo );
@@ -573,11 +573,9 @@ int main()
 			glUniform1i( postShader("aoMode"), aoMode );
 			glUniform3fv( postShader("hemisphere"), hemisphereSize, samplePoints);
 			glUniformMatrix4fv( postShader( "projMat" ), 1, GL_FALSE, value_ptr( g_cam->getProjectionMatrix() ) );
-			glUniform2f( postShader("pixelSize"), pixSize.x, pixSize.y);
 			glUniform2f( postShader("noiseScale"), noiseScale[0], noiseScale[1] );
 			glUniform1i( postShader("hemisphereSize"), hemisphereSize );
 			glUniform1i( postShader("hemisphereRadius"), hemisphereRadius );
-			glUniform1f( postShader("zoom"), glm::length(g_cam->getPosition())/10.0);
 			glDrawArrays(GL_POINTS, 0, 1);
 		postShader.unUse();
 
