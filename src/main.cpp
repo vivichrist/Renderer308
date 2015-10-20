@@ -34,7 +34,7 @@ GLint g_num_of_lights;
 // Ambient Occlusion
 int aoMode = 0;
 const int hemisphereRadius = 4;
-const int hemisphereSize = 32;
+const int hemisphereSize = 128;
 GLfloat noiseScale[2], g_dof = 0.5;
 GLfloat noise[3*hemisphereRadius*hemisphereRadius];
 GLuint noiseTex;
