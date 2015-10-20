@@ -581,20 +581,25 @@ int main()
 			glDrawArrays(GL_POINTS, 0, 1);
 		postShader.unUse();
 
-		txt->activateStage2FB( fbo, stage1fbo );
 //    glClear( GL_DEPTH_BUFFER_BIT );
-    glDisable( GL_DEPTH_TEST );
     ppShader.use();
       glUniform1i( ppShader("colour"), 0 );
       glUniform1i( ppShader("spec"), 1 );
       glUniform2f( ppShader("pixelSize"), pixSize.x, pixSize.y);
-      for ( i = 0; i<4; ++i )
+
+      glUniform1i( ppShader("isVert"), 0 );
+      txt->activateStage2FB( stage1fbo, fbo, ppfbo[0] );
+      glDisable( GL_DEPTH_TEST );
+      //glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+      glDrawArrays(GL_POINTS, 0, 1);
+
+      for ( i = 0; i<9; ++i )
       {
         glUniform1i( ppShader("isVert"), i % 2 );
-        txt->swapPPFBO( ppfbo[i % 2], ppfbo[(i + 1) % 2] );
+        txt->swapPPFBO( ppfbo[(i + 1) % 2], ppfbo[i % 2] );
+        //glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
         glDrawArrays(GL_POINTS, 0, 1);
-        glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-      }
+	    }
     ppShader.unUse();
 
     // setup combine shader with the last shader as input

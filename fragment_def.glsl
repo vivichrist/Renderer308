@@ -26,15 +26,14 @@ void main()
     // Specular Light
     vec3 halfway = normalize(vLightDir - normalize(vView));
     float specular = max(0.0, dot(normalize(vNormal), halfway));
-//    float intensity = colour.x + colour.y + colour.z / 3.0;
-//    spec = (intensity > 0.8) ? vec4( intensity, intensity, intensity, 1 )
-//                             : vec4(0,0,0,1);
+    float intensity = colour.x + colour.y + colour.z / 3.0;
+    spec = (intensity > 0.9) ? vec4( intensity, intensity, intensity, 1 )
+                             : vec4(0,0,0,1);
     // If the diffuse light is zero, don’t even bother with the pow function
     if ( diff > 0 )
     {
         float fSpec = pow(specular, 128.0);
         spec = vec4(fSpec, fSpec, fSpec, 1);
-        colour += vec4(fSpec, fSpec, fSpec, 1);
     }
 
     normal = vec4( vNormal, 1 );
