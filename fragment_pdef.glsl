@@ -1,6 +1,8 @@
 #version 330
+#pragma optimize(off)
+#pragma debug(on)
 #define MAX_SAMPLE_POINTS 128
-layout(location = 1) out vec4 FBColor;
+layout(location = 1)out vec4 FBColor;
 
 in vec2 texcoord;
 
@@ -22,10 +24,10 @@ vec4 toViewSpace( in vec2 uv ) {
     float y = uv.t;
     float z = texture(depth, uv).r;
 
-    vec4 pos = inverse(projMat) * vec4(x, y, z, 1.0);
-    pos /= pos.w;
+  vec4 pos = inverse(projMat) * vec4(x, y, z, 1.0);
+  pos /= pos.w;
 
-    return pos;
+  return pos;
 }
 
 void main()
