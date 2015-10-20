@@ -399,7 +399,6 @@ int main()
 		postShader.addUniform( "hemisphere" );
 		postShader.addUniform( "hemisphereSize" );
 		postShader.addUniform( "hemisphereRadius" );
-		postShader.addUniform( "zoom" );
 	postShader.unUse();
 	// print debugging info
 	shader.printActiveUniforms();
@@ -573,11 +572,9 @@ int main()
 			glUniform1i( postShader("aoMode"), aoMode );
 			glUniform3fv( postShader("hemisphere"), hemisphereSize, samplePoints);
 			glUniformMatrix4fv( postShader( "projMat" ), 1, GL_FALSE, value_ptr( g_cam->getProjectionMatrix() ) );
-			glUniform2f( postShader("pixelSize"), pixSize.x, pixSize.y);
 			glUniform2f( postShader("noiseScale"), noiseScale[0], noiseScale[1] );
 			glUniform1i( postShader("hemisphereSize"), hemisphereSize );
 			glUniform1i( postShader("hemisphereRadius"), hemisphereRadius );
-			glUniform1f( postShader("zoom"), glm::length(g_cam->getPosition())/10.0);
 			glDrawArrays(GL_POINTS, 0, 1);
 		postShader.unUse();
 
