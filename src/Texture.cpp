@@ -214,13 +214,13 @@ GLuint Texture::setupStage1FBO( uint width, uint height )
 	// Generate and bind the texture for the depth buffer
 	glGenTextures( 1, &fbo.depthID );
 	glBindTexture( GL_TEXTURE_2D, fbo.depthID );
-	glTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, width, height, 0
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32, width, height, 0
 			, GL_DEPTH_COMPONENT, GL_FLOAT, 0 );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-	glFramebufferTexture2D( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D
+	glFramebufferTexture( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT
 			, fbo.depthID, 0 );
 
 	// Generate and bind the texture for diffuse
@@ -232,7 +232,7 @@ GLuint Texture::setupStage1FBO( uint width, uint height )
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-	glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D
+	glFramebufferTexture( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1
 			, fbo.colorID0, 0 );
 	// Bind the FBO so that the next operations will be bound to it.
 	// Attach the texture to the FBO

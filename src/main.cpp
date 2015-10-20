@@ -281,6 +281,13 @@ int checkGLErrors( int where )
 	return errCount;
 }
 
+float randomFloat(float a, float b) {
+    float random = ((float) rand()) / (float) RAND_MAX;
+    float diff = b - a;
+    float r = random * diff;
+    return a + r;
+}
+
 int main()
 {
 	///////////////////////////////////////////////////////////////////////////
@@ -383,6 +390,7 @@ int main()
 		postShader.addUniform( "projMat" );
 		postShader.addUniform( "noiseScale" );
 		postShader.addUniform( "noiseTexture" );
+		postShader.addUniform( "kernel" );
 		postShader.addUniform( "kernelSize" );
 		postShader.addUniform( "kernelRadius" );
 		postShader.addUniform( "zoom" );
@@ -461,11 +469,11 @@ int main()
     GLfloat ssaoKernel[3 * kernelSize];
 	srand(time(NULL));
 	for(int i = 0; i < kernelSize; i++) {
-		vec3 randVec = vec3( (rand()/(float)RAND_MAX) * 2.0 - 1.0,
-				(rand()/(float)RAND_MAX) * 2.0 - 1.0,
-				(rand()/(float)RAND_MAX));
+		vec3 randVec = vec3( randomFloat(0.0, 1.0),
+				   randomFloat(0.0, 1.0),
+				   randomFloat(0.0, 1.0));
 
-		normalize(randVec);
+		randVec = normalize(randVec);
 
 		float scale = float(i/3) / (float)kernelSize;
 		scale = 0.1 + scale*scale*0.9;
@@ -478,10 +486,11 @@ int main()
 	}
 
 	for(unsigned int i = 0; i < kernelRadius*kernelRadius; i++) {
-		vec3 randVec = glm::vec3( (rand()/(float)RAND_MAX) * 2.0 - 1.0,
-				(rand()/(float)RAND_MAX) * 2.0 - 1.0,
-				0.0);
-		normalize(randVec);
+		vec3 randVec = glm::vec3(randomFloat(0.0, 1.0),
+		   		   randomFloat(0.0, 1.0),
+		   		   0.0);
+
+		randVec = normalize(randVec);
 
 		noise[i*3] = randVec.x;
 		noise[i*3 + 1] = randVec.y;
@@ -494,7 +503,9 @@ int main()
 	noiseScale[0] = g_width / 4.0;
 	noiseScale[1] = g_height / 4.0;
 
-	glActiveTexture(GL_TEXTURE4);
+	cout << noise[0] << " " << noise[1] << " " << noise[2] << endl;
+
+	glActiveTexture(GL_TEXTURE8);
 	// Create SSAO rotation noise texture
 	glGenTextures(1, &noiseTex);
 	glBindTexture(GL_TEXTURE_2D, noiseTex);
@@ -504,8 +515,6 @@ int main()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	glBindTexture(GL_TEXTURE_2D, 0);
-
-	glBindTexture(GL_TEXTURE_2D, noiseTex);
 	glActiveTexture(GL_TEXTURE0);
 	float lightRot = M_1_PI / 30;
 	while ( !glfwWindowShouldClose( window ) )
@@ -531,6 +540,12 @@ int main()
 		txt->activateTexturesFB( fbo );
 		lightPos = rotateY( lightPos, lightRot );
 
+		glActiveTexture(GL_TEXTURE8);
+		glBindTexture(GL_TEXTURE_2D, noiseTex);
+		glActiveTexture(GL_TEXTURE0);
+		for(int i = 0; i < kernelSize; i++) {
+			cout << ssaoKernel[i*3] << " " << ssaoKernel[i*3 + 1] << " " << ssaoKernel[i*3 + 2] << endl;
+		}
 		txt->activateFrameBuffer( stage1fbo );
 		glClear( GL_DEPTH_BUFFER_BIT );
 		glDisable( GL_DEPTH_TEST );
@@ -538,11 +553,10 @@ int main()
 			glUniform1i( postShader("depth"), 0 );
 			glUniform1i( postShader("colour"), 1 );
 			glUniform1i( postShader("normal"), 2 );
-			glUniform1i( postShader("noiseTexture"), 4 );
+			glUniform1i( postShader("noiseTexture"), 8 );
 			glUniform1i( postShader("aoMode"), aoMode );
 			glUniform3fv( postShader("kernel"), kernelSize, ssaoKernel);
-			glUniformMatrix4fv( postShader( "projMat" ), 1, GL_FALSE,
-					value_ptr( g_cam->getProjectionMatrix() ) );
+			glUniformMatrix4fv( postShader( "projMat" ), 1, GL_FALSE, value_ptr( g_cam->getProjectionMatrix() ) );
 			glUniform2f( postShader("pixelSize"), pixSize.x, pixSize.y);
 			glUniform2f( postShader("noiseScale"), noiseScale[0], noiseScale[1] );
 			glUniform1i( postShader("kernelSize"), kernelSize );
