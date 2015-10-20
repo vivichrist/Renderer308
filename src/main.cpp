@@ -36,13 +36,13 @@ const int kernelSize = 32;
 GLfloat noiseScale[2], g_dof;
 GLfloat noise[3*kernelRadius*kernelRadius];
 GLuint noiseTex;
-uint fbo, stage1fbo;
+uint fbo, stage1fbo, ppfbo[2];
 Texture* txt;
 
 int aoMode = 0;
 int drawBunny = 1;
 
-int g_width = 800, g_height = 600;
+int g_width = 1024, g_height = 768;
 
 void error_callback( int error, const char * description )
 {
@@ -153,11 +153,13 @@ void key_callback( GLFWwindow * window, int key, int scancode
 	if (key == GLFW_KEY_KP_ADD && (action == GLFW_PRESS || action == GLFW_REPEAT) ){
 		g_dof += 0.01f;
 		g_dof = g_dof > 1.0f ? 1.0f : g_dof;
+		cout << "DOF increase: " << g_dof << "\n";
 	}
 
 	if (key == GLFW_KEY_KP_SUBTRACT && (action == GLFW_PRESS || action == GLFW_REPEAT) ){
 		g_dof -= 0.01f;
 		g_dof = g_dof < 0.0f ? 0.0f : g_dof;
+		cout << "DOF decrease: " << g_dof << "\n";
 	}
 	if (key == GLFW_KEY_O && action == GLFW_PRESS ){
 		aoMode++;
@@ -396,14 +398,28 @@ int main()
 	ppShader.loadFromFile( GL_FRAGMENT_SHADER, "fragment_pp.glsl" );
 	ppShader.createAndLinkProgram();
 	ppShader.use();
-		ppShader.addUniform( "depth" );
 		ppShader.addUniform( "colour" );
-		ppShader.addUniform( "eye" );
+		ppShader.addUniform( "spec" );
 		ppShader.addUniform( "pixelSize" );
-		ppShader.addUniform( "dof" );
+		ppShader.addUniform( "isVert" );
 	ppShader.unUse();
 	// print debugging info
-	shader.printActiveUniforms();
+	ppShader.printActiveUniforms();
+
+	Shader combine;
+  combine.loadFromFile( GL_VERTEX_SHADER, "vertex_pdef.glsl" );
+  combine.loadFromFile( GL_GEOMETRY_SHADER, "geometry_pdef.glsl" );
+  combine.loadFromFile( GL_FRAGMENT_SHADER, "fragment_combine.glsl" );
+  combine.createAndLinkProgram();
+  combine.use();
+    combine.addUniform( "depth" );
+    combine.addUniform( "colour" );
+    combine.addUniform( "blurColour" );
+    combine.addUniform( "blurSpec" );
+    combine.addUniform( "dof" );
+  combine.unUse();
+  // print debugging info
+  combine.printActiveUniforms();
 	/****************************************************************************
 	 * Setup Geometry
 	 ***************************************************************************/
@@ -456,7 +472,8 @@ int main()
 	glClearBufferfv( GL_COLOR, 0, black );
 	glViewport( 0, 0, g_width, g_height );
 	fbo = txt->setupFBO( g_width, g_height );
-	stage1fbo = txt->setupFBO( g_width, g_height );
+	stage1fbo = txt->setupStage1FBO( g_width, g_height );
+	txt->setupPinPongFBO( g_width, g_height, ppfbo[0], ppfbo[1] );
 
     GLfloat ssaoKernel[3 * kernelSize];
 	srand(time(NULL));
@@ -508,6 +525,7 @@ int main()
 	glBindTexture(GL_TEXTURE_2D, noiseTex);
 	glActiveTexture(GL_TEXTURE0);
 	float lightRot = M_1_PI / 30;
+	int i;
 	while ( !glfwWindowShouldClose( window ) )
 	{
 		// load values into the uniform slots of the shader and draw
@@ -534,6 +552,7 @@ int main()
 		txt->activateFrameBuffer( stage1fbo );
 		glClear( GL_DEPTH_BUFFER_BIT );
 		glDisable( GL_DEPTH_TEST );
+
 		postShader.use();
 			glUniform1i( postShader("depth"), 0 );
 			glUniform1i( postShader("colour"), 1 );
@@ -550,19 +569,33 @@ int main()
 			glUniform1f( postShader("zoom"), glm::length(g_cam->getPosition())/10.0);
 			glDrawArrays(GL_POINTS, 0, 1);
 		postShader.unUse();
-		txt->activateTexturesFB( fbo );
-		txt->activateColourBFromFB( stage1fbo );
-		glClear( GL_DEPTH_BUFFER_BIT );
-		ppShader.use();
-			glUniform1i( ppShader("depth"), 0 );
-			glUniform1i( ppShader("colour"), 1 );
-			glUniform1i( ppShader("eye"), 3 );
-			glUniform1f( ppShader("dof"), g_dof );
-			glUniform2f( ppShader("pixelSize"), pixSize.x, pixSize.y);
-			glDrawArrays(GL_POINTS, 0, 1);
-		ppShader.unUse();
 
-		//txt->deactivateTexturesFB();
+		txt->activateColourBFromFB( fbo );
+    ppShader.use();
+      glUniform1i( ppShader("colour"), 0 );
+      glUniform1i( ppShader("spec"), 1 );
+      glUniform2f( ppShader("pixelSize"), pixSize.x, pixSize.y);
+      for ( i = 0; i<4; ++i )
+      {
+        glUniform1i( ppShader("isVert"), i % 2 );
+        glClear( GL_DEPTH_BUFFER_BIT );
+        glDrawArrays(GL_POINTS, 0, 1);
+        txt->swapPPFBO( ppfbo[i % 2], ppfbo[(i + 1) % 2] );
+      }
+    ppShader.unUse();
+
+    // setup combine shader with the last shader as input
+    txt->combineStage( fbo, ppfbo[(i - 1) % 2] );
+    combine.use();
+      glUniform1i( combine("depth"), 0 );
+      glUniform1i( combine("colour"), 1 );
+      glUniform1i( combine("blurColour"), 2 );
+      glUniform1i( combine("blurSpec"), 3 );
+      glUniform1f( combine("dof"), g_dof );
+      glDrawArrays(GL_POINTS, 0, 1);
+    combine.unUse();
+
+		txt->deactivateTexturesFB();
 
 		// make sure the camera rotations, position and matrices are updated
 		g_cam->update();
