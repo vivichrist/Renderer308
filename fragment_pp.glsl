@@ -24,7 +24,6 @@ void main()
       shift = rot90 * shift;
       shift2 = rot90 * shift;
     }
-    int k;
     composite += texture( colour, texcoord );
     composite += 0.5 * texture( colour, texcoord + shift );
     composite += 0.5 * texture( colour, texcoord + (-shift) );
@@ -42,4 +41,5 @@ void main()
     // viv's code end
     FBColor = vec4( composite.xyz, 1 );
     FBSpec = vec4( bloom.xyz, 1 );
+    //FBbla = vec4( 1, 0, 0, 1 );
 }

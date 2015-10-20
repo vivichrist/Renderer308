@@ -169,13 +169,14 @@ void Texture::activateTexturesFB( uint fbID )
 	glBindTexture( GL_TEXTURE_2D, fbo.colorID2 );
 }
 
-void Texture::activateColourBFromFB( uint fbID )
+void Texture::activateStage2FB( uint s1fb, uint s2fb )
 {
-	FBObj& fbo = framebuffer[fbID];
+	FBObj& fbo1 = framebuffer[s1fb];
+	FBObj& fbo2 = framebuffer[s2fb];
+	glActiveTexture( GL_TEXTURE0 );
+	glBindTexture( GL_TEXTURE_2D, fbo2.colorID0);
 	glActiveTexture( GL_TEXTURE1 );
-	glBindTexture( GL_TEXTURE_2D, fbo.colorID0);
-	glActiveTexture( GL_TEXTURE2 );
-	glBindTexture( GL_TEXTURE_2D, fbo.colorID2 );
+	glBindTexture( GL_TEXTURE_2D, fbo1.colorID2 );
 }
 
 void Texture::deactivateTexturesFB()
@@ -208,7 +209,14 @@ void Texture::combineStage( uint fbID1, uint fbID2 )
 void Texture::activateFrameBuffer( uint fbID )
 {
 	glBindFramebuffer( GL_FRAMEBUFFER, fbID );
-
+	GLenum drawBuffers[] =
+  {
+      GL_COLOR_ATTACHMENT0
+    , GL_COLOR_ATTACHMENT1
+    , GL_COLOR_ATTACHMENT2
+    , GL_COLOR_ATTACHMENT3
+  };
+  glDrawBuffers(4, drawBuffers);
 }
 
 GLuint Texture::setupStage1FBO( uint width, uint height )
@@ -258,6 +266,11 @@ GLuint Texture::setupStage1FBO( uint width, uint height )
 
 void Texture::swapPPFBO( uint fb1, uint fb2 )
 {
+  FBObj& fbo = framebuffer[fb2];
+  glActiveTexture( GL_TEXTURE0 );
+  glBindTexture( GL_TEXTURE_2D, fbo.colorID0);
+  glActiveTexture( GL_TEXTURE1 );
+  glBindTexture( GL_TEXTURE_2D, fbo.colorID1 );
   glBindFramebuffer( GL_FRAMEBUFFER, fb1 );
   GLenum drawBuffers[] =
   {
@@ -266,11 +279,6 @@ void Texture::swapPPFBO( uint fb1, uint fb2 )
     , GL_COLOR_ATTACHMENT2
   };
   glDrawBuffers(3, drawBuffers);
-  FBObj& fbo = framebuffer[fb2];
-  glActiveTexture( GL_TEXTURE1 );
-  glBindTexture( GL_TEXTURE_2D, fbo.colorID0);
-  glActiveTexture( GL_TEXTURE2 );
-  glBindTexture( GL_TEXTURE_2D, fbo.colorID1 );
 }
 
 void Texture::setupPinPongFBO( uint width, uint height, uint& fb1, uint& fb2 )
@@ -283,7 +291,7 @@ void Texture::setupPinPongFBO( uint width, uint height, uint& fb1, uint& fb2 )
   glGenTextures( 1, &fbo1.depthID );
   fbo2.depthID = fbo1.depthID;
   glBindTexture( GL_TEXTURE_2D, fbo1.depthID );
-  glTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, width, height, 0
+  glTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, width, height, 0
       , GL_DEPTH_COMPONENT, GL_FLOAT, 0 );
   glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
   glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
@@ -347,7 +355,7 @@ void Texture::setupPinPongFBO( uint width, uint height, uint& fb1, uint& fb2 )
   glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
   glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
   glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-  glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D
+  glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D
       , fbo2.colorID1, 0 );
 
   fboStatus = glCheckFramebufferStatus( GL_FRAMEBUFFER );

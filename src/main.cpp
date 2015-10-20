@@ -561,10 +561,11 @@ int main()
 		glActiveTexture(GL_TEXTURE8);
 		glBindTexture(GL_TEXTURE_2D, noiseTex);
 		glActiveTexture(GL_TEXTURE0);
-		for(int i = 0; i < kernelSize; i++) {
-			cout << ssaoKernel[i*3] << " " << ssaoKernel[i*3 + 1] << " " << ssaoKernel[i*3 + 2] << endl;
-		}
-		txt->activateFrameBuffer( stage1fbo );
+//		for(int i = 0; i < kernelSize; i++) {
+//			cout << ssaoKernel[i*3] << " " << ssaoKernel[i*3 + 1] << " " << ssaoKernel[i*3 + 2] << endl;
+//		}
+		//txt->activateFrameBuffer( stage1fbo );
+		//glBindFramebuffer( GL_FRAMEBUFFER, 0 );
 		glClear( GL_DEPTH_BUFFER_BIT );
 		glDisable( GL_DEPTH_TEST );
 
@@ -584,7 +585,8 @@ int main()
 			glDrawArrays(GL_POINTS, 0, 1);
 		postShader.unUse();
 
-		txt->activateColourBFromFB( fbo );
+		txt->activateStage2FB( fbo, stage1fbo );
+		//glBindFramebuffer( GL_FRAMEBUFFER, 0 );
     ppShader.use();
       glUniform1i( ppShader("colour"), 0 );
       glUniform1i( ppShader("spec"), 1 );
@@ -594,20 +596,20 @@ int main()
         glUniform1i( ppShader("isVert"), i % 2 );
         glClear( GL_DEPTH_BUFFER_BIT );
         glDrawArrays(GL_POINTS, 0, 1);
-        txt->swapPPFBO( ppfbo[i % 2], ppfbo[(i + 1) % 2] );
+        txt->swapPPFBO( ppfbo[(i + 1) % 2], ppfbo[i % 2] );
       }
     ppShader.unUse();
 
     // setup combine shader with the last shader as input
-    txt->combineStage( fbo, ppfbo[(i - 1) % 2] );
-    combine.use();
-      glUniform1i( combine("depth"), 0 );
-      glUniform1i( combine("colour"), 1 );
-      glUniform1i( combine("blurColour"), 2 );
-      glUniform1i( combine("blurSpec"), 3 );
-      glUniform1f( combine("dof"), g_dof );
-      glDrawArrays(GL_POINTS, 0, 1);
-    combine.unUse();
+//    txt->combineStage( stage1fbo, ppfbo[(i - 1) % 2] );
+//    combine.use();
+//      glUniform1i( combine("depth"), 0 );
+//      glUniform1i( combine("colour"), 1 );
+//      glUniform1i( combine("blurColour"), 2 );
+//      glUniform1i( combine("blurSpec"), 3 );
+//      glUniform1f( combine("dof"), g_dof );
+//      glDrawArrays(GL_POINTS, 0, 1);
+//    combine.unUse();
 
 		txt->deactivateTexturesFB();
 
