@@ -33,7 +33,7 @@ GLint g_num_of_lights;
 
 const int kernelRadius = 4;
 const int kernelSize = 32;
-GLfloat noiseScale[2], g_dof;
+GLfloat noiseScale[2], g_dof = 0.5;
 GLfloat noise[3*kernelRadius*kernelRadius];
 GLuint noiseTex;
 uint fbo, stage1fbo, ppfbo[2];
@@ -262,6 +262,7 @@ void resize_callback( GLFWwindow * window, int newWidth, int newHeight )
 	glViewport( 0, 0, g_width, g_height );
 	fbo = txt->setupFBO( g_width, g_height );
 	stage1fbo = txt->setupStage1FBO( g_width, g_height );
+	txt->setupPinPongFBO( g_width, g_height, ppfbo[0], ppfbo[1] );
 }
 
 /******************************************************************************
@@ -560,12 +561,11 @@ int main()
 
 		glActiveTexture(GL_TEXTURE8);
 		glBindTexture(GL_TEXTURE_2D, noiseTex);
-		glActiveTexture(GL_TEXTURE0);
+		// glActiveTexture(GL_TEXTURE0);
 //		for(int i = 0; i < kernelSize; i++) {
 //			cout << ssaoKernel[i*3] << " " << ssaoKernel[i*3 + 1] << " " << ssaoKernel[i*3 + 2] << endl;
 //		}
-		//txt->activateFrameBuffer( stage1fbo );
-		//glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+		txt->activateFrameBuffer( stage1fbo );
 		glClear( GL_DEPTH_BUFFER_BIT );
 		glDisable( GL_DEPTH_TEST );
 
@@ -586,7 +586,8 @@ int main()
 		postShader.unUse();
 
 		txt->activateStage2FB( fbo, stage1fbo );
-		//glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+//    glClear( GL_DEPTH_BUFFER_BIT );
+    glDisable( GL_DEPTH_TEST );
     ppShader.use();
       glUniform1i( ppShader("colour"), 0 );
       glUniform1i( ppShader("spec"), 1 );
@@ -594,22 +595,25 @@ int main()
       for ( i = 0; i<4; ++i )
       {
         glUniform1i( ppShader("isVert"), i % 2 );
-        glClear( GL_DEPTH_BUFFER_BIT );
+        txt->swapPPFBO( ppfbo[i % 2], ppfbo[(i + 1) % 2] );
         glDrawArrays(GL_POINTS, 0, 1);
-        txt->swapPPFBO( ppfbo[(i + 1) % 2], ppfbo[i % 2] );
+        glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
       }
     ppShader.unUse();
 
     // setup combine shader with the last shader as input
-//    txt->combineStage( stage1fbo, ppfbo[(i - 1) % 2] );
-//    combine.use();
-//      glUniform1i( combine("depth"), 0 );
-//      glUniform1i( combine("colour"), 1 );
-//      glUniform1i( combine("blurColour"), 2 );
-//      glUniform1i( combine("blurSpec"), 3 );
-//      glUniform1f( combine("dof"), g_dof );
-//      glDrawArrays(GL_POINTS, 0, 1);
-//    combine.unUse();
+		glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+    txt->combineStage( fbo, stage1fbo, ppfbo[0] );
+		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+		glDisable( GL_DEPTH_TEST );
+    combine.use();
+      glUniform1i( combine("depth"), 0 );
+      glUniform1i( combine("colour"), 1 );
+      glUniform1i( combine("blurColour"), 2 );
+      glUniform1i( combine("blurSpec"), 3 );
+      glUniform1f( combine("dof"), g_dof );
+      glDrawArrays(GL_POINTS, 0, 1);
+    combine.unUse();
 
 		txt->deactivateTexturesFB();
 

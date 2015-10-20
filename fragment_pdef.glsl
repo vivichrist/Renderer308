@@ -1,8 +1,7 @@
 #version 330
 
 #define MAX_KERNEL_SIZE 128
-//layout(location = 1)
-out vec4 FBColor;
+layout(location = 1) out vec4 FBColor;
 
 in vec2 texcoord;
 

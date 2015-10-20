@@ -41,5 +41,4 @@ void main()
     // viv's code end
     FBColor = vec4( composite.xyz, 1 );
     FBSpec = vec4( bloom.xyz, 1 );
-    //FBbla = vec4( 1, 0, 0, 1 );
 }
