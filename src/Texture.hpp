@@ -127,9 +127,12 @@ namespace vogl
       void activateTexturesFB( uint );
       void activateColourBFromFB( uint );
       void deactivateTexturesFB();
+      void combineStage( uint, uint );
       void activateFrameBuffer( uint );
       GLuint setupFBO( uint, uint );
       GLuint setupStage1FBO( uint, uint );
+      void swapPPFBO( uint, uint );
+      void setupPinPongFBO( uint, uint, uint&, uint& );
       GLuint setupEnvMap( uint );
       void createOmniView( const glm::vec3&, glm::mat4[ 6 ], glm::mat3[ 6 ] );
       void useEnvironmentMap( Shader&, glm::vec3, const uint );
