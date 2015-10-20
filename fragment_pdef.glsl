@@ -20,14 +20,10 @@ uniform int hemisphereSize;
 uniform int hemisphereRadius;
 
 vec4 toViewSpace( in vec2 uv ) {
-    float x = uv.s;
-    float y = uv.t;
     float z = texture(depth, uv).r;
 
-  vec4 pos = inverse(projMat) * vec4(x, y, z, 1.0);
-  pos /= pos.w;
-
-  return pos;
+    vec4 pos = inverse(projMat) * vec4(uv.x, uv.y, z, 1.0);
+    return pos / pos.w;
 }
 
 void main()
@@ -36,7 +32,7 @@ void main()
     vec3 norm = normalize(texture( normal, texcoord ).xyz);
 
 	vec4 viewSpacePosition = toViewSpace(texcoord);
-	vec4 randomSample = texture(noiseTexture, texcoord * (noiseScale * 3));
+	vec4 randomSample = texture(noiseTexture, texcoord * noiseScale);
     vec3 randomVec = normalize(randomSample.xyz);
 	vec3 tangent = normalize(randomVec - norm * dot(randomVec, norm));
 	mat3 transformationMatrix = mat3(tangent, cross(norm, tangent), norm);
