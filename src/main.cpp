@@ -31,7 +31,7 @@ mat4 g_spotlight_rot;
 float g_light_array[160];
 GLint g_num_of_lights;
 
-mat3 light = mat3(vec3( -3.0f, 1.0f, 0.0f ) //position
+mat3 light = mat3(vec3( -3.0f, 5.0f, 0.0f ) //position
     	          , vec3(1.0f, 1.0f, 1.0f ) // colour
     	          , vec3(2.0f, 0.0f, 0.0) ); //intensity, unknown, unknown
 
@@ -533,6 +533,7 @@ int main()
 	geo->bindHMTexure( "res/textures/brick2_height.jpg", table );
 
 	geo->bindTexure( "res/textures/test.jpg", teapot );
+	geo->bindNMTexure( "res/textures/normalMap.jpg", table );
 
 	/****************************************************************************
 	 * Setup Lighting

@@ -174,17 +174,18 @@ void main()
     colour += vec4(light[1],1)*lightIntensity * texture( image, uv ) + vec4(0,0,0,0);
 
     // Specular Light
-    vec3 halfway = normalize(vLightDir - normalize(vView));
-    float specular = max(0.0, dot(normalize(n), halfway));
+    vec3 halfway = normalize(lightDir - normalize(vView));
+    float specular = max(0.0, dot(normalize(vNormal+n), halfway));
     float intensity = colour.x + colour.y + colour.z / 3.0;
     spec = (intensity > 0.9) ? vec4( intensity, intensity, intensity, 1 ) : vec4(0,0,0,1);
 
     // If the diffuse light is zero, don’t even bother with the pow function
-    if ( lightIntensity > 0 ){
+    if ( intensity > 0.9 ){
         float fSpec = pow(specular, 512.0);
         spec = vec4(fSpec, fSpec, fSpec, 1);
     }
 
+    normal = vec4( n, 1 );
 
     //
     // getUVCoordinate Has to be after all the outs are assigned!!
