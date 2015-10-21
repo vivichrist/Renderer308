@@ -352,29 +352,6 @@ uint Geometry::addBuffer(const string& load, const float *pos, const float *col,
 	uint i = 0;
 	for (triangle t : tris) { // load in the location data each possibly empty except points
 
-		// Edges of the triangle : position delta
-		vec3 edge1 = v[t.v[2].p]-v[t.v[1].p];
-		vec3 edge2 = v[t.v[0].p]-v[t.v[1].p];
-
-		//cerr << "DeltaPos 1: "<< deltaPos1.x << "," << deltaPos1.y << "," << deltaPos1.z << endl;
-		//cerr << "DeltaPos 2: "<< deltaPos2.x << "," << deltaPos2.y << "," << deltaPos2.z << endl;
-
-		// UV delta
-		vec2 deltaUV1;
-		vec2 deltaUV2;
-		if( vt.size() > 0 ){
-			//cerr << "Success " << vt.size() << endl;
-			deltaUV1 = vt[t.v[1].t]-vt[t.v[0].t];
-			deltaUV2 = vt[t.v[2].t]-vt[t.v[0].t];
-			//cerr << "deltaUV 1: "<< deltaUV1.x << "," << deltaUV1.y << endl;
-			//cerr << "deltaUV 2: "<< deltaUV2.x << "," << deltaUV2.y << endl;
-		}
-		else{
-			//cerr << "Failed to obtain UV" << endl;
-			deltaUV1 = vec2(1);
-			deltaUV2 = vec2(1);
-		}
-
 		for (uint j = 0; j < 3; ++j) {
 			Varying b;
 			vertex &k = t.v[j];
@@ -388,6 +365,24 @@ uint Geometry::addBuffer(const string& load, const float *pos, const float *col,
 			// texture coordinates
 			b.UVs[0] = vt[k.t].x;
 			b.UVs[1] = vt[k.t].y;
+
+			// Edges of the triangle : position delta
+			vec3 edge1 = v[t.v[(j+2)%3].n]-v[t.v[(j+1)%3].n];
+			vec3 edge2 = v[t.v[j].n]-v[t.v[(j+1)%3].n];
+
+			// UV delta
+			vec2 deltaUV1;
+			vec2 deltaUV2;
+			if( vt.size() > 0 ){
+				//cerr << "Success " << vt.size() << endl;
+				deltaUV1 = vt[t.v[(j+2)%3].t]-vt[t.v[j].t];
+				deltaUV2 = vt[t.v[(j+1)%3].t]-vt[t.v[j].t];
+			}
+			else{
+				//cerr << "Failed to obtain UV" << endl;
+				deltaUV1 = vec2(1);
+				deltaUV2 = vec2(1);
+			}
 
 			// tangent
 			GLfloat f = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);

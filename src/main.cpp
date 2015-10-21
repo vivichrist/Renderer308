@@ -31,7 +31,7 @@ mat4 g_spotlight_rot;
 float g_light_array[160];
 GLint g_num_of_lights;
 
-mat3 light = mat3(vec3( -3.0f, 5.0f, 0.0f ) //position
+mat3 light = mat3(vec3( -10.0f, 5.0f, 0.0f ) //position
     	          , vec3(1.0f, 1.0f, 1.0f ) // colour
     	          , vec3(2.0f, 0.0f, 0.0) ); //intensity, unknown, unknown
 
@@ -50,7 +50,7 @@ int aoMode = 0;
 int noiseMode = 0;
 const int hemisphereRadius = 4;
 const int hemisphereSize = 32;
-GLfloat noiseScale[2], g_dof = 0.5;
+GLfloat noiseScale[2], g_dof = 0.62;
 GLfloat noise[3*hemisphereRadius*hemisphereRadius];
 GLuint noiseTex;
 
@@ -618,7 +618,7 @@ int main()
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glActiveTexture(GL_TEXTURE0);
 
-	float lightRot = M_1_PI / 30;
+	float lightRot = M_1_PI / 5;
 	int i;
 	while ( !glfwWindowShouldClose( window ) )
 	{
@@ -636,7 +636,7 @@ int main()
 			glUniformMatrix4fv( shader( "mvM" ), 1, GL_FALSE, value_ptr( g_cam->getViewMatrix() ) );
 			glUniformMatrix4fv( shader( "projM" ), 1, GL_FALSE,	value_ptr( g_cam->getProjectionMatrix() ) );
 			glUniformMatrix3fv( shader( "normM" ), 1, GL_FALSE,	value_ptr( g_cam->getNormalMatrix() ) );
-			glUniformMatrix4fv( shader( "viewP" ), 1, GL_FALSE,	value_ptr( g_cam->getNormalMatrix() ) );
+			glUniformMatrix4fv( shader( "viewP" ), 1, GL_FALSE,	value_ptr( g_cam->getPosition() ) );
 			glUniformMatrix3fv( shader( "light" ), 1, GL_FALSE, value_ptr(light) );
 			glUniform1f( shader( "parallaxScale" ), parallaxScale );
 			glUniform1f( shader( "parallaxMinLayer" ), parallaxMinLayer );
@@ -649,14 +649,14 @@ int main()
 			else geo->draw( teapot, 1 );*/
 
 
-			geo->draw( castle, 1 );
-			//geo->draw( table, 1 );
+			//geo->draw( castle, 1 );
+			geo->draw( table, 1 );
 			glUniform1f( shader( "parallaxScale" ), 0 );
 			//geo->draw( sphere, 1 );
 			geo->draw( teapot, 1 );
 		shader.unUse();
 		txt->activateTexturesFB( fbo );
-		lightPos = rotateY( lightPos, lightRot );
+		light[0] = rotateY( light[0], lightRot );
 
 		glActiveTexture(GL_TEXTURE8);
 		glBindTexture(GL_TEXTURE_2D, noiseTex);

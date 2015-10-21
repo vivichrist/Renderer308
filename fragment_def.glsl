@@ -33,7 +33,7 @@ uniform sampler2D depth;
 
 // Gets the UV Coordinate of the given vector that is in tangent space. Against the given Texture coordinate
 // Outputs the given parallaxHeight of the pixel to the parallaxHeight variable
-vec2 parallaxMapping(in vec3 view, in vec2 texCoords, out float parallaxHeight){
+vec2 parallaxMappingSteep(in vec3 view, in vec2 texCoords, out float parallaxHeight){
 
    // determine number of layers from angle between V and N
    float numLayers = mix(parallaxMaxLayer, parallaxMinLayer, abs(dot(vec3(0.0, 0.0, 1.0), view)));
@@ -71,6 +71,23 @@ vec2 parallaxMapping(in vec3 view, in vec2 texCoords, out float parallaxHeight){
    return currentTextureCoords;
 }
 
+vec2 parallaxMapping(in vec3 V, in vec2 T, out float parallaxHeight)
+{
+   // get depth for this fragment
+   float initialHeight = texture(heightmap, T).r;
+
+   // calculate amount of offset for Parallax Mapping
+   vec2 texCoordOffset = parallaxScale * V.xy / V.z * initialHeight;
+
+   // calculate amount of offset for Parallax Mapping With Offset Limiting
+   texCoordOffset = parallaxScale * V.xy * initialHeight;
+
+   parallaxHeight = initialHeight;
+
+   // retunr modified texture coordinates
+   return T - texCoordOffset;
+}
+
 // Gets the UV coodinate that should be displaced on the screen
 vec2 getUVCoordinate(out float parallaxHeight){
 
@@ -80,10 +97,11 @@ vec2 getUVCoordinate(out float parallaxHeight){
 	if( parallaxScale != 0.0 ){
 		// Get parallax' offset of this pixel
 		vec3 viewDir = normalize(vTangentView - vTangentFragPos);
-		return parallaxMapping(viewDir, uv, parallaxHeight);
+		vec2 uv2 = parallaxMappingSteep(viewDir, uv, parallaxHeight);
+		return uv2;
 	}
 	else{
-		return vUV;
+		return uv;
 	}
 }
 
@@ -157,7 +175,7 @@ void main()
 
 
 	// Dot product gives us diffuse intensity
-    float lightIntensity = max(0.0, dot(lightDir,vNormal));
+    float lightIntensity = max(0.0, dot(lightDir,n));
 
     // Shading from parallax
     if( parallaxScale != 0.0 ){
@@ -166,7 +184,7 @@ void main()
     }
 
     // Multiply intensity by diffuse color, force alpha to 1.0 and add in ambient light
-    colour = vec4(light[1],1)*lightIntensity * texture( image, uv );
+    colour = vec4(light[1],1)*lightIntensity * texture(image,uv);
 
     // Specular Light
     vec3 halfway = normalize(lightDir - normalize(vView));
