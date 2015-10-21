@@ -533,7 +533,7 @@ int main()
 	geo->bindHMTexure( "res/textures/brick2_height.jpg", table );
 
 	geo->bindTexure( "res/textures/test.jpg", teapot );
-	geo->bindNMTexure( "res/textures/normalMap.jpg", table );
+	geo->bindNMTexure( "res/textures/normalMap.jpg", teapot );
 
 	/****************************************************************************
 	 * Setup Lighting
