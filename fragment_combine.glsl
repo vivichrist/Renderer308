@@ -22,6 +22,8 @@ void main()
     vec4 composite = texture( blurColour, texcoord );
 
     // viv's code end
-    FBColor = vec4( composite.rgb * dofOffset + bloom.rgb
-        + (1 - dofOffset) * c.rgb, 1);
+    FBColor = vec4( composite.rgb * dofOffset * 0.5
+                    + bloom.rgb
+                    + (1.0 - dofOffset) * c.rgb, 1);
+//   FBColor = vec4( composite.xyz,1 );
 }

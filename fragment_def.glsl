@@ -10,6 +10,7 @@ layout(location = 3) out vec4 spec;
 smooth in vec2 vUV;
 smooth in vec3 vNormal;
 smooth in vec3 vView;
+smooth in vec3 vLightDir;
 smooth in vec3 vTangentLightPos;
 smooth in vec3 vTangentFragPos;
 smooth in vec3 vTangentView;
@@ -79,11 +80,11 @@ vec2 getUVCoordinate(out float parallaxHeight){
 	if( parallaxScale != 0.0 ){
 		// Get parallax' offset of this pixel
 		vec3 viewDir = normalize(vTangentView - vTangentFragPos);
-		uv = parallaxMapping(viewDir, uv, parallaxHeight);
+		return parallaxMapping(viewDir, uv, parallaxHeight);
 	}
-
-	return uv;
-
+	else{
+		return vUV;
+	}
 }
 
 float parallaxSoftShadowMultiplier(in vec3 L, in vec2 initialTexCoord,
@@ -154,7 +155,7 @@ void main()
 	vec4 lightPos = mvM*vec4(light[0],1); // w=1 point light
     vec3 lightDir = normalize(lightPos.xyz - vView);
     vec3 tangentLightDir = normalize(vTangentLightPos - vTangentFragPos);
-    float lightIntensity;
+    float lightIntensity = 0;
 
     colour = vec4(0);
     if( parallaxScale != 0.0 ){
@@ -173,16 +174,15 @@ void main()
     colour += vec4(light[1],1)*lightIntensity * texture( image, uv ) + vec4(0,0,0,0);
 
     // Specular Light
-    vec3 halfway = normalize(lightDir - normalize(vView));
-
-    float spec = max(0.0, dot(n,halfway));
-
+    vec3 halfway = normalize(vLightDir - normalize(vView));
+    float specular = max(0.0, dot(normalize(n), halfway));
+    float intensity = colour.x + colour.y + colour.z / 3.0;
+    spec = (intensity > 0.9) ? vec4( intensity, intensity, intensity, 1 ) : vec4(0,0,0,1);
 
     // If the diffuse light is zero, don’t even bother with the pow function
-    if ( lightIntensity > 0 )
-    {
-        float fSpec = pow(spec, 128.0);
-        colour.rgb += vec3(fSpec, fSpec, fSpec);
+    if ( lightIntensity > 0 ){
+        float fSpec = pow(specular, 512.0);
+        spec = vec4(fSpec, fSpec, fSpec, 1);
     }
 
 

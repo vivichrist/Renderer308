@@ -190,14 +190,22 @@ void Texture::activateTexturesFB( uint fbID )
 	glBindTexture( GL_TEXTURE_2D, fbo.colorID2 );
 }
 
-void Texture::activateStage2FB( uint s1fb, uint s2fb )
+void Texture::activateStage2FB( uint s1fb, uint s2fb, uint startfb )
 {
 	FBObj& fbo1 = framebuffer[s1fb];
 	FBObj& fbo2 = framebuffer[s2fb];
 	glActiveTexture( GL_TEXTURE0 );
-	glBindTexture( GL_TEXTURE_2D, fbo2.colorID0);
+	glBindTexture( GL_TEXTURE_2D, fbo1.colorID0);
 	glActiveTexture( GL_TEXTURE1 );
-	glBindTexture( GL_TEXTURE_2D, fbo1.colorID2 );
+	glBindTexture( GL_TEXTURE_2D, fbo2.colorID2 );
+	glBindFramebuffer( GL_FRAMEBUFFER, startfb );
+	  GLenum drawBuffers[] =
+	  {
+	      GL_COLOR_ATTACHMENT0
+	    , GL_COLOR_ATTACHMENT1
+	    , GL_COLOR_ATTACHMENT2
+	  };
+	  glDrawBuffers(3, drawBuffers);
 }
 
 void Texture::deactivateTexturesFB()
@@ -213,12 +221,14 @@ void Texture::deactivateTexturesFB()
 	glBindTexture( GL_TEXTURE_2D, 0 );
 }
 
-void Texture::combineStage( uint fbID1, uint fbID2 )
+void Texture::combineStage( uint fbID0, uint fbID1, uint fbID2 )
 {
-  FBObj& fbo1 = framebuffer[fbID1], fbo2 = framebuffer[fbID2];
+  FBObj& fbo0 = framebuffer[fbID0]
+       , &fbo1 = framebuffer[fbID1]
+       , &fbo2 = framebuffer[fbID2];
   glBindFramebuffer( GL_FRAMEBUFFER, 0 ); // just in case
   glActiveTexture( GL_TEXTURE0 );
-  glBindTexture( GL_TEXTURE_2D, fbo1.depthID ); // old depthBuffer
+  glBindTexture( GL_TEXTURE_2D, fbo0.depthID ); // old depthBuffer
   glActiveTexture( GL_TEXTURE1 );
   glBindTexture( GL_TEXTURE_2D, fbo1.colorID0); // colour
   glActiveTexture( GL_TEXTURE2 );
@@ -309,8 +319,8 @@ void Texture::setupPinPongFBO( uint width, uint height, uint& fb1, uint& fb2 )
   glGenFramebuffers( 1, &fbo2.fboID );
 
   // Generate and bind the texture for the depth buffer
+  glBindFramebuffer( GL_FRAMEBUFFER, fbo1.fboID );
   glGenTextures( 1, &fbo1.depthID );
-  fbo2.depthID = fbo1.depthID;
   glBindTexture( GL_TEXTURE_2D, fbo1.depthID );
   glTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, width, height, 0
       , GL_DEPTH_COMPONENT, GL_FLOAT, 0 );
@@ -318,12 +328,8 @@ void Texture::setupPinPongFBO( uint width, uint height, uint& fb1, uint& fb2 )
   glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
   glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
   glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-  glBindFramebuffer( GL_FRAMEBUFFER, fbo1.fboID );
   glFramebufferTexture2D( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D
       , fbo1.depthID, 0 );
-  glBindFramebuffer( GL_FRAMEBUFFER, fbo2.fboID );
-  glFramebufferTexture2D( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D
-      , fbo2.depthID, 0 );
   // Generate and bind the texture for fbo1 diffuse
   glGenTextures( 1, &fbo1.colorID0 );
   glBindTexture( GL_TEXTURE_2D, fbo1.colorID0 );
@@ -333,7 +339,6 @@ void Texture::setupPinPongFBO( uint width, uint height, uint& fb1, uint& fb2 )
   glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
   glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
   glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-  glBindFramebuffer( GL_FRAMEBUFFER, fbo1.fboID );
   glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D
       , fbo1.colorID0, 0 );
   // Generate and bind the texture for fbo1 highlights
@@ -355,6 +360,18 @@ void Texture::setupPinPongFBO( uint width, uint height, uint& fb1, uint& fb2 )
         fboStatus );
     exit( 1 );
   }
+
+  glBindFramebuffer( GL_FRAMEBUFFER, fbo2.fboID );
+  glGenTextures( 1, &fbo2.depthID );
+  glBindTexture( GL_TEXTURE_2D, fbo2.depthID );
+  glTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, width, height, 0
+      , GL_DEPTH_COMPONENT, GL_FLOAT, 0 );
+  glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+  glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+  glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+  glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+  glFramebufferTexture2D( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D
+      , fbo2.depthID, 0 );
   // Generate and bind the texture for fbo2 diffuse
   glGenTextures( 1, &fbo2.colorID0 );
   glBindTexture( GL_TEXTURE_2D, fbo2.colorID0 );
@@ -364,7 +381,6 @@ void Texture::setupPinPongFBO( uint width, uint height, uint& fb1, uint& fb2 )
   glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
   glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
   glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-  glBindFramebuffer( GL_FRAMEBUFFER, fbo2.fboID );
   glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D
       , fbo2.colorID0, 0 );
   // Generate and bind the texture for fbo2 highlights
@@ -388,8 +404,10 @@ void Texture::setupPinPongFBO( uint width, uint height, uint& fb1, uint& fb2 )
   }
 
   glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+
   framebuffer[ fbo1.fboID ] = fbo1;
   framebuffer[ fbo2.fboID ] = fbo2;
+
   fb1 = fbo1.fboID;
   fb2 = fbo2.fboID;
 }
