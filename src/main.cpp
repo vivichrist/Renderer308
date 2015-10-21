@@ -512,28 +512,36 @@ int main()
 	/*int bunny = geo->addBuffer( "res/assets/dragon.obj"
 			, vec3( 0.0f, -1.5f, 0.0f )
 			, vec3( 0.80754f, 0.90754f, 0.90754f ) );*/
-	uint sphere = geo->addBuffer( "res/assets/teapot.obj"
-            , vec3( 0.0f, -1.5f, 0.0f ) );
+	uint sphere = geo->addBuffer( "res/assets/sphere.obj"
+            , light[0] );
 	uint teapot = geo->addBuffer( "res/assets/teapot.obj"
 			, vec3( 0.0f, -1.5f, 0.0f )
 			, vec3( 0.80754f, 0.90754f, 0.90754f ) );
 	uint torus = geo->addBuffer( "res/assets/torus.obj"
 			, vec3( 0.0f, -1.0f, 0.0f )
 			, vec3( 0.80754f, 0.90754f, 0.90754f ) );
-	uint table = geo->addBuffer( "res/assets/Castle.obj"
+	uint table = geo->addBuffer( "res/assets/table.obj"
             , vec3( 0.0f, -2.0f, 0.0f ) );
+	uint castle = geo->addBuffer( "res/assets/Castle.obj"
+	            , vec3( 0.0f, -2.0f, 0.0f ) );
 
 	if ( checkGLErrors( 375 ) ) exit(1);
 
 	txt = Texture::getInstance();
 
-
 	geo->bindTexure( "res/textures/brick2.jpg", table );
 	geo->bindNMTexure( "res/textures/brick2_normal.jpg", table );
 	geo->bindHMTexure( "res/textures/brick2_height.jpg", table );
 
+
+	geo->bindTexure( "res/textures/brick2.jpg", castle );
+	geo->bindNMTexure( "res/textures/brick2_normal.jpg", castle );
+	geo->bindHMTexure( "res/textures/brick2_height.jpg", castle );
+
 	geo->bindTexure( "res/textures/test.jpg", teapot );
 	geo->bindNMTexure( "res/textures/normalMap.jpg", teapot );
+
+	geo->bindTexure( "res/textures/test.jpg", sphere);
 
 	/****************************************************************************
 	 * Setup Lighting
@@ -640,8 +648,11 @@ int main()
 			else if (shape == 2) geo->draw( torus, 1 );
 			else geo->draw( teapot, 1 );*/
 
-			geo->draw( table, 1 );
+
+			geo->draw( castle, 1 );
+			//geo->draw( table, 1 );
 			glUniform1f( shader( "parallaxScale" ), 0 );
+			//geo->draw( sphere, 1 );
 			geo->draw( teapot, 1 );
 		shader.unUse();
 		txt->activateTexturesFB( fbo );

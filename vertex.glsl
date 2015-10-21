@@ -45,7 +45,7 @@ void main(void)
 	vTangentView     = TBN * mat3(mvM)*viewP;
 	vTangentLightPos = TBN * mat3(mvM)*light[0];
 	vTangentFragPos  = TBN * pos4.xyz;
-	vTangentNormal   = TBN * vNormal;
+	vTangentNormal   = normalize(TBN * vNormal);
 
     // transform the geometry!
     gl_Position = projM * pos4;

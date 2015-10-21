@@ -149,28 +149,29 @@ void main()
 
 	// Normal
 	vec3 n = texture(normalmap, uv).rgb*2-1;
-	n = normalize(n);
+	n = normalize(n+vNormal);
 
     // Dot product gives us diffuse intensity
 	vec4 lightPos = mvM*vec4(light[0],1); // w=1 point light
     vec3 lightDir = normalize(lightPos.xyz - vView);
-    float lightIntensity;
 
+
+	// Dot product gives us diffuse intensity
+    float lightIntensity = max(0.0, dot(lightDir,vNormal));
+
+    // Shading from parallax
     if( parallaxScale != 0.0 ){
         vec3 tangentLightDir = normalize(vTangentLightPos - vTangentFragPos);
-    	lightIntensity = parallaxSoftShadowMultiplier(lightDir.xyz,uv,parallaxHeight);
-    }
-    else{
-    	// Dot product gives us diffuse intensity
-		lightIntensity = max(0.0, dot(lightDir,vNormal));
+    	lightIntensity *= parallaxSoftShadowMultiplier(lightDir.xyz,uv,parallaxHeight);
     }
 
     // Multiply intensity by diffuse color, force alpha to 1.0 and add in ambient light
-    colour = vec4(light[1],1)*lightIntensity * texture( image, uv ) + vec4(0,0,0,0);
+    colour = vec4(light[1],1)*lightIntensity * texture( image, uv );
 
     // Specular Light
     vec3 halfway = normalize(lightDir - normalize(vView));
-    float specular = max(0.0, dot(normalize(vNormal+n), halfway));
+    float specular = max(0.0, dot(vNormal, halfway));
+
     float intensity = colour.x + colour.y + colour.z / 3.0;
     spec = (intensity > 0.9) ? vec4( intensity, intensity, intensity, 1 ) : vec4(0,0,0,1);
 
