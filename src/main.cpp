@@ -168,12 +168,12 @@ void key_callback( GLFWwindow * window, int key, int scancode
 		parallaxMinLayer = p < 0 ? 0 : p;
 		cerr << "Parallax Min Layer: " << parallaxMaxLayer << endl;
 	}
-	else if ( key == GLFW_KEY_Q && action == GLFW_PRESS ){ light[0].x+=1; }//g_cam->rotateAroundX(0.1); }
-	else if ( key == GLFW_KEY_A && action == GLFW_PRESS ){ light[0].x-=1; }//g_cam->rotateAroundX(-0.1); }
-	else if ( key == GLFW_KEY_W && action == GLFW_PRESS ){ light[0].y+=1; }//g_cam->rotateAroundY(0.1); }
-	else if ( key == GLFW_KEY_S && action == GLFW_PRESS ){ light[0].y-=1; }//g_cam->rotateAroundY(-0.1); }
-	else if ( key == GLFW_KEY_E && action == GLFW_PRESS ){ light[0].z+=1; }//g_cam->rotateAroundZ(0.1); }
-	else if ( key == GLFW_KEY_D && action == GLFW_PRESS ){ light[0].z-=1; }//g_cam->rotateAroundZ(-0.1); }
+	else if ( key == GLFW_KEY_KP_7 && action == GLFW_PRESS ){ light[0].x+=1; }//g_cam->rotateAroundX(0.1); }
+	else if ( key == GLFW_KEY_KP_4 && action == GLFW_PRESS ){ light[0].x-=1; }//g_cam->rotateAroundX(-0.1); }
+	else if ( key == GLFW_KEY_KP_8 && action == GLFW_PRESS ){ light[0].y+=1; }//g_cam->rotateAroundY(0.1); }
+	else if ( key == GLFW_KEY_KP_5 && action == GLFW_PRESS ){ light[0].y-=1; }//g_cam->rotateAroundY(-0.1); }
+	else if ( key == GLFW_KEY_KP_9 && action == GLFW_PRESS ){ light[0].z+=1; }//g_cam->rotateAroundZ(0.1); }
+	else if ( key == GLFW_KEY_KP_6 && action == GLFW_PRESS ){ light[0].z-=1; }//g_cam->rotateAroundZ(-0.1); }
 	else if ( g_cam_select )
 	{
 	  if ( key == GLFW_KEY_PAGE_UP && action == GLFW_PRESS )
@@ -641,6 +641,7 @@ int main()
 			else geo->draw( teapot, 1 );*/
 
 			geo->draw( table, 1 );
+			glUniform1f( shader( "parallaxScale" ), 0 );
 			geo->draw( teapot, 1 );
 		shader.unUse();
 		txt->activateTexturesFB( fbo );

@@ -158,13 +158,10 @@ void main()
 
     if( parallaxScale != 0.0 ){
         vec3 tangentLightDir = normalize(vTangentLightPos - vTangentFragPos);
-    	lightIntensity = parallaxSoftShadowMultiplier(tangentLightDir.xyz,uv,parallaxHeight);
+    	lightIntensity = parallaxSoftShadowMultiplier(lightDir.xyz,uv,parallaxHeight);
     }
     else{
     	// Dot product gives us diffuse intensity
-		vec4 lightPos = mvM*vec4(light[0],1); // w=1 point light
-		vec3 lightDir = normalize(lightPos.xyz - vView);
-		vec3 tangentLightDir = normalize(vTangentLightPos - vTangentFragPos);
 		lightIntensity = max(0.0, dot(lightDir,vNormal));
     }
 
