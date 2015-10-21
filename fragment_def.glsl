@@ -178,7 +178,7 @@ void main()
     float lightIntensity = max(0.0, dot(lightDir,n));
 
     // Shading from parallax
-    if( parallaxScale == 0.0 ){
+    if( parallaxScale != 0.0 ){
         vec3 tangentLightDir = normalize(vTangentLightPos - vTangentFragPos);
     	lightIntensity *= parallaxSoftShadowMultiplier(lightDir.xyz,uv,parallaxHeight);
     }

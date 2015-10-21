@@ -31,7 +31,7 @@ mat4 g_spotlight_rot;
 float g_light_array[160];
 GLint g_num_of_lights;
 
-mat3 light = mat3(vec3( -3.0f, 5.0f, 0.0f ) //position
+mat3 light = mat3(vec3( -10.0f, 5.0f, 0.0f ) //position
     	          , vec3(1.0f, 1.0f, 1.0f ) // colour
     	          , vec3(2.0f, 0.0f, 0.0) ); //intensity, unknown, unknown
 
@@ -618,7 +618,7 @@ int main()
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glActiveTexture(GL_TEXTURE0);
 
-	float lightRot = M_1_PI / 30;
+	float lightRot = M_1_PI / 5;
 	int i;
 	while ( !glfwWindowShouldClose( window ) )
 	{
@@ -653,7 +653,7 @@ int main()
 			geo->draw( table, 1 );
 			glUniform1f( shader( "parallaxScale" ), 0 );
 			//geo->draw( sphere, 1 );
-			//geo->draw( teapot, 1 );
+			geo->draw( teapot, 1 );
 		shader.unUse();
 		txt->activateTexturesFB( fbo );
 		light[0] = rotateY( light[0], lightRot );
