@@ -534,9 +534,9 @@ int main()
 	geo->bindHMTexure( "res/textures/brick2_height.jpg", table );
 
 
-	geo->bindTexure( "res/textures/brick2.jpg", castle );
-	geo->bindNMTexure( "res/textures/brick2_normal.jpg", castle );
-	geo->bindHMTexure( "res/textures/brick2_height.jpg", castle );
+	geo->bindTexure( "res/textures/stone.png", castle );
+	geo->bindNMTexure( "res/textures/stone_normal.jpg", castle );
+	geo->bindHMTexure( "res/textures/stone_height.jpg", castle );
 
 	geo->bindTexure( "res/textures/test.jpg", teapot );
 	geo->bindNMTexure( "res/textures/normalMap.jpg", teapot );
