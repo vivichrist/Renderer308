@@ -17,7 +17,7 @@ void main()
     vec4 c = texture( colour, texcoord );
     float d = texture( depth, texcoord ).r;
     float depth = 1.2 - (11.0 * d - 10.0);
-    float dofOffset = clamp( (abs( log2(dof) - log2(depth) ) / max( depth, dof )) , 0.0, 0.8);
+    float dofOffset = clamp( (abs( log2(dof) - log2(depth) ) / max( depth, dof )) , 0.0, 1.0);
 
     vec4 bloom = texture( blurSpec, texcoord );
     vec4 composite = texture( blurColour, texcoord );

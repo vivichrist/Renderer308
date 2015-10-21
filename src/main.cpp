@@ -515,7 +515,7 @@ int main()
 	uint sphere = geo->addBuffer( "res/assets/sphere.obj"
             , light[0] );
 	uint teapot = geo->addBuffer( "res/assets/teapot.obj"
-			, vec3( 0.0f, -1.5f, 0.0f )
+			, vec3( 0.0f, 3.5f, 0.0f )
 			, vec3( 0.80754f, 0.90754f, 0.90754f ) );
 	uint torus = geo->addBuffer( "res/assets/torus.obj"
 			, vec3( 0.0f, -1.0f, 0.0f )
