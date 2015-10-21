@@ -47,7 +47,7 @@ const int kernelSize = 32;
 
 // Ambient Occlusion
 int aoMode = 0;
-int noiseMode = 1;
+int noiseMode = 0;
 const int hemisphereRadius = 4;
 const int hemisphereSize = 32;
 GLfloat noiseScale[2], g_dof = 0.5;
