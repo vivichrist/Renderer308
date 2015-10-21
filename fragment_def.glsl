@@ -154,13 +154,11 @@ void main()
     // Dot product gives us diffuse intensity
 	vec4 lightPos = mvM*vec4(light[0],1); // w=1 point light
     vec3 lightDir = normalize(lightPos.xyz - vView);
-    vec3 tangentLightDir = normalize(vTangentLightPos - vTangentFragPos);
-    float lightIntensity = 0;
+    float lightIntensity;
 
-    colour = vec4(0);
     if( parallaxScale != 0.0 ){
+        vec3 tangentLightDir = normalize(vTangentLightPos - vTangentFragPos);
     	lightIntensity = parallaxSoftShadowMultiplier(tangentLightDir.xyz,uv,parallaxHeight);
-    	//colour = vec4(f,f,f,1);
     }
     else{
     	// Dot product gives us diffuse intensity
@@ -171,7 +169,7 @@ void main()
     }
 
     // Multiply intensity by diffuse color, force alpha to 1.0 and add in ambient light
-    colour += vec4(light[1],1)*lightIntensity * texture( image, uv ) + vec4(0,0,0,0);
+    colour = vec4(light[1],1)*lightIntensity * texture( image, uv ) + vec4(0,0,0,0);
 
     // Specular Light
     vec3 halfway = normalize(lightDir - normalize(vView));
