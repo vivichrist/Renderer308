@@ -54,9 +54,9 @@ void main()
 		float delta = samplePoint.z - sampleDepth;
 
 		float linearDepth = toViewSpace(sampleTexCoord).z;
-		float rangeCheck = abs(viewSpacePosition.z - linearDepth) < hemisphereRadius ? 1.0 : 0.0;
-
-		occlusion += (delta > 0.0005 ? 1.0 : 0.0) * rangeCheck;
+		if (abs(viewSpacePosition.z - linearDepth) < hemisphereRadius && delta > 0.000005){
+			occlusion++;
+		}
 	}
 
 	occlusion = 1.0 - (occlusion / float(hemisphereSize));
