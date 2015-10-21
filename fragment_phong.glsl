@@ -41,6 +41,8 @@ void main()
   vec3 diff = vec3(0); // accumulated diffuse intensity
   float spec = 0; // accumulated specular intensity
   vec3 specIntense = vec3(0);
+
+  vec3 diff = vec3(0); // accumulated diffuse intensity
   for ( int i = 0; i<numLights; ++i )
   {
     float d = 0; // current diffuse intensity

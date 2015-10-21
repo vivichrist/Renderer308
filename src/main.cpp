@@ -31,6 +31,20 @@ mat4 g_spotlight_rot;
 float g_light_array[160];
 GLint g_num_of_lights;
 
+mat3 light = mat3(vec3( -3.0f, 5.0f, 0.0f ) //position
+    	          , vec3(1.0f, 1.0f, 1.0f ) // colour
+    	          , vec3(2.0f, 0.0f, 0.0) ); //intensity, unknown, unknown
+
+vec3 cam_rotation = vec3(0,0,0);
+
+GLfloat parallaxScale = 0.05;
+GLfloat parallaxMinLayer = 10;
+GLfloat parallaxMaxLayer = 400;
+bool aoRight = false;
+
+const int kernelRadius = 4;
+const int kernelSize = 32;
+
 // Ambient Occlusion
 int aoMode = 0;
 int noiseMode = 1;
@@ -114,6 +128,52 @@ void key_callback( GLFWwindow * window, int key, int scancode
 	{
 	  g_cam_select = !g_cam_select;
 	}
+	else if ( key == GLFW_KEY_PAGE_DOWN && action == GLFW_PRESS )
+	{
+	  parallaxScale -= 0.05;
+	}
+	//
+	// Parallax Commands
+	//
+	else if ( key == GLFW_KEY_PAGE_UP && action == GLFW_PRESS )
+	{
+		parallaxScale += 0.05;
+		cerr << "Parallax Scale: " << parallaxScale << endl;
+	}
+	else if ( key == GLFW_KEY_PAGE_DOWN && action == GLFW_PRESS )
+	{
+		parallaxScale -= 0.05;
+		cerr << "Parallax Scale: " << parallaxScale << endl;
+	}
+	else if ( key == GLFW_KEY_HOME && action == GLFW_PRESS )
+	{
+		parallaxMaxLayer += 5;
+		cerr << "Parallax Max Layer: " << parallaxMaxLayer << endl;
+	}
+	else if ( key == GLFW_KEY_END && action == GLFW_PRESS )
+	{
+		float p = parallaxMaxLayer - 5;
+		parallaxMaxLayer = p > parallaxMinLayer ? p : parallaxMaxLayer;
+		cerr << "Parallax Max Layer: " << parallaxMaxLayer << endl;
+	}
+	else if ( key == GLFW_KEY_INSERT && action == GLFW_PRESS )
+	{
+		float p = parallaxMinLayer + 5;
+		parallaxMinLayer = p < parallaxMinLayer ? p : parallaxMinLayer;
+		cerr << "Parallax Min Layer: " << parallaxMinLayer << endl;
+	}
+	else if ( key == GLFW_KEY_DELETE && action == GLFW_PRESS )
+	{
+		float p = parallaxMinLayer - 5;
+		parallaxMinLayer = p < 0 ? 0 : p;
+		cerr << "Parallax Min Layer: " << parallaxMaxLayer << endl;
+	}
+	else if ( key == GLFW_KEY_Q && action == GLFW_PRESS ){ light[0].x+=1; }//g_cam->rotateAroundX(0.1); }
+	else if ( key == GLFW_KEY_A && action == GLFW_PRESS ){ light[0].x-=1; }//g_cam->rotateAroundX(-0.1); }
+	else if ( key == GLFW_KEY_W && action == GLFW_PRESS ){ light[0].y+=1; }//g_cam->rotateAroundY(0.1); }
+	else if ( key == GLFW_KEY_S && action == GLFW_PRESS ){ light[0].y-=1; }//g_cam->rotateAroundY(-0.1); }
+	else if ( key == GLFW_KEY_E && action == GLFW_PRESS ){ light[0].z+=1; }//g_cam->rotateAroundZ(0.1); }
+	else if ( key == GLFW_KEY_D && action == GLFW_PRESS ){ light[0].z-=1; }//g_cam->rotateAroundZ(-0.1); }
 	else if ( g_cam_select )
 	{
 	  if ( key == GLFW_KEY_PAGE_UP && action == GLFW_PRESS )
@@ -372,6 +432,7 @@ int main()
 	 * Load up a shader from the given files.
 	 *******************************************************//**/
 
+
 	Shader shader;
 	shader.loadFromFile( GL_VERTEX_SHADER, "vertex.glsl" );
 	shader.loadFromFile( GL_FRAGMENT_SHADER, "fragment_def.glsl" );
@@ -380,8 +441,15 @@ int main()
 		shader.addUniform( "mvM" );
 		shader.addUniform( "projM" );
 		shader.addUniform( "normM" );
-		shader.addUniform( "lightP" );
+		shader.addUniform( "light" );
+		shader.addUniform( "viewP" );
 		shader.addUniform( "image" );
+		shader.addUniform( "normalmap" );
+		shader.addUniform( "heightmap" );
+		shader.addUniform( "depth" );
+		shader.addUniform( "parallaxScale" );
+		shader.addUniform( "parallaxMinLayer" );
+		shader.addUniform( "parallaxMaxLayer" );
 	shader.unUse();
 	// print debugging info
 	shader.printActiveUniforms();
@@ -441,17 +509,17 @@ int main()
 	 ***************************************************************************/
 	//g_spotlight_pos = vec3( 0.0f, 7.0f, 0.0f );
 	Geometry *geo = Geometry::getInstance();
-	uint bunny = geo->addBuffer( "res/assets/bunny.obj"
+	/*int bunny = geo->addBuffer( "res/assets/dragon.obj"
 			, vec3( 0.0f, -1.5f, 0.0f )
-			, vec3( 0.80754f, 0.90754f, 0.90754f ) );
+			, vec3( 0.80754f, 0.90754f, 0.90754f ) );*/
+	uint sphere = geo->addBuffer( "res/assets/teapot.obj"
+            , vec3( 0.0f, -1.5f, 0.0f ) );
 	uint teapot = geo->addBuffer( "res/assets/teapot.obj"
 			, vec3( 0.0f, -1.5f, 0.0f )
 			, vec3( 0.80754f, 0.90754f, 0.90754f ) );
 	uint torus = geo->addBuffer( "res/assets/torus.obj"
 			, vec3( 0.0f, -1.0f, 0.0f )
 			, vec3( 0.80754f, 0.90754f, 0.90754f ) );
-	uint sphere = geo->addBuffer( "res/assets/sphere.obj"
-            , vec3( 0.0f, 2.0f, 0.0f ) );
 	uint table = geo->addBuffer( "res/assets/table.obj"
             , vec3( 0.0f, -2.0f, 0.0f ) );
 
@@ -459,17 +527,22 @@ int main()
 
 	txt = Texture::getInstance();
 
-	geo->bindTexure( "res/textures/brick.jpg", sphere );
-	geo->bindTexure( "res/textures/wood.jpg", table );
+
+	geo->bindTexure( "res/textures/brick2.jpg", table );
+	geo->bindNMTexure( "res/textures/brick2_normal.jpg", table );
+	geo->bindHMTexure( "res/textures/brick2_height.jpg", table );
+
+	geo->bindTexure( "res/textures/test.jpg", teapot );
+	geo->bindNMTexure( "res/textures/normalMap.jpg", table );
 
 	/****************************************************************************
 	 * Setup Lighting
 	 ***************************************************************************/
-	g_lights->addPointLight( vec3( 5.0f, 5.0f, -5.0f )
+	g_lights->addPointLight( vec3( 0.0f, -5.0f, 0.0f )
 	                       , vec3( 1.5f, 1.5f, 1.5f )
 	                       , 2.0f, 0.0f, 0.0f, 0.1f );
-	g_lights->addDirectionalLight( vec3( 0.0f, -1.0f, 0.0f )
-	                             , vec3( 1.5f,  1.5f, 1.5f ) );
+	//g_lights->addDirectionalLight( vec3( 0.0f, -1.0f, 0.0f )
+	  //                           , vec3( 1.5f,  1.5f, 1.5f ) );
 	g_lights->getLights( g_light_array, g_num_of_lights );
 
 	// Camera to get model view and projection matices from. Amongst other things
@@ -540,24 +613,34 @@ int main()
 	int i;
 	while ( !glfwWindowShouldClose( window ) )
 	{
+		cerr << "Print" << endl;
 		// load values into the uniform slots of the shader and draw
 		txt->activateFrameBuffer( fbo );
+
 
 		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 		glEnable( GL_DEPTH_TEST );
 		shader.use();
 			glUniform1i( shader("image"), 0 );
+			glUniform1i( shader("normalmap"), 1 );
+			glUniform1i( shader("heightmap"), 2 );
 			glUniformMatrix4fv( shader( "mvM" ), 1, GL_FALSE, value_ptr( g_cam->getViewMatrix() ) );
 			glUniformMatrix4fv( shader( "projM" ), 1, GL_FALSE,	value_ptr( g_cam->getProjectionMatrix() ) );
 			glUniformMatrix3fv( shader( "normM" ), 1, GL_FALSE,	value_ptr( g_cam->getNormalMatrix() ) );
-			glUniform3f( shader( "lightP" ), lightPos.x, lightPos.y, lightPos.z );
+			glUniformMatrix4fv( shader( "viewP" ), 1, GL_FALSE,	value_ptr( g_cam->getNormalMatrix() ) );
+			glUniformMatrix3fv( shader( "light" ), 1, GL_FALSE, value_ptr(light) );
+			glUniform1f( shader( "parallaxScale" ), parallaxScale );
+			glUniform1f( shader( "parallaxMinLayer" ), parallaxMinLayer );
+			glUniform1f( shader( "parallaxMaxLayer" ), parallaxMaxLayer );
+			//glUniform3f( shader( "lightP" ), lightPos.x, lightPos.y, lightPos.z );
 
-			if (shape == 0) geo->draw( bunny, 1 );
+			/*if (shape == 0) geo->draw( bunny, 1 );
 			else if (shape == 1) geo->draw( sphere, 1 );
 			else if (shape == 2) geo->draw( torus, 1 );
-			else geo->draw( teapot, 1 );
+			else geo->draw( teapot, 1 );*/
 
 			geo->draw( table, 1 );
+			geo->draw( teapot, 1 );
 		shader.unUse();
 		txt->activateTexturesFB( fbo );
 		lightPos = rotateY( lightPos, lightRot );
