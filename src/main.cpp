@@ -268,20 +268,20 @@ void mousemotion_callback( GLFWwindow * window, double x, double y )
 	    if (x)
 	    {
 	      g_spotlight_rot = rotate( g_spotlight_rot, xr, vec3(1,0,0) );
-	      g_lights->directLight( mat3(g_spotlight_rot), g_spotlight );
+	      //g_lights->directLight( mat3(g_spotlight_rot), g_spotlight );
 	    }
 	    if (y)
 	    {
 	      g_spotlight_rot = rotate( g_spotlight_rot, yr, vec3(0,0,1) );
-	      g_lights->directLight( mat3(g_spotlight_rot), g_spotlight );
+	      //g_lights->directLight( mat3(g_spotlight_rot), g_spotlight );
 	    }
 	    glfwSetCursorPos( window, g_width / 2, g_height / 2 );
-	    g_lights->getLights( g_light_array, g_num_of_lights );
+	    //g_lights->getLights( g_light_array, g_num_of_lights );
 	  }
 	  else if ( g_cam_mode )
 		{
-			g_cam->rotateY( (float)((g_width / 2) - x) * 0.05f );
-			g_cam->rotateX( (float)((g_height / 2) - y) * 0.05f );
+			g_cam->rotateY( (float)((g_width / 2) - x) * 0.002f );
+			g_cam->rotateX( (float)((g_height / 2) - y) * 0.002f );
 			glfwSetCursorPos( window, g_width / 2, g_height / 2 );
 		}
 		else
@@ -520,7 +520,7 @@ int main()
 	uint torus = geo->addBuffer( "res/assets/torus.obj"
 			, vec3( 0.0f, -1.0f, 0.0f )
 			, vec3( 0.80754f, 0.90754f, 0.90754f ) );
-	uint table = geo->addBuffer( "res/assets/table.obj"
+	uint table = geo->addBuffer( "res/assets/Castle.obj"
             , vec3( 0.0f, -2.0f, 0.0f ) );
 
 	if ( checkGLErrors( 375 ) ) exit(1);
@@ -550,6 +550,7 @@ int main()
 	g_cam->setupProjection( M_PI_4, (float) g_width / (float) g_height
 						, 0.5f, 100.0f );
 	g_cam->setLookCenter();
+	g_cam->setSpeed( 0.8 );
 
 	///////////////////////////////////////////////////////////////////////////
 	//                           Main Rendering Loop                         //
