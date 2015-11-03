@@ -16,12 +16,13 @@
 #include <iostream>
 #include <string>
 #include <map>
+#include <cmath>
 #include <vector>
 #include <cstdio>
 #include <stb_image.h>
 #include "Shader.hpp"
 
-namespace vogl
+namespace R308
 {
   struct image
   {

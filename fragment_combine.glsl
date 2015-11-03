@@ -16,8 +16,9 @@ void main()
     // viv's code start
     vec4 c = texture( colour, texcoord );
     float d = texture( depth, texcoord ).r;
-    float depth = 1.2 - (11.0 * d - 10.0);
-    float dofOffset = clamp( (abs( log2(dof) - log2(depth) ) / max( depth, dof )) , 0.0, 0.8);
+    float depth = 1.0 - (12.0 * d - 11.0);
+    float dofOffset = clamp( 1.5 * (abs( log(depth) - log(dof) / max( depth, dof ) ) ) - 0.5
+                                 , 0.0, 1.0);
 
     vec4 bloom = texture( blurSpec, texcoord );
     vec4 composite = texture( blurColour, texcoord );
@@ -26,5 +27,5 @@ void main()
     FBColor = vec4( dofOffset * composite.rgb * 2.0
                     + bloom.rgb
                     + (1.0 - dofOffset) * c.rgb, 1);
-    // FBColor = vec4( dofOffset,dofOffset,dofOffset,1 );
+//    FBColor = vec4( dofOffset,dofOffset,dofOffset,1 );
 }

@@ -16,7 +16,7 @@
 #include "Loader.hpp"
 #include "Texture.hpp"
 
-namespace vogl
+namespace R308
 {
 
 enum LOC

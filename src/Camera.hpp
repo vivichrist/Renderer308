@@ -18,7 +18,7 @@
 #include <exception>
 #include "Plane.hpp"
 
-namespace vogl
+namespace R308
 {
 
 class Camera

@@ -1,3 +1,4 @@
+
 #define GLM_FORCE_RADIANS
 
 #include <GL/glew.h>
@@ -13,10 +14,10 @@
 #include "Geometry.hpp"
 #include "Lights.hpp"
 #include "Shader.hpp"
-#include "gbuffer.hpp"
+#include "GBuffer.hpp"
 
 using namespace glm;
-using namespace vogl;
+using namespace R308;
 
 bool g_hasMouse = false
    , g_cam_mode = false
@@ -246,7 +247,7 @@ void mousebutton_callback( GLFWwindow * window, int button
 	{
 		if ( g_hasMouse )
 		{
-			// TODO: do some such thing with mouse click...
+			// do some such thing with mouse click...
 		}
 		else
 		{ // capture mouse and allow mouse to rotate camera view
@@ -435,6 +436,7 @@ int main()
 
 	Shader shader;
 	shader.loadFromFile( GL_VERTEX_SHADER, "vertex.glsl" );
+	//shader.loadFromFile( GL_GEOMETRY_SHADER, "geometry_para.glsl" );
 	shader.loadFromFile( GL_FRAGMENT_SHADER, "fragment_def.glsl" );
 	shader.createAndLinkProgram();
 	shader.use();
@@ -446,7 +448,7 @@ int main()
 		shader.addUniform( "image" );
 		shader.addUniform( "normalmap" );
 		shader.addUniform( "heightmap" );
-		shader.addUniform( "depth" );
+		// shader.addUniform( "depth" );
 		shader.addUniform( "parallaxScale" );
 		shader.addUniform( "parallaxMinLayer" );
 		shader.addUniform( "parallaxMaxLayer" );
@@ -463,7 +465,6 @@ int main()
 		postShader.addUniform( "depth" );
 		postShader.addUniform( "colour" );
 		postShader.addUniform( "normal" );
-		postShader.addUniform( "pixelSize" );
 		postShader.addUniform( "aoMode" );
 		postShader.addUniform( "projMat" );
 		postShader.addUniform( "noiseScale" );
@@ -474,7 +475,7 @@ int main()
 		postShader.addUniform( "hemisphereRadius" );
 	postShader.unUse();
 	// print debugging info
-	shader.printActiveUniforms();
+	postShader.printActiveUniforms();
 
 	Shader ppShader;
 	ppShader.loadFromFile( GL_VERTEX_SHADER, "vertex_pdef.glsl" );
@@ -517,9 +518,9 @@ int main()
 	uint teapot = geo->addBuffer( "res/assets/teapot.obj"
 			, vec3( 0.0f, -1.5f, 0.0f )
 			, vec3( 0.80754f, 0.90754f, 0.90754f ) );
-	uint torus = geo->addBuffer( "res/assets/torus.obj"
-			, vec3( 0.0f, -1.0f, 0.0f )
-			, vec3( 0.80754f, 0.90754f, 0.90754f ) );
+//	uint torus = geo->addBuffer( "res/assets/torus.obj"
+//			, vec3( 0.0f, -1.0f, 0.0f )
+//			, vec3( 0.80754f, 0.90754f, 0.90754f ) );
 	uint table = geo->addBuffer( "res/assets/table.obj"
             , vec3( 0.0f, -2.0f, 0.0f ) );
 	uint castle = geo->addBuffer( "res/assets/Castle.obj"
@@ -565,14 +566,6 @@ int main()
 	///////////////////////////////////////////////////////////////////////////
 	float black[] =	{ 0, 0, 0 };
 	vec3 lightPos( 5, 2, 5 );
-	float blur[] = {
-		  1, 4, 7, 4, 1
-		, 4, 16, 26, 16, 4
-		, 7, 26, 41, 26, 7
-		, 4, 16, 26, 16, 4
-		, 1, 4, 7, 4, 1
-	};
-	for ( float& f: blur ) f /= 273.0f;
 	glClearBufferfv( GL_COLOR, 0, black );
 	glViewport( 0, 0, g_width, g_height );
 	fbo = txt->setupFBO( g_width, g_height );
@@ -622,10 +615,9 @@ int main()
 	int i;
 	while ( !glfwWindowShouldClose( window ) )
 	{
-		cerr << "Print" << endl;
+		//cerr << "Print" << endl;
 		// load values into the uniform slots of the shader and draw
 		txt->activateFrameBuffer( fbo );
-
 
 		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 		glEnable( GL_DEPTH_TEST );
@@ -682,35 +674,34 @@ int main()
 		postShader.unUse();
 
 		ppShader.use();
-		  glUniform1i( ppShader("colour"), 0 );
-		  glUniform1i( ppShader("spec"), 1 );
-		  glUniform2f( ppShader("pixelSize"), pixSize.x, pixSize.y);
+			glUniform1i( ppShader( "colour" ), 0 );
+			glUniform1i( ppShader( "spec" ), 1 );
+			glUniform2f( ppShader( "pixelSize" ), pixSize.x, pixSize.y );
+			glUniform1i( ppShader( "isVert" ), 0 );
+			txt->activateStage2FB( stage1fbo, fbo, ppfbo[0] );
+			glDisable( GL_DEPTH_TEST );
+			glDrawArrays( GL_POINTS, 0, 1 );
 
-		  glUniform1i( ppShader("isVert"), 0 );
-		  txt->activateStage2FB( stage1fbo, fbo, ppfbo[0] );
-		  glDisable( GL_DEPTH_TEST );
-		  glDrawArrays(GL_POINTS, 0, 1);
-
-		  for ( i = 0; i<9; ++i )
-		  {
-			glUniform1i( ppShader("isVert"), i % 2 );
-			txt->swapPPFBO( ppfbo[(i + 1) % 2], ppfbo[i % 2] );
-			glDrawArrays(GL_POINTS, 0, 1);
+			for ( i = 0; i < 9; ++i )
+			{
+				glUniform1i( ppShader( "isVert" ), i % 2 );
+				txt->swapPPFBO( ppfbo[(i + 1) % 2], ppfbo[i % 2] );
+				glDrawArrays( GL_POINTS, 0, 1 );
 			}
 		ppShader.unUse();
 
 		// setup combine shader with the last shader as input
-			glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+		glBindFramebuffer( GL_FRAMEBUFFER, 0 );
 		txt->combineStage( fbo, stage1fbo, ppfbo[0] );
-			glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-			glDisable( GL_DEPTH_TEST );
+		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+		glDisable( GL_DEPTH_TEST );
 		combine.use();
-		  glUniform1i( combine("depth"), 0 );
-		  glUniform1i( combine("colour"), 1 );
-		  glUniform1i( combine("blurColour"), 2 );
-		  glUniform1i( combine("blurSpec"), 3 );
-		  glUniform1f( combine("dof"), g_dof );
-		  glDrawArrays(GL_POINTS, 0, 1);
+			glUniform1i( combine( "depth" ), 0 );
+			glUniform1i( combine( "colour" ), 1 );
+			glUniform1i( combine( "blurColour" ), 2 );
+			glUniform1i( combine( "blurSpec" ), 3 );
+			glUniform1f( combine( "dof" ), g_dof );
+			glDrawArrays( GL_POINTS, 0, 1 );
 		combine.unUse();
 
 		txt->deactivateTexturesFB();

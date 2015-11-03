@@ -20,7 +20,7 @@
 #include <map>
 #include <set>
 
-namespace vogl
+namespace R308
 {
 
 struct vertex {

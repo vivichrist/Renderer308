@@ -29,7 +29,7 @@ int checkGLError2( int where )
   return errCount;
 }
 
-namespace vogl
+namespace R308
 {
 
 Texture *Texture::instance = nullptr;

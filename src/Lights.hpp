@@ -21,7 +21,7 @@ struct Light {
   glm::vec4 coneDir; // cone direction, cone angle is w;
 };
 
-namespace vogl
+namespace R308
 {
 
   class Lights

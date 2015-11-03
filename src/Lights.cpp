@@ -9,7 +9,7 @@
 
 using namespace glm;
 
-namespace vogl
+namespace R308
 {
 
 Lights::Lights()
@@ -84,7 +84,7 @@ void Lights::beamLight( const float angle, const uint index )
   light.coneDir.w += angle;
 }
 
-void vogl::Lights::getLights( float out[160], GLint& num )
+void R308::Lights::getLights( float out[160], GLint& num )
 {
 	num = 0;
 	for ( Light l : lights )

@@ -11,7 +11,7 @@
 using namespace std;
 using namespace glm;
 
-namespace vogl {
+namespace R308 {
 
 Geometry::Geometry() {
 }
@@ -59,7 +59,7 @@ Geometry::~Geometry() {
  */
 uint Geometry::addSmoothSurfaceBuffer(const string& load, const float *pos,
 		const float *col, uint n) {
-	vogl::Loader triangles;
+	R308::Loader triangles;
 	triangles.readOBJ(load);
 	// grab all relevant triangle info
 	vector<vec3> v;
@@ -98,13 +98,13 @@ uint Geometry::addSmoothSurfaceBuffer(const string& load, const float *pos,
 		tangent.x = f * (deltaUV2.y * edge1.x - deltaUV1.y * edge2.x);
 		tangent.y = f * (deltaUV2.y * edge1.y - deltaUV1.y * edge2.y);
 		tangent.z = f * (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z);
-		tangent = glm::normalize(tangent);
+		tangent = normalize(tangent);
 
 		vec3 bitangent = vec3(0);
 		bitangent.x = f * (-deltaUV2.x * edge1.x + deltaUV1.x * edge2.x);
 		bitangent.y = f * (-deltaUV2.x * edge1.y + deltaUV1.x * edge2.y);
 		bitangent.z = f * (-deltaUV2.x * edge1.z + deltaUV1.x * edge2.z);
-		bitangent = glm::normalize(bitangent);
+		bitangent = normalize(bitangent);
 
 		for (uint j = 0; j < 3; ++j) {
 			indices.push_back(t.v[j].p);
@@ -168,10 +168,10 @@ uint Geometry::addSmoothSurfaceBuffer(const string& load, const float *pos,
 			sizeof(Varying), (GLvoid *) (sizeof(float) * 6));
 	glEnableVertexAttribArray(TexCoordsLoc);
 	glVertexAttribPointer(TangentLoc, 3, b.vBuffType, GL_FALSE, sizeof(Varying),
-				(GLvoid *) 0);
+			(GLvoid *) (sizeof(float) * 8));
 	glEnableVertexAttribArray(TangentLoc);
 	glVertexAttribPointer(BitangentLoc, 3, b.vBuffType, GL_FALSE, sizeof(Varying),
-					(GLvoid *) 0);
+			(GLvoid *) (sizeof(float) * 11));
 	glEnableVertexAttribArray(BitangentLoc);
 	checkGLError(134);
 	// instancing attributes
@@ -200,7 +200,6 @@ uint Geometry::addSmoothSurfaceBuffer(const string& load, const float *pos,
 	glGenBuffers(1, &b.ebo);
 	glBindBuffer(b.type, b.ebo);
 	glBufferData(b.type, b.eBytesSize, (GLvoid *) &data[0], GL_STATIC_DRAW);
-	checkGLError(144);
 	// the VAO should remember all of that
 	m_elemBuffOb[b.vao] = b;
 	return b.vao;
@@ -231,16 +230,12 @@ void Geometry::bindCMTexure(GLuint cmapID, GLuint id) {
 
 void Geometry::bindCMTexure(const std::string& load, GLuint id) {
 	GLuint cmapID = Texture::getInstance()->addCMTexture(load);
-	checkGLError(1011);
 	if (m_elemBuffOb.find(id) != m_elemBuffOb.end()) {
 		m_elemBuffOb[id].cubeMap = cmapID;
-		checkGLError(102);
 	} else if (m_buffOb.find(id) != m_buffOb.end()) {
 		m_buffOb[id].cubeMap = cmapID;
-		checkGLError(103);
 	} else {
 		std::cout << "No Such VBObject (name:" << id << ")\n";
-		checkGLError(104);
 		throw;
 	}
 }
@@ -257,7 +252,6 @@ void Geometry::bindNMTexure(GLuint cmapID, GLuint id) {
 }
 
 void Geometry::bindNMTexure(const std::string& load, GLuint id) {
-	checkGLError(100);
 	GLuint nmapID = Texture::getInstance()->addNMTexture(load);
 	if (m_elemBuffOb.find(id) != m_elemBuffOb.end()) {
 		m_elemBuffOb[id].normalMap = nmapID;
@@ -273,7 +267,6 @@ void Geometry::bindNMTexure(const std::string& load, GLuint id) {
 }
 
 void Geometry::bindHMTexure(const std::string& load, GLuint id) {
-	checkGLError(100);
 	GLuint nmapID = Texture::getInstance()->addHMTexture(load);
 	if (m_elemBuffOb.find(id) != m_elemBuffOb.end()) {
 		m_elemBuffOb[id].heightMap = nmapID;
@@ -290,13 +283,11 @@ void Geometry::bindHMTexure(const std::string& load, GLuint id) {
 
 uint Geometry::addBuffer(const string& load) {
 	float p[] = { 0, 0, 0 };
-	checkGLError(194);
 	return addBuffer(load, p, p, 1);
 }
 
 uint Geometry::addBuffer(const string& load, const vec3& pos) {
 	float p[] = { pos.x, pos.y, pos.z };
-	checkGLError(194);
 	return addBuffer(load, p, p, 1);
 }
 
@@ -305,7 +296,6 @@ uint Geometry::addBuffer(const string& load, const vec3& pos, const vec3& col) {
 	float c[] = { col.x, col.y, col.z };
 	GLuint texture = Texture::getInstance()->addTexture(col);
 	GLuint id = addBuffer(load, p, c, 1);
-	checkGLError(205);
 	if (m_elemBuffOb.find(id) != m_elemBuffOb.end()) {
 		m_elemBuffOb[id].texture = texture;
 	} else if (m_buffOb.find(id) != m_buffOb.end()) {
@@ -328,29 +318,54 @@ uint Geometry::addBuffer(const string& load, const vec3& pos, const vec3& col) {
  */
 uint Geometry::addBuffer(const string& load, const float *pos, const float *col,
 		uint n) {
-	vogl::Loader triangles;
+	// get the Triangles
+	R308::Loader triangles;
 	triangles.readOBJ(load);
-
+	// extract the vertices array
 	vector<vec3> v;
 	triangles.getPoints(v);
+	// extract the texture coordinates array
 	vector<vec2> vt;
-	cerr << "a" << endl;
 	triangles.getUVs(vt);
+	// extract the vertex normal array
 	vector<vec3> vn;
 	triangles.getNormals(vn);
+	// extract the triangle indices
 	vector<triangle> tris;
 	triangles.getTriIndices(tris);
 	uint max = tris.size() * 3;
-	checkGLError(245);
 	if (!max) {
 		cout << "No Vertices To Load!";
 		throw;
 	}
-	cerr << "b " << max << endl;
+	// buffer the actual values in index ordering
 	Varying buff[max];
 	cerr << "c " << endl;
 	uint i = 0;
 	for (triangle t : tris) { // load in the location data each possibly empty except points
+
+		// Edges of the triangle : position delta
+		vec3 edge1 = v[t.v[2].p]-v[t.v[0].p];
+		vec3 edge2 = v[t.v[1].p]-v[t.v[0].p];
+
+		//cerr << "DeltaPos 1: "<< deltaPos1.x << "," << deltaPos1.y << "," << deltaPos1.z << endl;
+		//cerr << "DeltaPos 2: "<< deltaPos2.x << "," << deltaPos2.y << "," << deltaPos2.z << endl;
+
+		// UV delta
+		vec2 deltaUV1;
+		vec2 deltaUV2;
+		if( vt.size() > 0 ){
+			//cerr << "Success " << vt.size() << endl;
+			deltaUV1 = vt[t.v[1].t]-vt[t.v[0].t];
+			deltaUV2 = vt[t.v[2].t]-vt[t.v[0].t];
+			//cerr << "deltaUV 1: "<< deltaUV1.x << "," << deltaUV1.y << endl;
+			//cerr << "deltaUV 2: "<< deltaUV2.x << "," << deltaUV2.y << endl;
+		}
+		else{
+			//cerr << "Failed to obtain UV" << endl;
+			deltaUV1 = vec2(1);
+			deltaUV2 = vec2(1);
+		}
 
 		for (uint j = 0; j < 3; ++j) {
 			Varying b;
@@ -365,24 +380,6 @@ uint Geometry::addBuffer(const string& load, const float *pos, const float *col,
 			// texture coordinates
 			b.UVs[0] = vt[k.t].x;
 			b.UVs[1] = vt[k.t].y;
-
-			// Edges of the triangle : position delta
-			vec3 edge1 = v[t.v[(j+2)%3].n]-v[t.v[(j+1)%3].n];
-			vec3 edge2 = v[t.v[j].n]-v[t.v[(j+1)%3].n];
-
-			// UV delta
-			vec2 deltaUV1;
-			vec2 deltaUV2;
-			if( vt.size() > 0 ){
-				//cerr << "Success " << vt.size() << endl;
-				deltaUV1 = vt[t.v[(j+2)%3].t]-vt[t.v[j].t];
-				deltaUV2 = vt[t.v[(j+1)%3].t]-vt[t.v[j].t];
-			}
-			else{
-				//cerr << "Failed to obtain UV" << endl;
-				deltaUV1 = vec2(1);
-				deltaUV2 = vec2(1);
-			}
 
 			// tangent
 			GLfloat f = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
@@ -402,7 +399,6 @@ uint Geometry::addBuffer(const string& load, const float *pos, const float *col,
 			bitangent.y = f * (-deltaUV2.x * edge1.y + deltaUV1.x * edge2.y);
 			bitangent.z = f * (-deltaUV2.x * edge1.z + deltaUV1.x * edge2.z);
 			bitangent = normalize(bitangent);
-			bitangent = normalize(cross(vn[k.n],tangent));
 
 			b.bitangent[0] = bitangent.x;
 			b.bitangent[1] = bitangent.y;
@@ -420,12 +416,10 @@ uint Geometry::addBuffer(const string& load, const float *pos, const float *col,
 	glBindVertexArray(b.vao);
 	glGenBuffers(1, &b.vbo);
 	glBindBuffer(b.type, b.vbo);
-	checkGLError(280);
 	uint isize = sizeof(float) * 3 * n;
 	glBufferData(b.type, b.bytesSize + (isize * 2), (GLvoid *) 0,
 			GL_STATIC_DRAW);
 	glBufferSubData(b.type, 0, b.bytesSize, &buff[0]);
-	checkGLError(284);
 	glVertexAttribPointer(VertLoc, 3, b.buffType, GL_FALSE, sizeof(Varying),
 			(GLvoid *) 0);
 	glEnableVertexAttribArray(VertLoc);
@@ -436,10 +430,10 @@ uint Geometry::addBuffer(const string& load, const float *pos, const float *col,
 			sizeof(Varying), (GLvoid *) (sizeof(float) * 6));
 	glEnableVertexAttribArray(TexCoordsLoc);
 	glVertexAttribPointer(TangentLoc, 3, b.buffType, GL_FALSE, sizeof(Varying),
-				(GLvoid *) 0);
+				(GLvoid *) (sizeof(float) * 8));
 	glEnableVertexAttribArray(TangentLoc);
 	glVertexAttribPointer(BitangentLoc, 3, b.buffType, GL_FALSE, sizeof(Varying),
-				(GLvoid *) 0);
+				(GLvoid *) (sizeof(float) * 11));
 	glEnableVertexAttribArray(BitangentLoc);
 	// instancing attributes
 	if (n > 0) // bypass if there are none
@@ -458,7 +452,6 @@ uint Geometry::addBuffer(const string& load, const float *pos, const float *col,
 		glEnableVertexAttribArray(ColourLoc);
 		glVertexAttribDivisor(ColourLoc, 1);
 	}
-	checkGLError(227);
 	m_buffOb[b.vao] = b;
 	return b.vao;
 }
@@ -470,7 +463,6 @@ uint Geometry::addBuffer(const string& load, const float *pos, const float *col,
  */
 void Geometry::draw( uint id, GLsizei insts )
 {
-  checkGLError( 368 );
   EBuffer e;
   Buffer b;
   if ( m_elemBuffOb.find( id ) != m_elemBuffOb.end() )
@@ -481,20 +473,16 @@ void Geometry::draw( uint id, GLsizei insts )
     if (e.normalMap) {
 		glActiveTexture( GL_TEXTURE1 );
 		glBindTexture( GL_TEXTURE_2D, e.normalMap);
-		checkGLError(396);
 	}
     if (e.heightMap) {
 		glActiveTexture( GL_TEXTURE2 );
 		glBindTexture( GL_TEXTURE_2D, e.heightMap);
-		checkGLError(397);
 	}
     if ( e.cubeMap )
     {
     	glActiveTexture( GL_TEXTURE3 );
     	glBindTexture( GL_TEXTURE_CUBE_MAP, e.cubeMap );
-		checkGLError(395);
     }
-    checkGLError( 378 );
     glBindVertexArray( e.vao );
     if ( insts == 1 )
       glDrawElements( GL_TRIANGLES, e.eNumElements, e.eBuffType,
@@ -511,18 +499,15 @@ void Geometry::draw( uint id, GLsizei insts )
     if (b.normalMap) {
     	glActiveTexture( GL_TEXTURE1 );
 		glBindTexture( GL_TEXTURE_2D, b.normalMap);
-		checkGLError(399);
 	}
     if (b.heightMap) {
 		glActiveTexture( GL_TEXTURE2 );
 		glBindTexture( GL_TEXTURE_2D, b.heightMap);
-		checkGLError(400);
 	}
     if ( b.cubeMap )
     {
     	glActiveTexture( GL_TEXTURE3 );
     	glBindTexture( GL_TEXTURE_CUBE_MAP, b.cubeMap );
-    	checkGLError( 398 );
     }
     glBindVertexArray( b.vao );
     if ( insts == 1 )
@@ -547,5 +532,5 @@ void Geometry::drawAll() {
 	// TODO:
 }
 
-} /**< namespace vogl */
+} /**< namespace R308 */
 

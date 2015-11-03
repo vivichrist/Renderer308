@@ -14,7 +14,7 @@
 using namespace std;
 
 
-namespace vogl
+namespace R308
 {
 
 class Plane

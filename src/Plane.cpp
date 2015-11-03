@@ -10,7 +10,7 @@
 using namespace std;
 using namespace glm;
 
-namespace vogl
+namespace R308
 {
 
 /**

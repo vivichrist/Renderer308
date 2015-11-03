@@ -8,7 +8,7 @@
 #include "Camera.hpp"
 #include <iostream>
 
-namespace vogl
+namespace R308
 {
 
 const glm::vec3 Camera::UP( 0.0f, 1.0f, 0.0f );
