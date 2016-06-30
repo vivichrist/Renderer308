@@ -23,19 +23,103 @@
 //	GLfloat defCube = 0.5f;
 //	GLfloat defNormal = 0.0f;
 
-
-
-
-
 //	g_spotlight = g_lights->addSpotLight( g_spotlight_pos
 //	                                    , vec3( 1.0f, 1.0f, 1.0f )
 //	                                    ,	1.0f, 0.0f, 0.0f, 0.1f
 //	                                    , vec3( 0.0f, -1.0f, 0.0f ), 45.0f );
 
-
-
-
-
-
 //  lights->addSpotLight( vec3( 0.0f, 10.0f, 0.0f ), vec3( 1.0f, 1.0f, 1.0f )
 //                      , 1.0f, 0.0f, 0.0f, 0.05f, vec3( 0.0f, -1.0f, 0.0f ), 10.0f );
+
+//    // Edges of the triangle : position delta
+//    vec3 edge1 = v[t.v[1].p]-v[t.v[0].p];
+//    vec3 edge2 = v[t.v[2].p]-v[t.v[0].p];
+//
+//    // UV delta
+//    vec2 deltaUV1 = vt[t.v[1].t]-vt[t.v[0].t];
+//    vec2 deltaUV2 = vt[t.v[2].t]-vt[t.v[0].t];
+
+//    float r = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV1.y * deltaUV2.x);
+//    vec3 tangent = normalize((edge1 * deltaUV2.y   - edge2 * deltaUV1.y)*r);
+//    vec3 bitangent = normalize((edge2 * deltaUV1.x - edge1 * deltaUV2.x)*r);
+
+//    GLfloat f = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
+//
+//    vec3 tangent(0);
+//    tangent.x = f * (deltaUV2.y * edge1.x - deltaUV1.y * edge2.x);
+//    tangent.y = f * (deltaUV2.y * edge1.y - deltaUV1.y * edge2.y);
+//    tangent.z = f * (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z);
+//    tangent = normalize(tangent);
+//
+//    vec3 bitangent(0);
+//    bitangent.x = f * (-deltaUV2.x * edge1.x + deltaUV1.x * edge2.x);
+//    bitangent.y = f * (-deltaUV2.x * edge1.y + deltaUV1.x * edge2.y);
+//    bitangent.z = f * (-deltaUV2.x * edge1.z + deltaUV1.x * edge2.z);
+//    bitangent = normalize(bitangent);
+
+//      // tangent
+//      b.tangent[0] = tangent.x;
+//      b.tangent[1] = tangent.y;
+//      b.tangent[2] = tangent.z;
+//
+//      // bitangent
+//      b.bitangent[0] = bitangent.x;
+//      b.bitangent[1] = bitangent.y;
+//      b.bitangent[2] = bitangent.z;
+
+//  glVertexAttribPointer(TangentLoc, 3, b.vBuffType, GL_FALSE, sizeof(Varying),
+//      (GLvoid *) (sizeof(float) * 8));
+//  glEnableVertexAttribArray(TangentLoc);
+//  glVertexAttribPointer(BitangentLoc, 3, b.vBuffType, GL_FALSE, sizeof(Varying),
+//      (GLvoid *) (sizeof(float) * 11));
+//  glEnableVertexAttribArray(BitangentLoc);
+
+//    // Edges of the triangle : position delta
+//    vec3 edge1 = v[t.v[1].p]-v[t.v[0].p];
+//    vec3 edge2 = v[t.v[2].p]-v[t.v[0].p];
+//
+//    // UV delta
+//    vec2 deltaUV1;
+//    vec2 deltaUV2;
+//    if( vt.size() > 0 ){
+//      //cerr << "Success " << vt.size() << endl;
+//      deltaUV1 = vt[t.v[1].t]-vt[t.v[0].t];
+//      deltaUV2 = vt[t.v[2].t]-vt[t.v[0].t];
+//      //cerr << "deltaUV 1: "<< deltaUV1.x << "," << deltaUV1.y << endl;
+//      //cerr << "deltaUV 2: "<< deltaUV2.x << "," << deltaUV2.y << endl;
+//    }
+//    else{
+//      //cerr << "Failed to obtain UV" << endl;
+//      deltaUV1 = vec2(1);
+//      deltaUV2 = vec2(1);
+//    }
+
+//      // tangent
+//      GLfloat f = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
+//      vec3 tangent;
+//      tangent.x = f * (deltaUV2.y * edge1.x - deltaUV1.y * edge2.x);
+//      tangent.y = f * (deltaUV2.y * edge1.y - deltaUV1.y * edge2.y);
+//      tangent.z = f * (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z);
+//      tangent = normalize(tangent);
+//
+//      b.tangent[0] = tangent.x;
+//      b.tangent[1] = tangent.y;
+//      b.tangent[2] = tangent.z;
+//
+//      // bitangent
+//      vec3 bitangent;
+//      bitangent.x = f * (-deltaUV2.x * edge1.x + deltaUV1.x * edge2.x);
+//      bitangent.y = f * (-deltaUV2.x * edge1.y + deltaUV1.x * edge2.y);
+//      bitangent.z = f * (-deltaUV2.x * edge1.z + deltaUV1.x * edge2.z);
+//      bitangent = normalize(bitangent);
+//
+//      b.bitangent[0] = bitangent.x;
+//      b.bitangent[1] = bitangent.y;
+//      b.bitangent[2] = bitangent.z;
+
+//  glVertexAttribPointer(TangentLoc, 3, b.buffType, GL_FALSE, sizeof(Varying),
+//        (GLvoid *) (sizeof(float) * 8));
+//  glEnableVertexAttribArray(TangentLoc);
+//  glVertexAttribPointer(BitangentLoc, 3, b.buffType, GL_FALSE, sizeof(Varying),
+//        (GLvoid *) (sizeof(float) * 11));
+//  glEnableVertexAttribArray(BitangentLoc);

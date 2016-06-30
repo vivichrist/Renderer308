@@ -22,7 +22,7 @@ namespace R308
 enum LOC
 {
 	VertLoc, NormalLoc, TexCoordsLoc
-	, PositionLoc, ColourLoc, TangentLoc, BitangentLoc // instance data
+	, PositionLoc, ColourLoc//, TangentLoc, BitangentLoc // instance data
 };
 
 struct Varying
@@ -30,8 +30,8 @@ struct Varying
 	float vertex[3];
 	float VNs[3];
 	float UVs[2];
-	float tangent[3];
-	float bitangent[3];
+//	float tangent[3];
+//	float bitangent[3];
 };
 
 struct Buffer

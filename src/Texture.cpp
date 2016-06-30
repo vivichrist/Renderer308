@@ -164,8 +164,9 @@ GLuint Texture::addHMTexture( const string& filename )
 	GLuint heightMap;
 	glGenTextures(1, &heightMap);
 	glBindTexture(GL_TEXTURE_2D, heightMap);
-	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, heightMapImage.w, heightMapImage.h,
-		0, heightMapImage.glFormat(), GL_UNSIGNED_BYTE, heightMapImage.data.data());
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, heightMapImage.w
+			, heightMapImage.h, 0, heightMapImage.glFormat()
+			, GL_UNSIGNED_BYTE, heightMapImage.data.data());
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);

@@ -79,33 +79,6 @@ uint Geometry::addSmoothSurfaceBuffer(const string& load, const float *pos,
 	vector<Varying> buff(max);
 	vector<GLuint> indices;
 	for (triangle t : tris) { // load in the location data each possibly empty except points
-
-		// Edges of the triangle : position delta
-		vec3 edge1 = v[t.v[1].p]-v[t.v[0].p];
-		vec3 edge2 = v[t.v[2].p]-v[t.v[0].p];
-
-		// UV delta
-		vec2 deltaUV1 = vt[t.v[1].t]-vt[t.v[0].t];
-		vec2 deltaUV2 = vt[t.v[2].t]-vt[t.v[0].t];
-
-//		float r = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV1.y * deltaUV2.x);
-//		vec3 tangent = normalize((edge1 * deltaUV2.y   - edge2 * deltaUV1.y)*r);
-//		vec3 bitangent = normalize((edge2 * deltaUV1.x - edge1 * deltaUV2.x)*r);
-
-		GLfloat f = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
-
-		vec3 tangent = vec3(0);
-		tangent.x = f * (deltaUV2.y * edge1.x - deltaUV1.y * edge2.x);
-		tangent.y = f * (deltaUV2.y * edge1.y - deltaUV1.y * edge2.y);
-		tangent.z = f * (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z);
-		tangent = normalize(tangent);
-
-		vec3 bitangent = vec3(0);
-		bitangent.x = f * (-deltaUV2.x * edge1.x + deltaUV1.x * edge2.x);
-		bitangent.y = f * (-deltaUV2.x * edge1.y + deltaUV1.x * edge2.y);
-		bitangent.z = f * (-deltaUV2.x * edge1.z + deltaUV1.x * edge2.z);
-		bitangent = normalize(bitangent);
-
 		for (uint j = 0; j < 3; ++j) {
 			indices.push_back(t.v[j].p);
 			if (mbuff.find(t.v[j].p) != mbuff.end())
@@ -123,15 +96,6 @@ uint Geometry::addSmoothSurfaceBuffer(const string& load, const float *pos,
 			b.UVs[0] = vt[k.t].x;
 			b.UVs[1] = vt[k.t].y;
 
-			// tangent
-			b.tangent[0] = tangent.x;
-			b.tangent[1] = tangent.y;
-			b.tangent[2] = tangent.z;
-
-			// bitangent
-			b.bitangent[0] = bitangent.x;
-			b.bitangent[1] = bitangent.y;
-			b.bitangent[2] = bitangent.z;
 			buff[t.v[j].p] = b;
 			mbuff[t.v[j].p] = &(buff.data()[t.v[j].p]);
 		}
@@ -150,8 +114,8 @@ uint Geometry::addSmoothSurfaceBuffer(const string& load, const float *pos,
 	glBindVertexArray(b.vbo);
 	glBindBuffer(b.type, b.vbo);
 	checkGLError(110);
-	// write data
-	uint isize = sizeof(float) * 3 * n;
+	// write data to buffer
+	uint isize = sizeof(float) * 3 * n; //
 	glBufferData(b.type, b.vBytesSize + isize * 2, (GLvoid *) 0,
 			GL_STATIC_DRAW);
 	glBufferSubData(b.type, 0, b.vBytesSize, &(buff.data()[0]));
@@ -167,13 +131,8 @@ uint Geometry::addSmoothSurfaceBuffer(const string& load, const float *pos,
 	glVertexAttribPointer(TexCoordsLoc, 2, b.vBuffType, GL_FALSE,
 			sizeof(Varying), (GLvoid *) (sizeof(float) * 6));
 	glEnableVertexAttribArray(TexCoordsLoc);
-	glVertexAttribPointer(TangentLoc, 3, b.vBuffType, GL_FALSE, sizeof(Varying),
-			(GLvoid *) (sizeof(float) * 8));
-	glEnableVertexAttribArray(TangentLoc);
-	glVertexAttribPointer(BitangentLoc, 3, b.vBuffType, GL_FALSE, sizeof(Varying),
-			(GLvoid *) (sizeof(float) * 11));
-	glEnableVertexAttribArray(BitangentLoc);
-	checkGLError(134);
+
+	checkGLError(135);
 	// instancing attributes
 	if (n > 0) // bypass if there are none
 			{
@@ -212,7 +171,7 @@ void Geometry::bindTexure(const std::string& load, GLuint id) {
 	} else if (m_buffOb.find(id) != m_buffOb.end()) {
 		m_buffOb[id].texture = texID;
 	} else {
-		std::cout << "No Such VBObject (name:" << id << ")\n";
+		cout << "No Such VBObject (name:" << id << ")\n";
 		throw;
 	}
 }
@@ -223,7 +182,7 @@ void Geometry::bindCMTexure(GLuint cmapID, GLuint id) {
 	} else if (m_buffOb.find(id) != m_buffOb.end()) {
 		m_buffOb[id].cubeMap = cmapID;
 	} else {
-		std::cout << "No Such VBObject (name:" << id << ")\n";
+		cout << "No Such VBObject (name:" << id << ")\n";
 		throw;
 	}
 }
@@ -235,7 +194,7 @@ void Geometry::bindCMTexure(const std::string& load, GLuint id) {
 	} else if (m_buffOb.find(id) != m_buffOb.end()) {
 		m_buffOb[id].cubeMap = cmapID;
 	} else {
-		std::cout << "No Such VBObject (name:" << id << ")\n";
+		cout << "No Such VBObject (name:" << id << ")\n";
 		throw;
 	}
 }
@@ -246,7 +205,7 @@ void Geometry::bindNMTexure(GLuint cmapID, GLuint id) {
 	} else if (m_buffOb.find(id) != m_buffOb.end()) {
 		m_buffOb[id].normalMap = cmapID;
 	} else {
-		std::cout << "No Such VBObject (name:" << id << ")\n";
+		cout << "No Such VBObject (name:" << id << ")\n";
 		throw;
 	}
 }
@@ -261,7 +220,7 @@ void Geometry::bindNMTexure(const std::string& load, GLuint id) {
 		cerr << "ID: " << id << endl;
 		cerr << "Cubemap: " << m_buffOb[id].normalMap << endl;
 	} else {
-		std::cout << "No Such VBObject (name:" << id << ")\n";
+		cout << "No Such VBObject (name:" << id << ")\n";
 		throw;
 	}
 }
@@ -276,7 +235,7 @@ void Geometry::bindHMTexure(const std::string& load, GLuint id) {
 		cerr << "ID: " << id << endl;
 		cerr << "Heightmap: " << m_buffOb[id].heightMap << endl;
 	} else {
-		std::cout << "No Such VBObject (name:" << id << ")\n";
+		cout << "No Such VBObject (name:" << id << ")\n";
 		throw;
 	}
 }
@@ -301,7 +260,7 @@ uint Geometry::addBuffer(const string& load, const vec3& pos, const vec3& col) {
 	} else if (m_buffOb.find(id) != m_buffOb.end()) {
 		m_buffOb[id].texture = texture;
 	} else {
-		std::cout << "No Such VBObject (name:" << id << ")\n";
+		cout << "No Such VBObject (name:" << id << ")\n";
 		throw;
 	}
 	return id;
@@ -344,29 +303,6 @@ uint Geometry::addBuffer(const string& load, const float *pos, const float *col,
 	uint i = 0;
 	for (triangle t : tris) { // load in the location data each possibly empty except points
 
-		// Edges of the triangle : position delta
-		vec3 edge1 = v[t.v[2].p]-v[t.v[0].p];
-		vec3 edge2 = v[t.v[1].p]-v[t.v[0].p];
-
-		//cerr << "DeltaPos 1: "<< deltaPos1.x << "," << deltaPos1.y << "," << deltaPos1.z << endl;
-		//cerr << "DeltaPos 2: "<< deltaPos2.x << "," << deltaPos2.y << "," << deltaPos2.z << endl;
-
-		// UV delta
-		vec2 deltaUV1;
-		vec2 deltaUV2;
-		if( vt.size() > 0 ){
-			//cerr << "Success " << vt.size() << endl;
-			deltaUV1 = vt[t.v[1].t]-vt[t.v[0].t];
-			deltaUV2 = vt[t.v[2].t]-vt[t.v[0].t];
-			//cerr << "deltaUV 1: "<< deltaUV1.x << "," << deltaUV1.y << endl;
-			//cerr << "deltaUV 2: "<< deltaUV2.x << "," << deltaUV2.y << endl;
-		}
-		else{
-			//cerr << "Failed to obtain UV" << endl;
-			deltaUV1 = vec2(1);
-			deltaUV2 = vec2(1);
-		}
-
 		for (uint j = 0; j < 3; ++j) {
 			Varying b;
 			vertex &k = t.v[j];
@@ -381,28 +317,6 @@ uint Geometry::addBuffer(const string& load, const float *pos, const float *col,
 			b.UVs[0] = vt[k.t].x;
 			b.UVs[1] = vt[k.t].y;
 
-			// tangent
-			GLfloat f = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
-			vec3 tangent;
-			tangent.x = f * (deltaUV2.y * edge1.x - deltaUV1.y * edge2.x);
-			tangent.y = f * (deltaUV2.y * edge1.y - deltaUV1.y * edge2.y);
-			tangent.z = f * (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z);
-			tangent = normalize(tangent);
-
-			b.tangent[0] = tangent.x;
-			b.tangent[1] = tangent.y;
-			b.tangent[2] = tangent.z;
-
-			// bitangent
-			vec3 bitangent;
-			bitangent.x = f * (-deltaUV2.x * edge1.x + deltaUV1.x * edge2.x);
-			bitangent.y = f * (-deltaUV2.x * edge1.y + deltaUV1.x * edge2.y);
-			bitangent.z = f * (-deltaUV2.x * edge1.z + deltaUV1.x * edge2.z);
-			bitangent = normalize(bitangent);
-
-			b.bitangent[0] = bitangent.x;
-			b.bitangent[1] = bitangent.y;
-			b.bitangent[2] = bitangent.z;
 			buff[i + j] = b;
 		}
 		i += 3;
@@ -429,12 +343,7 @@ uint Geometry::addBuffer(const string& load, const float *pos, const float *col,
 	glVertexAttribPointer(TexCoordsLoc, 2, b.buffType, GL_FALSE,
 			sizeof(Varying), (GLvoid *) (sizeof(float) * 6));
 	glEnableVertexAttribArray(TexCoordsLoc);
-	glVertexAttribPointer(TangentLoc, 3, b.buffType, GL_FALSE, sizeof(Varying),
-				(GLvoid *) (sizeof(float) * 8));
-	glEnableVertexAttribArray(TangentLoc);
-	glVertexAttribPointer(BitangentLoc, 3, b.buffType, GL_FALSE, sizeof(Varying),
-				(GLvoid *) (sizeof(float) * 11));
-	glEnableVertexAttribArray(BitangentLoc);
+
 	// instancing attributes
 	if (n > 0) // bypass if there are none
 			{
