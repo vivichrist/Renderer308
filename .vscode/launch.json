@@ -4,7 +4,7 @@
             "name": "C++ Launch",
             "type": "cppdbg",
             "request": "launch",
-            "program": "Renderer308",
+            "program": "${workspaceRoot}/build/R308",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceRoot}",
@@ -24,7 +24,7 @@
             "name": "C++ Attach",
             "type": "cppdbg",
             "request": "attach",
-            "program": "Renderer308",
+            "program": "${workspaceRoot}/build/R308",
             "processId": "${command.pickProcess}",
             "linux": {
                 "MIMode": "gdb"
