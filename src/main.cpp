@@ -18,7 +18,7 @@
 using namespace glm;
 
 bool g_hasMouse = false;
-vogl::Camera *g_cam = nullptr;
+R308::Camera *g_cam = nullptr;
 int g_width = 800, g_height = 600;
 
 void error_callback( int error, const char * description )
@@ -142,8 +142,8 @@ int main()
 	if ( !glfwInit() )
 		exit( EXIT_FAILURE );
 
-	glfwWindowHint( GLFW_CONTEXT_VERSION_MAJOR, 3 );
-	glfwWindowHint( GLFW_CONTEXT_VERSION_MINOR, 3 );
+	glfwWindowHint( GLFW_CONTEXT_VERSION_MAJOR, 4 );
+	glfwWindowHint( GLFW_CONTEXT_VERSION_MINOR, 0 );
 	glfwWindowHint( GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE );
 	glfwWindowHint( GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE );
 	glfwWindowHint( GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE );
@@ -174,7 +174,15 @@ int main()
 	}
 	else
 	{
-		if ( glewIsSupported( "GL_VERSION_3_3" ) )
+		if ( glewIsSupported( "GL_VERSION_4_3" ) )
+		{
+			std::cout << "Driver supports OpenGL 4.3\nDetails:" << std::endl;
+		}
+		if ( glewIsSupported( "GL_VERSION_4_0" ) )
+		{
+			std::cout << "Driver supports OpenGL 4.0\nDetails:" << std::endl;
+		}
+		else if ( glewIsSupported( "GL_VERSION_3_3" ) )
 		{
 			std::cout << "Driver supports OpenGL 3.3\nDetails:" << std::endl;
 		}
@@ -203,17 +211,19 @@ int main()
 	// tell GL to only draw onto a pixel if the shape is closer to the viewer
 	glEnable( GL_DEPTH_TEST );
 	glDepthFunc( GL_LEQUAL );
-
-	vogl::Geometry geo;
-	uint name = geo.addBuffer( "teapot.obj" );
-	geo.bindTexure( "box.png", name );
+	///////////////////////////////////////////////////////////////////////////
+	// Define Scene															 //
+	///////////////////////////////////////////////////////////////////////////
+	R308::Geometry *geo = R308::Geometry::getInstance();
+	uint name = geo->addBuffer( "res/assets/box.obj" );
+	geo->bindTexure( "res/textures/box.png", name );
 
 	/************************************************************
 	 * Load up a shader from the given files.
 	 *******************************************************//**/
 	Shader shader;
-	shader.loadFromFile( GL_VERTEX_SHADER, "vertex.x.glsl" );
-	shader.loadFromFile( GL_FRAGMENT_SHADER, "fragment.x.glsl" );
+	shader.loadFromFile( GL_VERTEX_SHADER, "res/shaders/vertex.phong.glsl" );
+	shader.loadFromFile( GL_FRAGMENT_SHADER, "res/shaders/fragment.phong.glsl" );
 	shader.createAndLinkProgram();
 	shader.use();
 		shader.addUniform( "mvM" );
@@ -224,7 +234,7 @@ int main()
 	// print debuging info
 	shader.printActiveUniforms();
 	// Camera to get model view and projection matices from. Amongst other things
-	g_cam = new vogl::Camera( vec3( 0.0f, 0.0f, 10.0f ), g_width, g_height );
+	g_cam = new R308::Camera( vec3( 0.0f, 0.0f, 10.0f ), g_width, g_height );
 
 	float black[] =	{ 0, 0, 0 };
 	glClearBufferfv( GL_COLOR, 0, black );
@@ -244,7 +254,7 @@ int main()
 			glUniformMatrix3fv( shader( "normM" ), 1, GL_FALSE,
 					value_ptr( g_cam->getNormalMatrix() ) );
 			glUniform3fv( shader( "lightP" ), 1, &lightP[0] );
-			geo.draw( name, 1 );
+			geo->draw( name, 1 );
 		shader.unUse();
 		// make sure the camera rotations, position and matrices are updated
 		g_cam->update();

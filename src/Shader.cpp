@@ -14,10 +14,7 @@ Shader::Shader() : totalShaders(0), completed(false)
 
 Shader::~Shader()
 {
-	glDeleteProgram( pgName );
-	glDeleteShader( shaders[0] );
-	glDeleteShader( shaders[1] );
-	glDeleteShader( shaders[2] );
+    deleteShaderProgram();
 }
 ///////////////////////////////////////////////////////////////////////////////
 //                          Private Helper Methods                           //
@@ -35,6 +32,9 @@ void Shader::getShader( const std::string& filename, std::string& source )
 	while ( std::getline( pg_in, line ) )
 	{
 		source.append( line + '\n' );
+		sizt_t pos = -1;
+		if ((pos = line.find("uniform", 0)) >= 0)
+			
 	}
 	pg_in.close();
 }
@@ -93,10 +93,7 @@ void Shader::checkProgram()
 		GLchar infoLog[ maxLength ] = { 0 };
 		glGetProgramInfoLog( pgName, maxLength, &maxLength, &infoLog[0] );
 		//remove debris.
-		glDeleteProgram( pgName );
-		glDeleteShader( shaders[0] );
-		glDeleteShader( shaders[1] );
-		glDeleteShader( shaders[2] );
+		deleteShaderProgram();
 		//print infoLog and end execution.
 		std::stringstream str;
 		str << "\nprogram object " << pgName << " failed to link" << infoLog << "\n";
@@ -132,6 +129,9 @@ void Shader::loadFromString( const GLenum whichShader, const std::string& source
 {
 	if ( source.empty() or !(whichShader == GL_VERTEX_SHADER
 						  or whichShader == GL_FRAGMENT_SHADER
+						  or whichShader == GL_TESS_CONTROL_SHADER
+						  or whichShader == GL_TESS_EVALUATION_SHADER
+						  or whichShader == GL_COMPUTE_SHADER
 						  or whichShader == GL_GEOMETRY_SHADER) )
 		throw "file names for shader objects must be valid";
 	GLuint name = glCreateShader( whichShader );
@@ -151,6 +151,9 @@ void Shader::loadFromFile( const GLenum whichShader, const std::string& filename
 {
 	if ( filename.empty() or !(whichShader == GL_VERTEX_SHADER
 							or whichShader == GL_FRAGMENT_SHADER
+							or whichShader == GL_TESS_CONTROL_SHADER
+							or whichShader == GL_TESS_EVALUATION_SHADER
+							or whichShader == GL_COMPUTE_SHADER
 							or whichShader == GL_GEOMETRY_SHADER) )
 		throw "file names for shader objects must be valid";
 	GLuint name = glCreateShader( whichShader );
@@ -305,4 +308,6 @@ void Shader::deleteShaderProgram()
 	glDeleteShader( shaders[0] );
 	glDeleteShader( shaders[1] );
 	glDeleteShader( shaders[2] );
+	glDeleteShader( shaders[3] );
+	glDeleteShader( shaders[4] );
 }

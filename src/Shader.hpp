@@ -49,7 +49,7 @@ private:
 	GLuint pgName;
 	GLuint totalShaders;
 	bool completed;
-	GLuint shaders[3];
+	GLuint shaders[5];
 	std::map<std::string, GLuint> attributeList;
 	std::map<std::string, GLuint> uniformLocationList;
 };

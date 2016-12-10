@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.0.0)
 project(R308 VERSION 0.1.0)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ../)
 
 include(CTest)
 find_package(OpenGL REQUIRED)
@@ -19,3 +20,4 @@ target_link_libraries(R308 ${ASSIMP_LIBRARIES} ${OPENGL_LIBRARIES} ${GLEW_LIBRAR
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
 include(CPack)
+
