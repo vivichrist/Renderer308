@@ -6,8 +6,7 @@
  *      Author: vivichrist
  *****************************************************************************/
 
-#ifndef SRC_ENGINE_H_
-#define SRC_ENGINE_H_
+#pragma once
 
 #define GLM_FORCE_RADIANS
 
@@ -34,16 +33,6 @@ class Engine
 {
 private:
 	// GLFW callback
-	static void resizeCallback( GLFWwindow * window
-								, int newWidth, int newHeight );
-	static void errorCallback( int error, const char* description );
-	static void mousemotion_callback( GLFWwindow * window
-									   , double x, double y );
-	static void mousebutton_callback( GLFWwindow * window
-									   , int button, int action, int mods );
-	static void key_callback( GLFWwindow * window
-							  , int key, int scancode, int action, int mods );
-	static void scroll_callback( GLFWwindow * window, double x, double y );
 
 	GLFWwindow* window;
 	bool mouseLook;
@@ -51,18 +40,20 @@ private:
 
 public:
 	Engine( uint major, uint minor );
-	static int checkGLErrors( int where, const char* className );
+	static int gLErrors( int where, const char* className );
 
 	Camera *cam;
 	Lights *lights;
 	Geometry *geo;
 	Texture *txt;
 
-	virtual void keyboardEvent( int key, int scancode
-								, int action, int mods );
-	virtual void mouseScrollEvent( double x, double y );
-	virtual void mouseButtonEvent( int button, int action, int mods );
-	virtual void mouseMoveEvent( double x, double y );
+	virtual void error( int error, const char* description ) = 0;
+	virtual void resize( GLFWwindow * window, int newWidth, int newHeight );
+	virtual void keyboardEvent( GLFWwindow * window, int key, int scancode
+								, int action, int mods ) = 0;
+	virtual void mouseScrollEvent( GLFWwindow * window, double x, double y ) = 0;
+	virtual void mouseButtonEvent( GLFWwindow * window, int button, int action, int mods ) = 0;
+	virtual void mouseMoveEvent( GLFWwindow * window, double x, double y ) = 0;
 
 	virtual void update() = 0;
 	virtual void render() = 0;

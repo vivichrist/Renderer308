@@ -6,7 +6,7 @@
  *      Author: vivichrist
  *****************************************************************************/
 
-#include "Engine.h"
+#include "Engine.hpp"
 
 namespace Engine
 {
@@ -14,51 +14,7 @@ namespace Engine
 /// Methods to be overridden and interface with GLFW
 ////////////////////////////////////////////////////////////////////////////////
 
-void Engine::keyboardEvent( int key, int scancode, int action, int mods )
-{
-}
-
-void Engine::mouseScrollEvent( double x, double y )
-{
-}
-
-
-void Engine::mouseButtonEvent( int button, int action, int mods )
-{
-}
-
-void Engine::mouseMoveEvent( double x, double y )
-{
-}
-
-void Engine::key_callback( GLFWwindow * window, int key, int scancode, int action,
-		int mods )
-{
-	if (eng) eng->keyboardEvent( key, scancode, action, mods );
-}
-
-void Engine::mousebutton_callback( GLFWwindow * window, int button, int action,
-		int mods )
-{
-	if (eng) eng->mouseButtonEvent( button, action, mods );
-}
-
-void Engine::mousemotion_callback( GLFWwindow * window, double x, double y )
-{
-	if (eng) eng->mouseMoveEvent( x, y );
-}
-
-void Engine::scroll_callback( GLFWwindow * window, double x, double y )
-{
-	if (eng) eng->mouseScrollEvent( x, y );
-}
-
-void Engine::errorCallback( int error, const char* description )
-{
-	fputs( description, stderr );
-}
-
-void Engine::resizeCallback( GLFWwindow * window, int newWidth, int newHeight )
+void Engine::resize( GLFWwindow * window, int newWidth, int newHeight )
 {
 	if ( eng == nullptr || window != eng->window ) return;
 	eng->width = newWidth;

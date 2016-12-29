@@ -1,8 +1,7 @@
 #include <stdio.h>
 #include <cstring>
 
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
+#include <glbinding/gl/gl.h>
 #include <iostream>
 #include <fstream>   // file I/O
 #include <exception>
@@ -10,8 +9,9 @@
 #include "GBuffer.hpp"
 
 using namespace std;
-using namespace R308;
-
+namespace R308
+{
+using namespace gl;
 GBuffer *GBuffer::instance = nullptr;
 
 GBuffer::GBuffer()
@@ -29,14 +29,14 @@ GBuffer *GBuffer::getInstance()
 GBuffer::~GBuffer()
 {
     for ( auto &fb: framebuffer ) {
-        glDeleteFramebuffers(1, &fb.second.fboID);
-        glDeleteTextures( fb.second.numTex, fb.second.colorID );
-		glDeleteTextures( 1, &fb.second.depthID );
+        glDeleteFramebuffers(1u, &fb.second.fboID);
+		glDeleteTextures( fb.second.numTex, &fb.second.colorID[0] );
+		glDeleteTexture( &fb.second.depthID );
 	}
 }
 
 
-uint GBuffer::addBuffer( uint screenWidth, uint screenHeight, uint num )
+uint GBuffer::addBuffer( uint screenWidth, uint screenHeight, GLsizei num )
 {
 	assert( num < GBUFFER_TEXTURE_MAX );
     // The framebuffer, which regroups 0, 1, or more textures, and 0 or 1 depth buffer.
@@ -109,4 +109,4 @@ void GBuffer::BindTextures( uint fb )
 //	cout << textures[GBUFFER_TEXTURE_TYPE_DIFFUSE] << " " << textures[GBUFFER_TEXTURE_TYPE_NORMAL] << " " << depthTexture << endl;
 }
 
-
+}

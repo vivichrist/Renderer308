@@ -1,4 +1,5 @@
 #pragma once
+
 #include <GL/glew.h>
 #include <assert.h>
 #include <vector>
@@ -11,6 +12,8 @@
 
 namespace R308
 {
+using namespace gl;
+
 class GBuffer
 {
 public:
@@ -29,16 +32,15 @@ public:
     
     struct FBObj
 	{
-    	GLuint fboID = 0, depthID = 0
-    		 , xres = 0, yres = 0, numTex = 0
-    		 , colorID[GBUFFER_TEXTURE_MAX] = { 0 };
+	    GLsizei numTex = 0;
+	    GLuint fboID = 0, depthID = 0, xres = 0, yres = 0, colorID[GBUFFER_TEXTURE_MAX] = {0};
 	};
 
     GBuffer *getInstance();
 
     ~GBuffer();
 
-    uint addBuffer( uint screenWidth, uint screenHeight, uint num );
+    uint addBuffer( uint screenWidth, uint screenHeight, GLsizei num );
 
     void BindForWriting( uint fb );
    
