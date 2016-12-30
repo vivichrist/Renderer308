@@ -12,7 +12,6 @@
 
 namespace R308
 {
-using namespace gl;
 
 class GBuffer
 {

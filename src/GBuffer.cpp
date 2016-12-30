@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <cstring>
 
-#include <glbinding/gl/gl.h>
+#include <GL/glew.h>
 #include <iostream>
 #include <fstream>   // file I/O
 #include <exception>
@@ -11,7 +11,7 @@
 using namespace std;
 namespace R308
 {
-using namespace gl;
+
 GBuffer *GBuffer::instance = nullptr;
 
 GBuffer::GBuffer()
@@ -31,7 +31,7 @@ GBuffer::~GBuffer()
     for ( auto &fb: framebuffer ) {
         glDeleteFramebuffers(1u, &fb.second.fboID);
 		glDeleteTextures( fb.second.numTex, &fb.second.colorID[0] );
-		glDeleteTexture( &fb.second.depthID );
+		glDeleteTextures( 1u, &fb.second.depthID );
 	}
 }
 

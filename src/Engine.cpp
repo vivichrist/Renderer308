@@ -10,22 +10,51 @@
 
 namespace Engine
 {
+
+int width, height;
+GLFWwindow* window;
+Camera *cam;
+Lights *lights;
+Geometry *geo;
+Texture *txt;
+
+void error( int error, const char* description )
+{
+
+}
+void keyboardEvent( GLFWwindow * window, int key, int scancode, int action, int mods )
+{
+
+}
+void mouseScrollEvent( GLFWwindow * window, double x, double y )
+{
+
+}
+void mouseButtonEvent( GLFWwindow * window, int button, int action, int mods )
+{
+
+}
+void mouseMoveEvent( GLFWwindow * window, double x, double y )
+{
+
+}
+void resize( GLFWwindow * win, int newWidth, int newHeight )
+{
+	if ( eng == nullptr || win != window ) return;
+	width = newWidth;
+	height = newHeight > 0 ? newHeight : 1;
+	cam->setAspectRatio( newWidth, newHeight );
+	glViewport( 0, 0, newWidth, newHeight );
+}
 ////////////////////////////////////////////////////////////////////////////////
 /// Methods to be overridden and interface with GLFW
 ////////////////////////////////////////////////////////////////////////////////
 
-void Engine::resize( GLFWwindow * window, int newWidth, int newHeight )
-{
-	if ( eng == nullptr || window != eng->window ) return;
-	eng->width = newWidth;
-	eng->height = newHeight > 0 ? newHeight : 1;
-	eng->cam->setAspectRatio( newWidth, newHeight );
-	glViewport( 0, 0, newWidth, newHeight );
-	eng->resize();
-}
 
-Engine::Engine( uint major, uint minor ) : width(1024), height(768)
+Engine::Engine( uint major, uint minor )
 {
+	width = 1024;
+	height = 768;
 	///////////////////////////////////////////////////////////////////////////
 	// Initiate the opengl context and try to get an opengl context. Then    //
 	// initialise the scene.                                                 //
@@ -98,13 +127,6 @@ Engine::Engine( uint major, uint minor ) : width(1024), height(768)
 			<< std::endl;
 	glfwSwapInterval( 2 );
 
-	glfwSetErrorCallback( errorCallback );
-	glfwSetKeyCallback( window, key_callback );
-	glfwSetScrollCallback( window, scroll_callback );
-	glfwSetMouseButtonCallback( window, mousebutton_callback );
-	glfwSetCursorPosCallback( window, mousemotion_callback );
-	glfwSetFramebufferSizeCallback( window, resizeCallback );
-
 	mouseLook = false;
 	geo = Geometry::getInstance();
 	txt = Texture::getInstance();
@@ -113,7 +135,7 @@ Engine::Engine( uint major, uint minor ) : width(1024), height(768)
 	eng = this;
 }
 
-int Engine::checkGLErrors( int where, const char* className )
+int checkGLErrors( int where, const char* className )
 {
 	int errCount = 0;
 	for ( GLenum currError = glGetError(); currError != GL_NO_ERROR;
@@ -125,6 +147,31 @@ int Engine::checkGLErrors( int where, const char* className )
 	}
 
 	return errCount;
+}
+
+void Engine::setErrorCB( void(*errorCallback)(int error, const char* description) )
+{
+	glfwSetErrorCallback( errorCallback );
+}
+void Engine::setKBEvtCB( void(*keyCallback)(GLFWwindow * window, int key, int scancode, int action, int mods ) )
+{
+	glfwSetKeyCallback( window, keyCallback );
+}
+void Engine::setMScrollEvtCB( void(*mScrollCallback)(GLFWwindow * window, double x, double y ) )
+{
+	glfwSetScrollCallback( window, mScrollCallback );
+}
+void Engine::setMButtonEvtCB( void(*mButtonCallback)(GLFWwindow * window, int button, int action, int mods ) )
+{
+	glfwSetMouseButtonCallback( window, mButtonCallback );
+}
+void Engine::setMMoveEvtCB( void(*mMoveCallback)( GLFWwindow * window, double x, double y ) )
+{
+	glfwSetCursorPosCallback( window, mMoveCallback );
+}
+void Engine::setResizeCB( void(*resizeCallback)( GLFWwindow * window, int newWidth, int newHeight ) )
+{
+	glfwSetFramebufferSizeCallback( window, resizeCallback );
 }
 ////////////////////////////////////////////////////////////////////////////////
 /// GLFW Mouse Manipulation

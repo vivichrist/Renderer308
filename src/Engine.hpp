@@ -34,34 +34,26 @@ class Engine
 private:
 	// GLFW callback
 
-	GLFWwindow* window;
 	bool mouseLook;
-	int width, height;
 
 public:
 	Engine( uint major, uint minor );
 	static int gLErrors( int where, const char* className );
 
-	Camera *cam;
-	Lights *lights;
-	Geometry *geo;
-	Texture *txt;
-
-	virtual void error( int error, const char* description ) = 0;
-	virtual void resize( GLFWwindow * window, int newWidth, int newHeight );
-	virtual void keyboardEvent( GLFWwindow * window, int key, int scancode
-								, int action, int mods ) = 0;
-	virtual void mouseScrollEvent( GLFWwindow * window, double x, double y ) = 0;
-	virtual void mouseButtonEvent( GLFWwindow * window, int button, int action, int mods ) = 0;
-	virtual void mouseMoveEvent( GLFWwindow * window, double x, double y ) = 0;
-
+	void setErrorCB( void(*errorCallback)(int error, const char* description) );
+	void setKBEvtCB( void(*keyCallback)(GLFWwindow * window, int key, int scancode, int action, int mods ) );
+	void setMScrollEvtCB( void(*mScrollCallback)(GLFWwindow * window, double x, double y ) );
+	void setMButtonEvtCB( void(*mButtonCallback)(GLFWwindow * window, int button, int action, int mods ) );
+	void setMMoveEvtCB( void(*mMoveCallback)( GLFWwindow * window, double x, double y ) );
+	void setResizeCB( void(*resizeCallback)( GLFWwindow * window, int newWidth, int newHeight ) );
+	
 	virtual void update() = 0;
 	virtual void render() = 0;
-	virtual void resize() = 0;
 
 	void captureMouse();
 	void resetMousePos();
 	void releaseMouse();
+	int checkGLErrors(int where, const char *className);
 	void close();
 
 	virtual ~Engine();
@@ -72,5 +64,3 @@ public:
 Engine *eng = nullptr;
 
 } /**< namespace Engine */
-
-#endif /* SRC_ENGINE_H_ */

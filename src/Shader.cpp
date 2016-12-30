@@ -32,9 +32,9 @@ void Shader::getShader( const std::string& filename, std::string& source )
 	while ( std::getline( pg_in, line ) )
 	{
 		source.append( line + '\n' );
-		sizt_t pos = -1;
-		if ((pos = line.find("uniform", 0)) >= 0)
-			
+		//size_t pos = -1;
+		//if ((pos = line.find("uniform", 0)) >= 0)
+		// TODO: automatically add uniforms...	
 	}
 	pg_in.close();
 }

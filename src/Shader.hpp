@@ -10,7 +10,6 @@
 #define GLM_FORCE_RADIANS
 
 #include <GL/glew.h>
-#include <GL/gl.h>
 #include <glm/glm.hpp>
 #include <exception>
 #include <vector>

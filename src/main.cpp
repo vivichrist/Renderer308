@@ -143,7 +143,7 @@ int main()
 		exit( EXIT_FAILURE );
 
 	glfwWindowHint( GLFW_CONTEXT_VERSION_MAJOR, 4 );
-	glfwWindowHint( GLFW_CONTEXT_VERSION_MINOR, 0 );
+	glfwWindowHint( GLFW_CONTEXT_VERSION_MINOR, 3 );
 	glfwWindowHint( GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE );
 	glfwWindowHint( GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE );
 	glfwWindowHint( GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE );
@@ -222,8 +222,9 @@ int main()
 	 * Load up a shader from the given files.
 	 *******************************************************//**/
 	Shader shader;
-	shader.loadFromFile( GL_VERTEX_SHADER, "res/shaders/vertex.phong.glsl" );
-	shader.loadFromFile( GL_FRAGMENT_SHADER, "res/shaders/fragment.phong.glsl" );
+	shader.loadFromFile( GL_VERTEX_SHADER, "res/shaders/vert.phong.glsl" );
+	shader.loadFromFile( GL_GEOMETRY_SHADER, "res/shaders/geom.phong.glsl" );
+	shader.loadFromFile( GL_FRAGMENT_SHADER, "res/shaders/frag.phong.glsl" );
 	shader.createAndLinkProgram();
 	shader.use();
 		shader.addUniform( "mvM" );
@@ -238,7 +239,7 @@ int main()
 
 	float black[] =	{ 0, 0, 0 };
 	glClearBufferfv( GL_COLOR, 0, black );
-	float lightP[] = { 5.0f, 5.0f, 100.0f };
+	float lightP[] = { 5.0f, 5.0f, -5.0f };
 	///////////////////////////////////////////////////////////////////////////
 	//                           Main Rendering Loop                         //
 	///////////////////////////////////////////////////////////////////////////
