@@ -169,7 +169,7 @@ void Shader::loadFromFile( const GLenum whichShader, const std::string& filename
  * If the default number of shaders are loaded. Compile and link the shader
  * program from the shaders previously loaded.
  */
-void Shader::createAndLinkProgram()
+uint Shader::createAndLinkProgram()
 {
 	if ( totalShaders < 2 )
 	{
@@ -184,6 +184,7 @@ void Shader::createAndLinkProgram()
 	for ( GLuint i = 0; i < totalShaders; ++i )
 		glDetachShader( pgName, shaders[i] );
 	completed = true;
+	return(pgName);
 }
 /******************************************************************************
  * Register with the graphics card a location where data can be accepted in the

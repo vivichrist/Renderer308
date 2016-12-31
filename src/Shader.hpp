@@ -28,7 +28,7 @@ public:
 
 	void loadFromString( const GLenum whichShader, const std::string& source );
 	void loadFromFile( const GLenum whichShader, const std::string& filename );
-	void createAndLinkProgram();
+	uint createAndLinkProgram();
 	void setupShader( const char**, const GLenum[]
 					, const uint, const char**, const uint );
 	void use();

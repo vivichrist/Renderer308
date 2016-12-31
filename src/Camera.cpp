@@ -6,11 +6,10 @@
  */
 
 #include "Camera.hpp"
-#include <iostream>
 
 namespace R308
 {
-
+const float TWOPI = M_PI * 2.0f;
 const glm::vec3 Camera::UP( 0.0f, 1.0f, 0.0f );
 
 /**
@@ -18,11 +17,11 @@ const glm::vec3 Camera::UP( 0.0f, 1.0f, 0.0f );
  * @param feild of view (fov), @param yaw, @param pitch and @param roll
  * are all currently in degrees.
  */
-Camera::Camera( const glm::vec3 &initpos, int width, int height )
-: yaw(0), pitch(0), roll(0), fov(M_PI/4.0f), z_near(1.0f), z_far(1000.0f)
-, rotation_changed(true), movement_changed(true), view_changed(true)
-, forward(false), backward(false), sleft(false), sright(false), lift(false)
-, descent(false), speed(0.05)
+Camera::Camera( const glm::vec3& initpos, int width, int height )
+	: yaw(0), pitch(0), roll(0), fov(M_PI/4.0f), z_near(1.0f), z_far(1000.0f)
+	, rotation_changed(true), movement_changed(true), view_changed(true)
+	, forward(false), backward(false), sleft(false), sright(false), lift(false)
+	, descent(false), ublock(0), speed(0.05)
 {
 	aspect_ratio = (float) width / (float) height;
 	look = glm::vec3( 0.0f, 0.0f, -1.0f );
@@ -31,18 +30,20 @@ Camera::Camera( const glm::vec3 &initpos, int width, int height )
 	position = initpos;
 	// view matrix
 	view = glm::lookAt( position, position + look, up );
+	norm = glm::inverse(glm::transpose(glm::mat3(view)));
 	// projection matrix
 	proj = glm::perspective( fov, aspect_ratio, z_near, z_far );
 	calcFrustumPlanes();
 }
-Camera::~Camera() {}
+Camera::~Camera() {
+}
 
 /**
  * Reassign all the parameters of the camera frustum and projection.
  * And recalculate the projection matrix and the fustrum containment planes.
  */
 void Camera::setupProjection( const float fovy, const float aspectRatio
-		, const float near, const float far )
+                              , const float near, const float far )
 {
 	fov = fovy; z_near = near; z_far = far;
 	aspect_ratio = aspectRatio;
@@ -52,9 +53,9 @@ void Camera::setupProjection( const float fovy, const float aspectRatio
 
 void Camera::setAspectRatio( const float width, const float height )
 {
-  aspect_ratio = (float) width / (float) height;
-  proj = glm::perspective( fov, aspect_ratio, z_near, z_far );
-  view_changed = true;
+	aspect_ratio = (float) width / (float) height;
+	proj = glm::perspective( fov, aspect_ratio, z_near, z_far );
+	view_changed = true;
 }
 
 /**
@@ -162,8 +163,8 @@ void Camera::rotateY( const float yaw )
 	if ( yaw )
 	{
 		this->yaw = yaw * speed;
-		if ( this->yaw > PIx2 ) this->yaw -= PIx2;
-		else if ( this->yaw < 0 ) this->yaw += PIx2;
+		if ( this->yaw > TWOPI ) this->yaw -= TWOPI;
+		else if ( this->yaw < 0 ) this->yaw += TWOPI;
 		glm::mat4 R = glm::rotate( this->yaw, up );
 		look = glm::vec3( R * glm::vec4( look, 0 ) );
 		right = glm::normalize( glm::cross( look, up ) );
@@ -248,7 +249,7 @@ const glm::mat4 Camera::getProjectionMatrix() const
  */
 const glm::mat3 Camera::getNormalMatrix() const
 {
-	return( glm::inverse( glm::transpose( glm::mat3(view) ) ) );
+	return( norm );
 }
 
 const glm::vec3 Camera::getPosition() const
@@ -282,9 +283,9 @@ void Camera::calcFrustumPlanes()
 	glm::vec3 nearPts[4];
 
 	float heightOfNearPlane =
-			2.0f * glm::tan( glm::radians( fov / 2.0f ) ) * z_near;
+	        2.0f * glm::tan( glm::radians( fov / 2.0f ) ) * z_near;
 	float heightOfFarPlane =
-			2.0f * glm::tan( glm::radians( fov / 2.0f ) ) * z_far;
+	        2.0f * glm::tan( glm::radians( fov / 2.0f ) ) * z_far;
 	float widthOfNearPlane = heightOfNearPlane * aspect_ratio;
 	float widthOfFarPlane  = heightOfFarPlane  * aspect_ratio;
 	float hHnear = heightOfNearPlane / 2.0f;
@@ -312,7 +313,7 @@ void Camera::calcFrustumPlanes()
 
 bool Camera::isPointInFrustum( const glm::vec3& point )
 {
-	for ( Plane p: planes )
+	for ( Plane p : planes )
 	{
 		if ( p.distance( point ) < 0 )
 			return( false );
@@ -322,7 +323,7 @@ bool Camera::isPointInFrustum( const glm::vec3& point )
 
 bool Camera::isSphereInFrustum( const glm::vec3& center, const float radius )
 {
-	for( Plane p: planes )
+	for( Plane p : planes )
 	{
 		float d = p.distance( center );
 		if ( d < -radius)
@@ -334,7 +335,7 @@ bool Camera::isSphereInFrustum( const glm::vec3& center, const float radius )
 bool Camera::isBoxInFrustum( const glm::vec3& min, const glm::vec3& max )
 {
 	glm::vec3 p, n, norm;
-	for( Plane pl: planes )
+	for( Plane pl : planes )
 	{
 		p=min; n=max;
 		norm = pl.normal();
@@ -360,7 +361,7 @@ bool Camera::isBoxInFrustum( const glm::vec3& min, const glm::vec3& max )
 void Camera::getFrustumPlanes( glm::vec4 fp[6] )
 {
 	calcFrustumPlanes();
-	for( int i=0;i<6;i++ )
+	for( int i=0; i<6; i++ )
 		fp[i] = planes[i].plane();
 }
 ///////////////////////////////////////////////////////////////////////////////
@@ -383,24 +384,72 @@ void Camera::update()
 		// up = glm::vec3( R * glm::vec4( up, 0 ) );
 		right = glm::normalize( glm::cross( look, up ) );
 		// reset rotation values
-		cout << "rotation_changed";
+		std::cout << "rotation_changed";
 		rotation_changed = false;
 	}
 	if ( forward )
+	{
 		walkOn( true );
+		view_changed = true;
+	}
 	if ( backward )
+	{
 		walkOn( false );
+		view_changed = true;
+	}
 	if ( sleft )
+	{
 		strafeOn( false );
+		view_changed = true;
+	}
 	if ( sright )
+	{
 		strafeOn( true );
+		view_changed = true;
+	}
 	if ( lift )
+	{
 		verticalOn( true );
+		view_changed = true;
+	}
 	if ( descent )
+	{
 		verticalOn( false );
-	view = glm::lookAt( position, position + look, up );
+		view_changed = true;
+	}
+	if (ublock && view_changed )
+	{
+		view = glm::lookAt( position, position + look, up );
+		norm = glm::inverse(glm::transpose(glm::mat3(view)));
+		const float *mvM = glm::value_ptr( view );
+		size_t size = sizeof(mvM);
+		uint offset = 0u;
+		ublock->setUniformData4(offset, (void *)mvM, size);
+		const float *pjM = glm::value_ptr( proj );
+		size = sizeof(pjM);
+		offset = 4u;
+		ublock->setUniformData4(offset, (void *)pjM, size);
+		float *nM = glm::value_ptr( norm[0] );
+		size = sizeof(nM);
+		offset = 8u;
+		ublock->setUniformData4(offset, (void *)nM, size);
+		nM = glm::value_ptr( norm[1] );
+		size = sizeof(nM);
+		++offset;
+		ublock->setUniformData4(offset, (void *)nM, size);
+		nM = glm::value_ptr( norm[2] );
+		size = sizeof(nM);
+		++offset;
+		ublock->setUniformData4(offset, (void *)nM, size);
+		//ends at 10 so next avaliable slot is 11
+		calcFrustumPlanes();
+	}
 	view_changed = false;
-	calcFrustumPlanes();
+}
+
+void Camera::registerUBO( UniformBlock* ubo )
+{
+	ublock = ubo;
 }
 
 void Camera::zoomIn()
@@ -482,4 +531,4 @@ void Camera::setSpeed( const float speed )
 	this->speed = speed;
 }
 
-} // end vogl space
+} // end R308 space

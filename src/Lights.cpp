@@ -116,5 +116,5 @@ Lights::~Lights()
 	lights.clear();
 }
 
-} /* namespace vogl */
+} /* namespace R308 */
 

@@ -12,7 +12,7 @@ pkg_search_module(ASSIMP REQUIRED assimp)
 
 include_directories(src "ext/stb" ${ASSIMP_INCLUDE_DIRS} ${OPENGL_INCLUDE_DIRS} ${GLEW_INCLUDE_DIRS} ${GLFW_INCLUDE_DIRS})
 enable_testing()
-file(GLOB SOURCES "ext/stb/stb.c" "src/*.cpp")
+file(GLOB SOURCES "ext/stb/stb.c" "src/*.cpp" "src/*.hpp")
 
 add_executable(R308 src/main.cpp ${SOURCES})
 target_link_libraries(R308 ${ASSIMP_LIBRARIES} ${OPENGL_LIBRARIES} ${GLEW_LIBRARIES} ${GLFW_LIBRARIES})

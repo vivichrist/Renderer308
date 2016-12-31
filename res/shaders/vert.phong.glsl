@@ -1,13 +1,13 @@
 // Vertex shader for simple Phongs Lighting model
 #version 330
-//#extension GL_ARB_shading_language_420pack : enable
-//layout (std140, binding = 0) uniform Cam
-//{
+#extension GL_ARB_shading_language_420pack : enable
+layout (std140, binding = 1) uniform Cam
+{
 	uniform mat4 mvM;
 	uniform mat4 projM;
 	uniform mat3 normM; // Matrix to transform normals.
-	uniform vec3 lightP;
-//};
+};
+uniform vec3 lightP;
 
 layout (location = 0) in vec3 position;
 layout (location = 1) in vec3 normal;

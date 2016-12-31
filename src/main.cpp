@@ -14,6 +14,7 @@
 #include "Camera.hpp"
 #include "Geometry.hpp"
 #include "Shader.hpp"
+#include "UniformBlock.hpp"
 
 using namespace glm;
 
@@ -225,21 +226,21 @@ int main()
 	shader.loadFromFile( GL_VERTEX_SHADER, "res/shaders/vert.phong.glsl" );
 	shader.loadFromFile( GL_GEOMETRY_SHADER, "res/shaders/geom.phong.glsl" );
 	shader.loadFromFile( GL_FRAGMENT_SHADER, "res/shaders/frag.phong.glsl" );
-	shader.createAndLinkProgram();
+	uint shaderID = shader.createAndLinkProgram();
 	shader.use();
-		shader.addUniform( "mvM" );
-		shader.addUniform( "projM" );
-		shader.addUniform( "normM" );
 		shader.addUniform( "lightP" );
 	shader.unUse();
 	// print debuging info
 	shader.printActiveUniforms();
 	// Camera to get model view and projection matices from. Amongst other things
 	g_cam = new R308::Camera( vec3( 0.0f, 0.0f, 10.0f ), g_width, g_height );
+	R308::UniformBlock ubo( 1, 11 );
+	ubo.bindUniformBlock( shaderID, "Cam" );
+	g_cam->registerUBO( &ubo );
 
 	float black[] =	{ 0, 0, 0 };
 	glClearBufferfv( GL_COLOR, 0, black );
-	float lightP[] = { 5.0f, 5.0f, -5.0f };
+	float lightP[] = { 5.0f, 5.0f, -50.0f };
 	///////////////////////////////////////////////////////////////////////////
 	//                           Main Rendering Loop                         //
 	///////////////////////////////////////////////////////////////////////////
@@ -248,12 +249,6 @@ int main()
 		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 		// load values into the uniform slots of the shader and draw
 		shader.use();
-			glUniformMatrix4fv( shader( "mvM" ), 1, GL_FALSE,
-					value_ptr( g_cam->getViewMatrix() ) );
-			glUniformMatrix4fv( shader( "projM" ), 1, GL_FALSE,
-					value_ptr( g_cam->getProjectionMatrix() ) );
-			glUniformMatrix3fv( shader( "normM" ), 1, GL_FALSE,
-					value_ptr( g_cam->getNormalMatrix() ) );
 			glUniform3fv( shader( "lightP" ), 1, &lightP[0] );
 			geo->draw( name, 1 );
 		shader.unUse();

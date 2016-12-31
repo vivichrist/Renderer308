@@ -10,13 +10,15 @@
 #define GLM_FORCE_RADIANS
 
 #include <GL/glew.h>
-#include <GL/gl.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/rotate_vector.hpp>
 #include <glm/gtx/euler_angles.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <iostream>
 #include <exception>
 #include "Plane.hpp"
+#include "UniformBlock.hpp"
 
 namespace R308
 {
@@ -41,6 +43,7 @@ public:
 	const glm::mat4 getViewMatrix() const;
 	const glm::mat4 getProjectionMatrix() const;
 	const glm::mat3 getNormalMatrix() const;
+	const glm::mat4x3 getNMatrix() const;
 	void getFrustumPlanes( glm::vec4[6] );
 	void calcFrustumPlanes();
 	bool isPointInFrustum( const glm::vec3& );
@@ -57,6 +60,7 @@ public:
 	void rotateAroundY( const float );
 	void rotateAroundZ( const float );
 	virtual void update();
+	void registerUBO( UniformBlock* ubo );
 	void zoomIn();
 	void zoomOut();
 	void walkOn( const bool );
@@ -74,17 +78,18 @@ private:
 	bool rotation_changed, movement_changed, view_changed
 		, forward, backward, sleft, sright, lift, descent;
 	static const glm::vec3 UP;
-	static constexpr float PIx2 = M_PI * 2.0f;
+	UniformBlock* ublock;
 	glm::vec3 look;
 	glm::vec3 up;
 	glm::vec3 right;
 	glm::vec3 position;
 	glm::mat4 view;	//view matrix
 	glm::mat4 proj;	//projection matrix
+	glm::mat3 norm;	//normal matrix
 	Plane planes[6]; //Frustum planes
 	// camera movement variables
 	float speed; //movement speed of camera in m/s
 	glm::vec3 translation;
 };
 
-} // end vogl namespace
+} // end R308 namespace
