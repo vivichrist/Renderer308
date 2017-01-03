@@ -421,27 +421,17 @@ void Camera::update()
 	{
 		view = glm::lookAt( position, position + look, up );
 		norm = glm::inverse(glm::transpose(glm::mat3(view)));
-		const float *mvM = glm::value_ptr( view );
-		size_t size = sizeof(mvM);
+		float *mvM = glm::value_ptr( view );
 		uint offset = 0u;
-		ublock->setUniformData4(offset, (void *)mvM, size);
-		const float *pjM = glm::value_ptr( proj );
-		size = sizeof(pjM);
+		ublock->setUniformData<float>( 4u, 4u, offset, mvM );
+		glm::mat4 pvM = proj * view;
+		float *pjM = glm::value_ptr( pvM );
 		offset = 4u;
-		ublock->setUniformData4(offset, (void *)pjM, size);
-		float *nM = glm::value_ptr( norm[0] );
-		size = sizeof(nM);
+		ublock->setUniformData<float>( 4u, 4u, offset, pjM );
+		float *nM = glm::value_ptr( norm );
 		offset = 8u;
-		ublock->setUniformData4(offset, (void *)nM, size);
-		nM = glm::value_ptr( norm[1] );
-		size = sizeof(nM);
-		++offset;
-		ublock->setUniformData4(offset, (void *)nM, size);
-		nM = glm::value_ptr( norm[2] );
-		size = sizeof(nM);
-		++offset;
-		ublock->setUniformData4(offset, (void *)nM, size);
-		//ends at 10 so next avaliable slot is 11
+		ublock->setUniformData<float>( 3u, 3u, offset, nM );
+		//ends at 10 so next avaliable slot is 11 (vec4 alignment)
 		calcFrustumPlanes();
 	}
 	view_changed = false;

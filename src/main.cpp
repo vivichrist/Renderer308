@@ -1,8 +1,5 @@
 #define GLM_FORCE_RADIANS
 
-#define WIDTH 800
-#define HEIGHT 600
-
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
@@ -19,8 +16,8 @@
 using namespace glm;
 
 bool g_hasMouse = false;
-R308::Camera *g_cam = nullptr;
-int g_width = 800, g_height = 600;
+uint g_width = 800, g_height = 600;
+R308::Camera g_cam( vec3( 0.0f, 0.0f, 10.0f ), g_width, g_height );
 
 void error_callback( int error, const char * description )
 {
@@ -40,37 +37,36 @@ void key_callback( GLFWwindow * window, int key, int scancode, int action,
 		else
 		{
 			glfwSetWindowShouldClose( window, GL_TRUE );
-			delete (g_cam);
 		}
 	}
 	// directions of camera movement
 	else if ( key == GLFW_KEY_W )
 	{// move forward
 		if ( action == GLFW_PRESS )
-			g_cam->walkOn( true );
+			g_cam.walkOn( true );
 		else if ( action == GLFW_RELEASE )
-			g_cam->walkOff( true );
+			g_cam.walkOff( true );
 	}
 	else if ( key == GLFW_KEY_S )
 	{// move backward
 		if ( action == GLFW_PRESS )
-			g_cam->walkOn( false );
+			g_cam.walkOn( false );
 		else if ( action == GLFW_RELEASE )
-			g_cam->walkOff( false );
+			g_cam.walkOff( false );
 	}
 	else if ( key == GLFW_KEY_A )
 	{// move left
 		if ( action == GLFW_PRESS )
-			g_cam->strafeOn( false );
+			g_cam.strafeOn( false );
 		else if ( action == GLFW_RELEASE )
-			g_cam->strafeOff( false );
+			g_cam.strafeOff( false );
 	}
 	else if ( key == GLFW_KEY_D )
 	{// move right
 		if ( action == GLFW_PRESS )
-			g_cam->strafeOn( true );
+			g_cam.strafeOn( true );
 		else if ( action == GLFW_RELEASE )
-			g_cam->strafeOff( true );
+			g_cam.strafeOff( true );
 	}
 }
 
@@ -96,8 +92,8 @@ void mousemotion_callback( GLFWwindow * window, double x, double y )
 {
 	if ( g_hasMouse )
 	{ // apply rotations of the capured mouse cursor
-		g_cam->rotateY( ((g_width / 2) - x) * 0.05f );
-		g_cam->rotateX( ((g_height / 2) - y) * 0.05f );
+		g_cam.rotateY( ((g_width / 2) - x) * 0.05f );
+		g_cam.rotateX( ((g_height / 2) - y) * 0.05f );
 		glfwSetCursorPos( window, g_width / 2, g_height / 2 );
 	}
 }
@@ -233,10 +229,9 @@ int main()
 	// print debuging info
 	shader.printActiveUniforms();
 	// Camera to get model view and projection matices from. Amongst other things
-	g_cam = new R308::Camera( vec3( 0.0f, 0.0f, 10.0f ), g_width, g_height );
 	R308::UniformBlock ubo( 1, 11 );
 	ubo.bindUniformBlock( shaderID, "Cam" );
-	g_cam->registerUBO( &ubo );
+	g_cam.registerUBO( &ubo );
 
 	float black[] =	{ 0, 0, 0 };
 	glClearBufferfv( GL_COLOR, 0, black );
@@ -253,13 +248,12 @@ int main()
 			geo->draw( name, 1 );
 		shader.unUse();
 		// make sure the camera rotations, position and matrices are updated
-		g_cam->update();
+		g_cam.update();
 
 		glfwSwapBuffers( window );
 
 		glfwPollEvents();
 	}
-	delete (g_cam);
 
 	glfwTerminate();
 
