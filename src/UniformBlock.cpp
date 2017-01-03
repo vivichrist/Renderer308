@@ -2,7 +2,7 @@
 
 namespace R308
 {
-// Size is the number of slots of 4 GLfloats to be buffered
+// Size is the number of slots of vec4 to be buffered
 UniformBlock::UniformBlock( GLuint binding, uint size )
 {
 	bindingPoint = binding;
@@ -19,29 +19,27 @@ UniformBlock::~UniformBlock()
 {
 }
 
-// both offset and size are number of slots of 4 GLfloats
-void UniformBlock::setUniformData4( const uint& offset, const void* data, const size_t& size ) const
+// both offset and size are number of slots of vec4 so size==4 -> mat4
+// size==3 -> mat3 or mat3x4 or mat3x2 (assumes data is padded out)
+template <typename T>
+void UniformBlock::setUniformData( const uint &col, const uint &row, const uint &offset, T *data )
 {
+    uint obytes, sbytes;
 	glBindBuffer(GL_UNIFORM_BUFFER, buffer);
-	uint obytes = offset * 4u * sizeof(GLfloat);
-	uint sbytes = size * 4u * sizeof(GLfloat);
-	glBufferSubData(GL_UNIFORM_BUFFER, obytes, sbytes, data);
-}
-// both offset and size are number of slots of 2 GLfloats
-void UniformBlock::setUniformData2( const uint& offset, const void* data, const size_t& size ) const
-{
-	glBindBuffer(GL_UNIFORM_BUFFER, buffer);
-	uint obytes = offset * 2u * sizeof(GLfloat);
-	uint sbytes = size * 2u * sizeof(GLfloat);
-	glBufferSubData(GL_UNIFORM_BUFFER, obytes, sbytes, data);
-}
-// both offset and size are number of slots of one GLfloat or scalar members
-void UniformBlock::setUniformData( const uint& offset, const void* data, const size_t& size ) const
-{
-	glBindBuffer(GL_UNIFORM_BUFFER, buffer);
-	uint obytes = offset * sizeof(GLfloat);
-	uint sbytes = size * sizeof(GLfloat);
-	glBufferSubData(GL_UNIFORM_BUFFER, obytes, sbytes, data);
+	if (col == 3)
+	{
+		uint stride = 4u;
+		sbytes = stride * sizeof(T);
+		for (uint i = 0; i < row; ++i)
+		{
+			obytes = (offset + i) * stride * sizeof(T);
+			glBufferSubData(GL_UNIFORM_BUFFER, obytes, sbytes, data + (i * row) );
+		}
+		return;
+	}
+	sbytes = col * row * sizeof(T);
+	obytes = offset * col * sizeof(T);
+	glBufferSubData(GL_UNIFORM_BUFFER, obytes, sbytes, data );
 }
 
 void UniformBlock::bindUniformBlock( const GLuint& shaderProgram, const std::string& block )
@@ -53,4 +51,4 @@ void UniformBlock::bindUniformBlock( const GLuint& shaderProgram, const std::str
 	glUniformBlockBinding(shaderProgram, blockIndex, bindingPoint);
 }
 
-}
+} // end R308 namespace
