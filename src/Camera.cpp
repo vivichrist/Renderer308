@@ -24,10 +24,10 @@ Camera::Camera( const glm::vec3& initpos, int width, int height )
 	, descent(false), ublock(0), speed(0.05)
 {
 	aspect_ratio = (float) width / (float) height;
-	look = glm::vec3( 0.0f, 0.0f, -1.0f );
-	up = glm::vec3( 0.0f, 1.0f, 0.0f );
-	right = glm::vec3( 1.0f, 0.0f, 0.0f );
-	position = initpos;
+	look = old_look = glm::vec3( 0.0f, 0.0f, -1.0f );
+	up = old_look = glm::vec3( 0.0f, 1.0f, 0.0f );
+	right = old_right = glm::vec3( 1.0f, 0.0f, 0.0f );
+	position = old_position = initpos;
 	// view matrix
 	view = glm::lookAt( position, position + look, up );
 	norm = glm::inverse(glm::transpose(glm::mat3(view)));
@@ -368,7 +368,7 @@ void Camera::getFrustumPlanes( glm::vec4 fp[6] )
 //                              Camera Movement                              //
 ///////////////////////////////////////////////////////////////////////////////
 
-void Camera::update()
+void Camera::update(float delta)
 {
 	if ( movement_changed )
 	{
@@ -419,20 +419,32 @@ void Camera::update()
 	}
 	if (ublock && view_changed )
 	{
-		view = glm::lookAt( position, position + look, up );
-		norm = glm::inverse(glm::transpose(glm::mat3(view)));
-		float *mvM = glm::value_ptr( view );
-		uint offset = 0u;
-		ublock->setUniformData<float>( 4u, 4u, offset, mvM );
-		glm::mat4 pvM = proj * view;
-		float *pjM = glm::value_ptr( pvM );
-		offset = 4u;
-		ublock->setUniformData<float>( 4u, 4u, offset, pjM );
-		float *nM = glm::value_ptr( norm );
-		offset = 8u;
-		ublock->setUniformData<float>( 3u, 3u, offset, nM );
-		//ends at 10 so next avaliable slot is 11 (vec4 alignment)
-		calcFrustumPlanes();
+		// scale to interpolate
+	    float d = delta / 0.0133f;
+	    // interpolate
+	    position = glm::mix(old_position, position, d);
+	    old_position = glm::vec3(position);
+	    look = glm::mix(look, old_look, d);
+	    old_look = glm::vec3(look);
+	    right = glm::mix(right, old_right, d);
+	    old_right = glm::vec3(right);
+	    up = glm::mix(up, old_up, d);
+	    old_up = glm::vec3(up);
+	    // calulate matrices
+	    view = glm::lookAt(position, position + look, up);
+	    norm = glm::inverse(glm::transpose(glm::mat3(view)));
+	    // upload to the uniform buffer
+	    auto mvM = glm::value_ptr(view);
+	    uint offset = 0u;
+	    ublock->setUniformDataf(mvM, 4u, 4u, offset);
+	    auto pjM = glm::value_ptr(proj);
+	    offset = 4u;
+	    ublock->setUniformDataf(pjM, 4u, 4u, offset);
+	    auto nM = glm::value_ptr(norm);
+	    offset = 8u;
+	    ublock->setUniformDataf(nM, 3u, 3u, offset);
+	    //ends at 10 so next avaliable slot is 11 (vec4 alignment)
+	    calcFrustumPlanes();
 	}
 	view_changed = false;
 }

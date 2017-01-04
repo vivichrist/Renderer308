@@ -21,24 +21,63 @@ UniformBlock::~UniformBlock()
 
 // both offset and size are number of slots of vec4 so size==4 -> mat4
 // size==3 -> mat3 or mat3x4 or mat3x2 (assumes data is padded out)
-template <typename T>
-void UniformBlock::setUniformData( const uint &col, const uint &row, const uint &offset, T *data )
+void UniformBlock::setUniformDataf( GLfloat const *data, uint const &col, uint const &row, uint const &offset )
 {
-    uint obytes, sbytes;
+	uint obytes, sbytes;
 	glBindBuffer(GL_UNIFORM_BUFFER, buffer);
 	if (col == 3)
 	{
 		uint stride = 4u;
-		sbytes = stride * sizeof(T);
+		sbytes = stride * sizeof(GLfloat);
 		for (uint i = 0; i < row; ++i)
 		{
-			obytes = (offset + i) * stride * sizeof(T);
+			obytes = (offset + i) * stride * sizeof(GLfloat);
 			glBufferSubData(GL_UNIFORM_BUFFER, obytes, sbytes, data + (i * row) );
 		}
 		return;
 	}
-	sbytes = col * row * sizeof(T);
-	obytes = offset * col * sizeof(T);
+	sbytes = col * row * sizeof(GLfloat);
+	obytes = offset * col * sizeof(GLfloat);
+	glBufferSubData(GL_UNIFORM_BUFFER, obytes, sbytes, data );
+}
+
+void UniformBlock::setUniformDatai( GLint const *data, uint const &col, uint const &row, uint const &offset )
+{
+	uint obytes, sbytes;
+	glBindBuffer(GL_UNIFORM_BUFFER, buffer);
+	if (col == 3)
+	{
+		uint stride = 4u;
+		sbytes = stride * sizeof(GLint);
+		for (uint i = 0; i < row; ++i)
+		{
+			obytes = (offset + i) * stride * sizeof(GLint);
+			glBufferSubData(GL_UNIFORM_BUFFER, obytes, sbytes, data + (i * row) );
+		}
+		return;
+	}
+	sbytes = col * row * sizeof(GLint);
+	obytes = offset * col * sizeof(GLint);
+	glBufferSubData(GL_UNIFORM_BUFFER, obytes, sbytes, data );
+}
+
+void UniformBlock::setUniformDataui( GLuint const *data, uint const &col, uint const &row, uint const &offset )
+{
+	uint obytes, sbytes;
+	glBindBuffer(GL_UNIFORM_BUFFER, buffer);
+	if (col == 3)
+	{
+		uint stride = 4u;
+		sbytes = stride * sizeof(GLuint);
+		for (uint i = 0; i < row; ++i)
+		{
+			obytes = (offset + i) * stride * sizeof(GLuint);
+			glBufferSubData(GL_UNIFORM_BUFFER, obytes, sbytes, data + (i * row) );
+		}
+		return;
+	}
+	sbytes = col * row * sizeof(GLuint);
+	obytes = offset * col * sizeof(GLuint);
 	glBufferSubData(GL_UNIFORM_BUFFER, obytes, sbytes, data );
 }
 

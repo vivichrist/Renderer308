@@ -4,7 +4,7 @@
             "name": "C++ Launch",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceRoot}/build/R308",
+            "program": "${workspaceRoot}/R308",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceRoot}",

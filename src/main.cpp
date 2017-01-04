@@ -235,11 +235,12 @@ int main()
 
 	float black[] =	{ 0, 0, 0 };
 	glClearBufferfv( GL_COLOR, 0, black );
-	float lightP[] = { 5.0f, 5.0f, -50.0f };
+	float lightP[] = { 50.0f, 50.0f, -50.0f };
 	///////////////////////////////////////////////////////////////////////////
 	//                           Main Rendering Loop                         //
 	///////////////////////////////////////////////////////////////////////////
-	while ( !glfwWindowShouldClose( window ) )
+	double start = glfwGetTime(), end;
+	while (!glfwWindowShouldClose(window))
 	{
 		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 		// load values into the uniform slots of the shader and draw
@@ -248,7 +249,8 @@ int main()
 			geo->draw( name, 1 );
 		shader.unUse();
 		// make sure the camera rotations, position and matrices are updated
-		g_cam.update();
+		g_cam.update( float((end = glfwGetTime()) - start) );
+		start = end;
 
 		glfwSwapBuffers( window );
 

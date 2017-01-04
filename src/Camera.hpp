@@ -17,8 +17,8 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <iostream>
 #include <exception>
-#include "Plane.hpp"
 #include "UniformBlock.hpp"
+#include "Plane.hpp"
 
 namespace R308
 {
@@ -59,7 +59,7 @@ public:
 	void rotateAroundX( const float );
 	void rotateAroundY( const float );
 	void rotateAroundZ( const float );
-	virtual void update();
+	virtual void update(float delta);
 	void registerUBO( UniformBlock* ubo );
 	void zoomIn();
 	void zoomOut();
@@ -79,10 +79,10 @@ private:
 		, forward, backward, sleft, sright, lift, descent;
 	static const glm::vec3 UP;
 	UniformBlock* ublock;
-	glm::vec3 look;
-	glm::vec3 up;
-	glm::vec3 right;
-	glm::vec3 position;
+	glm::vec3 look, old_look;
+	glm::vec3 up, old_up;
+	glm::vec3 right, old_right;
+	glm::vec3 position, old_position;
 	glm::mat4 view;	//view matrix
 	glm::mat4 proj;	//projection matrix
 	glm::mat3 norm;	//normal matrix
