@@ -12,13 +12,9 @@ class ShaderStorage
 public:
 	ShaderStorage( GLuint binding, uint size );
 	~ShaderStorage();
-	template <typename T>
-	void setStorageData4( const uint& offset, const T* data, const size_t& size ) const;
-	template <typename T>
-	void setStorageData2( const uint& offset, const T* data, const size_t& size ) const;
-	template <typename T>
-	void setStorageData( const uint& offset, const T* data ) const;
-	template <typename T>
+	void setStorageDataf(GLfloat const *data, uint const &col, uint const &row, uint const &offset);
+	void setStorageDatai(GLint const *data, uint const &col, uint const &row, uint const &offset);
+	void setStorageDataui(GLuint const *data, uint const &col, uint const &row, uint const &offset);
 	void setStorageDataArray(const uint &offset, const T *data, const size_t &size) const;
 	void bindShaderStorage(const GLuint &shaderProgram, const std::string &block);
 

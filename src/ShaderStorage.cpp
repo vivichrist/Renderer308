@@ -18,41 +18,66 @@ ShaderStorage::ShaderStorage( GLuint binding, uint size )
 ShaderStorage::~ShaderStorage()
 {
 }
-template <typename T>
-void ShaderStorage::setStorageDataArray( const uint& offset, const T* data, const size_t& size ) const
+// both offset and size are number of slots of vec4 so size==4 -> mat4
+// size==3 -> mat3 or mat3x4 or mat3x2 (assumes data is padded out)
+void ShaderStorage::setStorageDataf( GLfloat const *data, uint const &col, uint const &row, uint const &offset )
 {
+	uint obytes, sbytes;
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, buffer);
-	uint obytes = offset * 4u * sizeof(T);
-	uint sbytes = size * sizeof(T);
-	glBufferSubData(GL_SHADER_STORAGE_BUFFER, obytes, sbytes, data);
+	if (col == 3)
+	{
+		uint stride = 4u;
+		sbytes = stride * sizeof(GLfloat);
+		for (uint i = 0; i < row; ++i)
+		{
+			obytes = (offset + i) * stride * sizeof(GLfloat);
+			glBufferSubData(GL_SHADER_STORAGE_BUFFER, obytes, sbytes, data + (i * row) );
+		}
+		return;
+	}
+	sbytes = col * row * sizeof(GLfloat);
+	obytes = offset * col * sizeof(GLfloat);
+	glBufferSubData(GL_SHADER_STORAGE_BUFFER, obytes, sbytes, data );
 }
 
-// both offset and size are number of slots of 4 GLfloats
-template <typename T>
-void ShaderStorage::setStorageData4( const uint& offset, const T* data, const size_t& size ) const
+void ShaderStorage::setStorageDatai( GLint const *data, uint const &col, uint const &row, uint const &offset )
 {
+	uint obytes, sbytes;
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, buffer);
-	uint obytes = offset * 4u * sizeof(T);
-	uint sbytes = size * 4u * sizeof(T);
-	glBufferSubData(GL_SHADER_STORAGE_BUFFER, obytes, sbytes, data);
+	if (col == 3)
+	{
+		uint stride = 4u;
+		sbytes = stride * sizeof(GLint);
+		for (uint i = 0; i < row; ++i)
+		{
+			obytes = (offset + i) * stride * sizeof(GLint);
+			glBufferSubData(GL_SHADER_STORAGE_BUFFER, obytes, sbytes, data + (i * row) );
+		}
+		return;
+	}
+	sbytes = col * row * sizeof(GLint);
+	obytes = offset * col * sizeof(GLint);
+	glBufferSubData(GL_SHADER_STORAGE_BUFFER, obytes, sbytes, data );
 }
-// both offset and size are number of slots of 2 GLfloats
-template <typename T>
-void ShaderStorage::setStorageData2( const uint& offset, const T* data, const size_t& size ) const
+
+void ShaderStorage::setStorageDataui( GLuint const *data, uint const &col, uint const &row, uint const &offset )
 {
+	uint obytes, sbytes;
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, buffer);
-	uint obytes = offset * 2u * sizeof(T);
-	uint sbytes = size * 2u * sizeof(T);
-	glBufferSubData(GL_SHADER_STORAGE_BUFFER, obytes, sbytes, data);
-}
-// both offset and size are number of slots of one GLfloat or scalar members
-template <typename T>
-void ShaderStorage::setStorageData( const uint& offset, const T* data ) const
-{
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, buffer);
-	uint obytes = offset * sizeof(T);
-	uint sbytes = sizeof(T);
-	glBufferSubData(GL_SHADER_STORAGE_BUFFER, obytes, sbytes, data);
+	if (col == 3)
+	{
+		uint stride = 4u;
+		sbytes = stride * sizeof(GLuint);
+		for (uint i = 0; i < row; ++i)
+		{
+			obytes = (offset + i) * stride * sizeof(GLuint);
+			glBufferSubData(GL_SHADER_STORAGE_BUFFER, obytes, sbytes, data + (i * row) );
+		}
+		return;
+	}
+	sbytes = col * row * sizeof(GLuint);
+	obytes = offset * col * sizeof(GLuint);
+	glBufferSubData(GL_SHADER_STORAGE_BUFFER, obytes, sbytes, data );
 }
 
 void ShaderStorage::bindShaderStorage( const GLuint& shaderProgram, const std::string& block )
