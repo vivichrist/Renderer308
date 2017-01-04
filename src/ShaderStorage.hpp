@@ -15,7 +15,7 @@ public:
 	void setStorageDataf(GLfloat const *data, uint const &col, uint const &row, uint const &offset);
 	void setStorageDatai(GLint const *data, uint const &col, uint const &row, uint const &offset);
 	void setStorageDataui(GLuint const *data, uint const &col, uint const &row, uint const &offset);
-	void setStorageDataArray(const uint &offset, const T *data, const size_t &size) const;
+	void setStorageDataArray(const uint &offset, const GLvoid *data, const size_t &size) const;
 	void bindShaderStorage(const GLuint &shaderProgram, const std::string &block);
 
       private:

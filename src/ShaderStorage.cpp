@@ -17,6 +17,7 @@ ShaderStorage::ShaderStorage( GLuint binding, uint size )
 
 ShaderStorage::~ShaderStorage()
 {
+    glDeleteBuffers(1u, &buffer);
 }
 // both offset and size are number of slots of vec4 so size==4 -> mat4
 // size==3 -> mat3 or mat3x4 or mat3x2 (assumes data is padded out)

@@ -17,6 +17,7 @@ UniformBlock::UniformBlock( GLuint binding, uint size )
 
 UniformBlock::~UniformBlock()
 {
+	glDeleteBuffers(1u, &buffer);
 }
 
 // both offset and size are number of slots of vec4 so size==4 -> mat4
