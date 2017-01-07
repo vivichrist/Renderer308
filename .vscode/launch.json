@@ -24,7 +24,7 @@
             "name": "C++ Attach",
             "type": "cppdbg",
             "request": "attach",
-            "program": "${workspaceRoot}/build/R308",
+            "program": "${workspaceRoot}/R308",
             "processId": "${command.pickProcess}",
             "linux": {
                 "MIMode": "gdb"
