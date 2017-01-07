@@ -436,13 +436,13 @@ void Camera::update(float delta)
 	    // upload to the uniform buffer
 	    auto mvM = glm::value_ptr(view);
 	    uint offset = 0u;
-	    ublock->setUniformDataf(mvM, 4u, 4u, offset);
+	    ublock->setUniformData<GLfloat>(mvM, 4u, 4u, offset);
 	    auto pjM = glm::value_ptr(proj);
 	    offset = 4u;
-	    ublock->setUniformDataf(pjM, 4u, 4u, offset);
+	    ublock->setUniformData<GLfloat>(pjM, 4u, 4u, offset);
 	    auto nM = glm::value_ptr(norm);
 	    offset = 8u;
-	    ublock->setUniformDataf(nM, 3u, 3u, offset);
+	    ublock->setUniformData<GLfloat>(nM, 3u, 3u, offset);
 	    //ends at 10 so next avaliable slot is 11 (vec4 alignment)
 	    calcFrustumPlanes();
 	}
