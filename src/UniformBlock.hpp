@@ -13,14 +13,13 @@ namespace R308
 class UniformBlock
 {
 public:
-	UniformBlock( GLuint binding, uint size );
+	UniformBlock( GLuint const& binding, size_t const& size );
 	~UniformBlock();
-	void setUniformDataf( GLfloat const *data, uint const &col, uint const &row, uint const &offset );
-	void setUniformDatai( GLint const *data, uint const &col, uint const &row, uint const &offset );
-	void setUniformDataui(GLuint const *data, uint const &col, uint const &row, uint const &offset);
+	template<typename T>
+	void setUniformData( T const *data, uint const &col, uint const &row, uint const &offset );
 	void bindUniformBlock(const GLuint &shaderProgram, const std::string &block);
 
-      private:
+private:
 	uint bufferSize;
 	GLuint buffer;
 	GLuint bindingPoint;
