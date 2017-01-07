@@ -14,32 +14,38 @@ Shader::Shader() : totalShaders(0), completed(false)
 
 Shader::~Shader()
 {
-    deleteShaderProgram();
+    attributeList.clear();
+    uniformLocationList.clear();
+    uniformSizeList.clear();
+    glDeleteProgram(pgName);
+    glDeleteShader(shaders[0]);
+    glDeleteShader(shaders[1]);
+    glDeleteShader(shaders[2]);
+    glDeleteShader(shaders[3]);
+    glDeleteShader(shaders[4]);
 }
 ///////////////////////////////////////////////////////////////////////////////
 //                          Private Helper Methods                           //
 ///////////////////////////////////////////////////////////////////////////////
-void Shader::getShader( const std::string& filename, std::string& source )
+bool Shader::getShader( std::string const& filename, std::string& source )
 {
 	std::ifstream pg_in( filename.c_str() );
 	if ( !pg_in.is_open() or pg_in.bad() )
 	{
 		std::stringstream str;
-		str << "File " << filename.c_str() << " Not Found";
-		throw str.str().c_str();
+		str << "No Shader File " << filename.c_str() << " \n";
+		return false;
 	}
 	std::string line;
 	while ( std::getline( pg_in, line ) )
 	{
 		source.append( line + '\n' );
-		//size_t pos = -1;
-		//if ((pos = line.find("uniform", 0)) >= 0)
-		// TODO: automatically add uniforms...	
 	}
 	pg_in.close();
+	return true;
 }
 
-void Shader::checkShader( const GLuint shaderName, const std::string& name )
+void Shader::checkShader( GLuint const& shaderName, std::string const& name )
 {
 	GLint isCompiled = 0;
 	glGetShaderiv( shaderName, GL_COMPILE_STATUS, &isCompiled );
@@ -49,7 +55,13 @@ void Shader::checkShader( const GLuint shaderName, const std::string& name )
 		glGetShaderiv( shaderName, GL_INFO_LOG_LENGTH, &maxLength );
 
 		// The maxLength includes the NULL character
-		GLchar errorLog[ maxLength ] = { 0 };
+		if ( !maxLength )
+		{
+			std::stringstream str;
+			str << "shader object " << name << " failed to compile\n";
+			return;
+		}
+		GLchar errorLog[maxLength] = {0};
 		glGetShaderInfoLog( shaderName, maxLength, &maxLength, &errorLog[0] );
 
 		//print infoLog and end execution.
@@ -59,15 +71,14 @@ void Shader::checkShader( const GLuint shaderName, const std::string& name )
 		glDeleteShader( shaderName ); // Don't leak the shader.
 		std::cout << str.str().c_str();
 		throw;
-	}
-	++totalShaders;
+	} else ++totalShaders;
 }
 
-void Shader::setupShader( const char** glslfiles
-						, const GLenum shadertype[]
-						, const uint numfs
-						, const char** uniforms
-						, const uint numshd )
+void Shader::setupShader( char const** glslfiles
+						, GLenum const shadertype[]
+						, uint const& numfs
+						, char const** uniforms
+						, uint const& numshd )
 {
 	uint i = 0;
 	for ( ; i<numshd; ++i )
@@ -90,6 +101,12 @@ void Shader::checkProgram()
 		GLint maxLength = 0;
 		glGetProgramiv( pgName, GL_INFO_LOG_LENGTH, &maxLength );
 		//The maxLength includes the NULL character
+		if ( !maxLength )
+		{
+			std::stringstream str;
+			str << "program " << pgName << " failed to compile\n";
+			return;
+		}
 		GLchar infoLog[ maxLength ] = { 0 };
 		glGetProgramInfoLog( pgName, maxLength, &maxLength, &infoLog[0] );
 		//remove debris.
@@ -125,7 +142,7 @@ void Shader::unUse()
  *        , GL_GEOMETRY_SHADER
  * @param source a string holding the source code for a GLSL shader
  */
-void Shader::loadFromString( const GLenum whichShader, const std::string& source )
+void Shader::loadFromString( GLenum const& whichShader, std::string const& source )
 {
 	if ( source.empty() or !(whichShader == GL_VERTEX_SHADER
 						  or whichShader == GL_FRAGMENT_SHADER
@@ -147,7 +164,7 @@ void Shader::loadFromString( const GLenum whichShader, const std::string& source
  *        , GL_GEOMETRY_SHADER
  * @param filename of a file containing GLSL source code
  */
-void Shader::loadFromFile( const GLenum whichShader, const std::string& filename )
+void Shader::loadFromFile( GLenum const& whichShader, std::string const& filename )
 {
 	if ( filename.empty() or !(whichShader == GL_VERTEX_SHADER
 							or whichShader == GL_FRAGMENT_SHADER
@@ -156,11 +173,14 @@ void Shader::loadFromFile( const GLenum whichShader, const std::string& filename
 							or whichShader == GL_COMPUTE_SHADER
 							or whichShader == GL_GEOMETRY_SHADER) )
 		throw "file names for shader objects must be valid";
+	std::string shader;
+	if (!getShader( filename, shader ))
+	{
+	    return;
+	}
 	GLuint name = glCreateShader( whichShader );
 	shaders[totalShaders] = name;
-	std::string shader;
-	getShader( filename, shader );
-	const GLchar * shaderSource = shader.c_str();
+	const GLchar *shaderSource = shader.c_str();
 	glShaderSource( name, 1, &shaderSource, nullptr );
 	glCompileShader( name );
 	checkShader( name, filename );
@@ -192,7 +212,7 @@ uint Shader::createAndLinkProgram()
  * locations have been marked with identifying number id's.
  * @param attribute
  */
-void Shader::addAttribute( const std::string& attribute )
+void Shader::addAttribute( std::string const& attribute )
 {
 
 	if ( !completed )
@@ -215,7 +235,7 @@ void Shader::addAttribute( const std::string& attribute )
  * Register the names of recipient uniform locations in shader code.
  * @param uniform
  */
-void Shader::addUniform( const std::string& uniform )
+void Shader::addUniform( std::string const& uniform, uint const& layout, size_t const& length )
 {
 	if ( !completed )
 	{
@@ -232,8 +252,49 @@ void Shader::addUniform( const std::string& uniform )
 				  << " - location returned -1!" << std::endl;
 	}
 	else
+	{
 		uniformLocationList[ uniform ] = location;
+		uniformSizeList[ uniform ] = std::pair<size_t, size_t>{size, length};
+	}
 }
+
+void Shader::setUniform( std::string const& uniform, float const* data )
+{
+	if ( !completed )
+	{
+		std::stringstream str;
+		str << "program " << pgName << " has not been linked yet and '"
+			<< uniform << "' cannot be updated.";
+		throw str.str().c_str();
+	}
+	uint size = uniformSizeList[uniform].first
+		, length = uniformSizeList[uniform].second;
+	if (size == 1)
+	    glUniform1fv( uniformLocationList[uniform], length, data );
+	else if (size == 2)
+		glUniform2fv( uniformLocationList[uniform], length, data );
+	else if (size == 3)
+		glUniform3fv( uniformLocationList[uniform], length, data );
+	else if (size == 4)
+		glUniform4fv( uniformLocationList[uniform], length, data );
+	else if (size == 22)
+		glUniformMatrix2fv( uniformLocationList[uniform], length, GL_FALSE, data );
+	else if (size == 23)
+		glUniformMatrix2x3fv( uniformLocationList[uniform], length, GL_FALSE, data );
+	else if (size == 32)
+		glUniformMatrix3x2fv( uniformLocationList[uniform], length, GL_FALSE, data );
+	else if (size == 33)
+		glUniformMatrix3fv( uniformLocationList[uniform], length, GL_FALSE, data );
+	else if (size == 34)
+		glUniformMatrix3x4fv( uniformLocationList[uniform], length, GL_FALSE, data );
+	else if (size == 42)
+		glUniformMatrix4x2fv( uniformLocationList[uniform], length, GL_FALSE, data );
+	else if (size == 43)
+		glUniformMatrix4x3fv( uniformLocationList[uniform], length, GL_FALSE, data );
+	else if (size == 44)
+		glUniformMatrix4fv( uniformLocationList[uniform], length, GL_FALSE, data );
+}
+
 /******************************************************************************
  * Get the id (name) of a named attribute within the shader. usually
  * unnecessary if these are already known within the code.
@@ -241,7 +302,7 @@ void Shader::addUniform( const std::string& uniform )
  * @param attribute
  * @return id
  */
-void Shader::registerFragOut( uint loc, const std::string& called )
+void Shader::registerFragOut( uint const& loc, std::string const& called )
 {
 	glBindFragDataLocation( pgName, loc, called.c_str());
 }
@@ -264,7 +325,7 @@ GLuint Shader::operator []( const std::string& attribute )
  * @param uniform
  * @return id
  */
-GLuint Shader::operator ()( const std::string& uniform )
+GLuint Shader::operator ()( std::string const& uniform )
 {
 	std::map<std::string, GLuint>::iterator it =
 			uniformLocationList.find(uniform);
@@ -301,14 +362,4 @@ void Shader::printActiveUniforms()
 		location = glGetUniformLocation( pgName, name );
 		std::cout << location << " - " << name << "\n" << std::endl;
     }
-}
-
-void Shader::deleteShaderProgram()
-{
-	glDeleteProgram( pgName );
-	glDeleteShader( shaders[0] );
-	glDeleteShader( shaders[1] );
-	glDeleteShader( shaders[2] );
-	glDeleteShader( shaders[3] );
-	glDeleteShader( shaders[4] );
 }

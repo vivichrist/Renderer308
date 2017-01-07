@@ -26,22 +26,22 @@ public:
 	Shader();
 	~Shader();
 
-	void loadFromString( const GLenum whichShader, const std::string& source );
-	void loadFromFile( const GLenum whichShader, const std::string& filename );
+	void loadFromString( GLenum const& whichShader, std::string const& source );
+	void loadFromFile( GLenum const& whichShader, std::string const& filename );
 	uint createAndLinkProgram();
 	void setupShader( const char**, const GLenum[]
-					, const uint, const char**, const uint );
+					, uint const&, char const**, uint const& );
 	void use();
 	void unUse();
-	void addAttribute( const std::string& attribute );
-	void addUniform( const std::string& uniform );
-	void registerFragOut( uint, const std::string& );
+	void addAttribute( std::string const& attribute );
+	void addUniform( std::string const& uniform, uint const& layout, size_t const& length );
+	size_t getUniformSize( std::string const& uniform );
+	void registerFragOut( uint const&, std::string const& );
 	GLuint operator[]( const std::string& attribute );
 	GLuint operator()( const std::string& uniform );
 	void printActiveUniforms();
-	void deleteShaderProgram();
 private:
-	void getShader( const std::string& filename, std::string& source );
+	bool getShader( std::string const& filename, std::string& source );
 	void checkShader( const GLuint shaderName, const std::string& name );
 	void checkProgram();
 
@@ -50,5 +50,6 @@ private:
 	bool completed;
 	GLuint shaders[5];
 	std::map<std::string, GLuint> attributeList;
-	std::map<std::string, GLuint> uniformLocationList;
+	std::map<std::string, GLint> uniformLocationList;
+	std::map<std::string, std::pair<size_t, size_t>> uniformSizeList;
 };
