@@ -11,50 +11,25 @@
 namespace Engine
 {
 
-int width, height;
-GLFWwindow* window;
-Camera *cam;
-Lights *lights;
-Geometry *geo;
-Texture *txt;
-
-void error( int error, const char* description )
-{
-
-}
-void keyboardEvent( GLFWwindow * window, int key, int scancode, int action, int mods )
-{
-
-}
-void mouseScrollEvent( GLFWwindow * window, double x, double y )
-{
-
-}
-void mouseButtonEvent( GLFWwindow * window, int button, int action, int mods )
-{
-
-}
-void mouseMoveEvent( GLFWwindow * window, double x, double y )
-{
-
-}
-void resize( GLFWwindow * win, int newWidth, int newHeight )
-{
-	if ( eng == nullptr || win != window ) return;
-	width = newWidth;
-	height = newHeight > 0 ? newHeight : 1;
-	cam->setAspectRatio( newWidth, newHeight );
-	glViewport( 0, 0, newWidth, newHeight );
-}
 ////////////////////////////////////////////////////////////////////////////////
 /// Methods to be overridden and interface with GLFW
 ////////////////////////////////////////////////////////////////////////////////
+Engine *instance = nullptr;
 
-
-Engine::Engine( uint major, uint minor )
+Engine* Engine::getInstance() // Singleton is accessed via getInstance()
 {
-	width = 1024;
-	height = 768;
+	if (!instance)
+	{
+		instance = new Engine(4, 3, 1024, 768);
+	}    
+	return instance;
+}
+
+Engine::Engine( uint major, uint minor, int w, int h )
+	: lights(Lights::getInstance()), geo(Geometry::getInstance()), txt(Texture::getInstance())
+	, sm(ShaderManager::getInstance()), width(w), height(h), halfWidth(w / 2), halfHeight(h / 2)
+	, cam(glm::vec3(0.0f, 0.0f, 10.0f), width, height), mouseLook(false), hasMouse(false)
+{
 	///////////////////////////////////////////////////////////////////////////
 	// Initiate the opengl context and try to get an opengl context. Then    //
 	// initialise the scene.                                                 //
@@ -125,14 +100,179 @@ Engine::Engine( uint major, uint minor )
 	std::cout << "\tVersion: " << glGetString( GL_VERSION ) << std::endl;
 	std::cout << "\tGLSL:	" << glGetString( GL_SHADING_LANGUAGE_VERSION )
 			<< std::endl;
-	glfwSwapInterval( 2 );
 
-	mouseLook = false;
-	geo = Geometry::getInstance();
-	txt = Texture::getInstance();
-	cam = new Camera( glm::vec3( 0.0f, 2.0f, 10.0f ), width, height );
-	lights = Lights::getInstance();
-	eng = this;
+	glfwSetWindowUserPointer(window, instance);
+	
+	//glfwSetErrorCallback( genericCallback(errorCallback) );
+	auto key = [](GLFWwindow *w, int k, int s, int a, int m) {
+	    static_cast<Engine *>(glfwGetWindowUserPointer(w))->keyboardEvent(k, s, a, m);
+	};
+	glfwSetKeyCallback(window, key);
+	auto scroll = [](GLFWwindow *w, double x, double y) {
+	    static_cast<Engine *>(glfwGetWindowUserPointer(w))->mouseScrollCallback(x, y);
+	};
+	glfwSetScrollCallback(window, scroll);
+	auto move = [](GLFWwindow *w, double x, double y) {
+	    static_cast<Engine *>(glfwGetWindowUserPointer(w))->mouseMovementEvent(x, y);
+	};
+	glfwSetCursorPosCallback(window, move);
+	auto button = [](GLFWwindow *w, int b, int a, int m) {
+	    static_cast<Engine *>(glfwGetWindowUserPointer(w))->mouseButtonEvent( b, a, m );
+	};
+	glfwSetMouseButtonCallback(window, button);
+	auto resize = [](GLFWwindow *w, int wd, int h) {
+	    static_cast<Engine *>(glfwGetWindowUserPointer(w))->windowResizeEvent( wd, h );
+	};
+	glfwSetFramebufferSizeCallback(window, resize);
+}
+
+void Engine::init()
+{
+
+	glEnable( GL_DEPTH_TEST );
+	glDepthFunc( GL_LEQUAL );
+	///////////////////////////////////////////////////////////////////////////
+	// Define Scene															 //
+	///////////////////////////////////////////////////////////////////////////
+	uint name = geo->addBuffer( "res/assets/box.obj" );
+	geo->bindTexure( "res/textures/box.png", name );
+
+	/************************************************************
+	 * Load up a shader from the given files.
+	 *******************************************************//**/
+	uint shaderID = sm->addShader("phong", name); // "phong.vert", "phong.frag" etc.
+	sm->addUniform(name, "lightP", 3u, 1u);
+	// Camera to get model view and projection matices from. Amongst other things
+	R308::UniformBlock ubo( 1, 11 );
+	ubo.bindUniformBlock( shaderID, "Cam" );
+	cam.registerUBO( &ubo );
+
+	float black[] = {0, 0, 0};
+	glClearBufferfv( GL_COLOR, 0, black );
+}
+
+void Engine::errorCallback( int error, const char* description )
+{
+	fputs( description, stderr );
+}
+
+void Engine::keyboardEvent( int& key, int& scancode, int& action, int& mods )
+{
+	if ( key == GLFW_KEY_ESCAPE && action == GLFW_PRESS )
+	{// exit captured mouse or exit program
+		if ( hasMouse )
+		{
+			hasMouse = false;
+			glfwSetInputMode( window, GLFW_CURSOR, GLFW_CURSOR_NORMAL );
+		}
+		else
+		{
+			glfwSetWindowShouldClose( window, GL_TRUE );
+		}
+	}
+	// directions of camera movement
+	else if ( key == GLFW_KEY_W )
+	{// move forward
+		if ( action == GLFW_PRESS )
+			cam.walkOn( true );
+		else if ( action == GLFW_RELEASE )
+			cam.walkOff( true );
+	}
+	else if ( key == GLFW_KEY_S )
+	{// move backward
+		if ( action == GLFW_PRESS )
+			cam.walkOn( false );
+		else if ( action == GLFW_RELEASE )
+			cam.walkOff( false );
+	}
+	else if ( key == GLFW_KEY_A )
+	{// move left
+		if ( action == GLFW_PRESS )
+			cam.strafeOn( false );
+		else if ( action == GLFW_RELEASE )
+			cam.strafeOff( false );
+	}
+	else if ( key == GLFW_KEY_D )
+	{// move right
+		if ( action == GLFW_PRESS )
+			cam.strafeOn( true );
+		else if ( action == GLFW_RELEASE )
+			cam.strafeOff( true );
+	}
+}
+
+void Engine::mouseScrollCallback( double& x, double& y)
+{
+	// TODO: this could be useful later...
+}
+
+void Engine::mouseMovementEvent( double& x, double& y) {
+	if (hasMouse)
+	{ // apply rotations of the capured mouse cursor
+	cam.rotateY((halfWidth - x) * 0.05f);
+	cam.rotateX((halfHeight - y) * 0.05f);
+	glfwSetCursorPos(window, halfWidth, halfHeight);
+	}
+}
+
+void Engine::mouseButtonEvent( int& button, int& action, int& mods) {
+	if (button == GLFW_MOUSE_BUTTON_1)
+	{
+		if (hasMouse)
+		{
+			// TODO: do some such thing with mouse click...
+		}
+		else
+		{ // capture mouse and allow mouse to rotate camera view
+			hasMouse = true;
+			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+			glfwSetCursorPos(window, halfWidth, halfHeight);
+		}
+	}
+}
+
+void Engine::windowResizeEvent( int& newWidth, int& newHeight )
+{
+	width = newWidth;
+	height = newHeight > 0 ? newHeight : 1;
+	halfWidth = width / 2;
+	halfHeight = height / 2;
+	glViewport( 0, 0, width, height );
+}
+
+void Engine::update()
+{
+
+}
+
+void Engine::render()
+{
+	// shader.use();
+	// 	glUniform3fv( shader( "lightP" ), 1, &lightP[0] );
+	// 	geo->draw( name, 1 );
+	// shader.unUse();
+}
+
+void Engine::start()
+{
+	init();
+	double start = glfwGetTime(), end;
+	while (!glfwWindowShouldClose(window))
+	{
+		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+		// load values into the uniform slots of the shader and draw, etc.
+		render();
+
+		update();
+		// make sure the camera rotations, position and matrices are updated, etc.
+		cam.update(float((end = glfwGetTime()) - start));
+		start = end;
+
+		glfwSwapBuffers( window );
+		glfwSwapInterval(1);
+		glfwPollEvents();
+	}
+	update();
 }
 
 int checkGLErrors( int where, const char* className )
@@ -149,30 +289,6 @@ int checkGLErrors( int where, const char* className )
 	return errCount;
 }
 
-void Engine::setErrorCB( void(*errorCallback)(int error, const char* description) )
-{
-	glfwSetErrorCallback( errorCallback );
-}
-void Engine::setKBEvtCB( void(*keyCallback)(GLFWwindow * window, int key, int scancode, int action, int mods ) )
-{
-	glfwSetKeyCallback( window, keyCallback );
-}
-void Engine::setMScrollEvtCB( void(*mScrollCallback)(GLFWwindow * window, double x, double y ) )
-{
-	glfwSetScrollCallback( window, mScrollCallback );
-}
-void Engine::setMButtonEvtCB( void(*mButtonCallback)(GLFWwindow * window, int button, int action, int mods ) )
-{
-	glfwSetMouseButtonCallback( window, mButtonCallback );
-}
-void Engine::setMMoveEvtCB( void(*mMoveCallback)( GLFWwindow * window, double x, double y ) )
-{
-	glfwSetCursorPosCallback( window, mMoveCallback );
-}
-void Engine::setResizeCB( void(*resizeCallback)( GLFWwindow * window, int newWidth, int newHeight ) )
-{
-	glfwSetFramebufferSizeCallback( window, resizeCallback );
-}
 ////////////////////////////////////////////////////////////////////////////////
 /// GLFW Mouse Manipulation
 ////////////////////////////////////////////////////////////////////////////////
@@ -203,7 +319,6 @@ Engine::~Engine()
 {
 	delete (geo);
 	delete (txt);
-	delete (cam);
 	delete (lights);
 
 	glfwTerminate();

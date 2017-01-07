@@ -19,48 +19,55 @@
 #include <iostream>
 #include <fstream>   // file I/O
 #include <exception>
+#include <memory>
 #include "Camera.hpp"
+#include "ShaderManager.hpp"
 #include "Geometry.hpp"
 #include "Lights.hpp"
-#include "Shader.hpp"
-#include "GBuffer.hpp"
 
 using namespace R308;
 namespace Engine
 {
 
+
 class Engine
 {
-private:
-	// GLFW callback
-
-	bool mouseLook;
+protected:
+	Lights *lights;
+	Geometry *geo;
+	Texture *txt;
+	ShaderManager *sm;
+	int width, height, halfWidth, halfHeight;
+	Camera cam;
+	bool mouseLook, hasMouse;
+	GLFWwindow* window;
+	Engine( uint major, uint minor, int width, int height );
 
 public:
-	Engine( uint major, uint minor );
-	static int gLErrors( int where, const char* className );
+	static Engine *getInstance();
+	static int gLErrors(int where, const char *className);
+	virtual void error_cb(int error, const char *description);
+	virtual void keyboard_cb(int& key, int& scancode, int& action, int& mods);
+	virtual void scroll_cb(double& x, double& y);
+	virtual void button_cb(int& button, int& action, int& mods);
+	virtual void move_cb(double& x, double& y);
+	virtual void resize_cb(int& newWidth, int& newHeight);
 
-	void setErrorCB( void(*errorCallback)(int error, const char* description) );
-	void setKBEvtCB( void(*keyCallback)(GLFWwindow * window, int key, int scancode, int action, int mods ) );
-	void setMScrollEvtCB( void(*mScrollCallback)(GLFWwindow * window, double x, double y ) );
-	void setMButtonEvtCB( void(*mButtonCallback)(GLFWwindow * window, int button, int action, int mods ) );
-	void setMMoveEvtCB( void(*mMoveCallback)( GLFWwindow * window, double x, double y ) );
-	void setResizeCB( void(*resizeCallback)( GLFWwindow * window, int newWidth, int newHeight ) );
-	
-	virtual void update() = 0;
-	virtual void render() = 0;
+void start();
+virtual void init();
+virtual void update();
+virtual void render();
 
-	void captureMouse();
-	void resetMousePos();
-	void releaseMouse();
-	int checkGLErrors(int where, const char *className);
-	void close();
+void captureMouse();
+void resetMousePos();
+void releaseMouse();
+int checkGLErrors(int where, const char *className);
+void close();
 
-	virtual ~Engine();
+virtual ~Engine();
 
-	/**< @class Engine */
+/**< @class Engine */
 };
 
-Engine *eng = nullptr;
 
 } /**< namespace Engine */
