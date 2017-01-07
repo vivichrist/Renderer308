@@ -35,21 +35,21 @@ public:
 	void unUse();
 	void addAttribute( std::string const& attribute );
 	void addUniform( std::string const& uniform, uint const& layout, size_t const& length );
-	size_t getUniformSize( std::string const& uniform );
+	void setUniform(std::string const &uniform, float const *data);
 	void registerFragOut( uint const&, std::string const& );
-	GLuint operator[]( const std::string& attribute );
-	GLuint operator()( const std::string& uniform );
+	GLint operator[]( std::string const& attribute );
+	GLint operator()( std::string const& uniform );
 	void printActiveUniforms();
 private:
 	bool getShader( std::string const& filename, std::string& source );
-	void checkShader( const GLuint shaderName, const std::string& name );
+	void checkShader( GLuint const& shaderName, std::string const& name );
 	void checkProgram();
 
 	GLuint pgName;
 	GLuint totalShaders;
 	bool completed;
 	GLuint shaders[5];
-	std::map<std::string, GLuint> attributeList;
+	std::map<std::string, GLint> attributeList;
 	std::map<std::string, GLint> uniformLocationList;
-	std::map<std::string, std::pair<size_t, size_t>> uniformSizeList;
+	std::map<std::string, std::pair<uint, size_t>> uniformSizeList;
 };

@@ -74,24 +74,6 @@ void Shader::checkShader( GLuint const& shaderName, std::string const& name )
 	} else ++totalShaders;
 }
 
-void Shader::setupShader( char const** glslfiles
-						, GLenum const shadertype[]
-						, uint const& numfs
-						, char const** uniforms
-						, uint const& numshd )
-{
-	uint i = 0;
-	for ( ; i<numshd; ++i )
-		loadFromFile( shadertype[i], glslfiles[i] );
-	createAndLinkProgram();
-	use();
-	i = 0;
-	for ( ; i<numfs; ++i )
-		addUniform( uniforms[i] );
-	unUse();
-	printActiveUniforms();
-}
-
 void Shader::checkProgram()
 {
 	GLint isLinked = 0;
@@ -104,13 +86,14 @@ void Shader::checkProgram()
 		if ( !maxLength )
 		{
 			std::stringstream str;
-			str << "program " << pgName << " failed to compile\n";
+			str << "program " << pgName << " failed to link\n";
+			delete(this);
 			return;
 		}
 		GLchar infoLog[ maxLength ] = { 0 };
 		glGetProgramInfoLog( pgName, maxLength, &maxLength, &infoLog[0] );
 		//remove debris.
-		deleteShaderProgram();
+		delete(this);
 		//print infoLog and end execution.
 		std::stringstream str;
 		str << "\nprogram object " << pgName << " failed to link" << infoLog << "\n";
@@ -254,7 +237,7 @@ void Shader::addUniform( std::string const& uniform, uint const& layout, size_t 
 	else
 	{
 		uniformLocationList[ uniform ] = location;
-		uniformSizeList[ uniform ] = std::pair<size_t, size_t>{size, length};
+		uniformSizeList[ uniform ] = std::pair<uint, size_t>{layout, length};
 	}
 }
 
@@ -307,10 +290,9 @@ void Shader::registerFragOut( uint const& loc, std::string const& called )
 	glBindFragDataLocation( pgName, loc, called.c_str());
 }
 
-GLuint Shader::operator []( const std::string& attribute )
+GLint Shader::operator []( std::string const& attribute )
 {
-	std::map<std::string, GLuint>::iterator it =
-			attributeList.find(attribute);
+	auto it = attributeList.find(attribute);
 	if ( it != attributeList.end() )
 		return( attributeList[attribute] );
 	else
@@ -325,10 +307,9 @@ GLuint Shader::operator []( const std::string& attribute )
  * @param uniform
  * @return id
  */
-GLuint Shader::operator ()( std::string const& uniform )
+GLint Shader::operator ()( std::string const& uniform )
 {
-	std::map<std::string, GLuint>::iterator it =
-			uniformLocationList.find(uniform);
+	auto it = uniformLocationList.find(uniform);
 	if ( it != uniformLocationList.end() )
 		return( uniformLocationList[uniform] );
 	else

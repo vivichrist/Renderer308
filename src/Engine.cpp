@@ -206,15 +206,6 @@ void Engine::mouseScrollCallback( double& x, double& y)
 	// TODO: this could be useful later...
 }
 
-void Engine::mouseMovementEvent( double& x, double& y) {
-	if (hasMouse)
-	{ // apply rotations of the capured mouse cursor
-	cam.rotateY((halfWidth - x) * 0.05f);
-	cam.rotateX((halfHeight - y) * 0.05f);
-	glfwSetCursorPos(window, halfWidth, halfHeight);
-	}
-}
-
 void Engine::mouseButtonEvent( int& button, int& action, int& mods) {
 	if (button == GLFW_MOUSE_BUTTON_1)
 	{
@@ -228,6 +219,15 @@ void Engine::mouseButtonEvent( int& button, int& action, int& mods) {
 			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 			glfwSetCursorPos(window, halfWidth, halfHeight);
 		}
+	}
+}
+
+void Engine::mouseMovementEvent( double& x, double& y) {
+	if (hasMouse)
+	{ // apply rotations of the capured mouse cursor
+	cam.rotateY((halfWidth - x) * 0.05f);
+	cam.rotateX((halfHeight - y) * 0.05f);
+	glfwSetCursorPos(window, halfWidth, halfHeight);
 	}
 }
 

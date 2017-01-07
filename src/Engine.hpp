@@ -46,12 +46,12 @@ protected:
 public:
 	static Engine *getInstance();
 	static int gLErrors(int where, const char *className);
-	virtual void error_cb(int error, const char *description);
-	virtual void keyboard_cb(int& key, int& scancode, int& action, int& mods);
-	virtual void scroll_cb(double& x, double& y);
-	virtual void button_cb(int& button, int& action, int& mods);
-	virtual void move_cb(double& x, double& y);
-	virtual void resize_cb(int& newWidth, int& newHeight);
+	virtual void errorCallback(int error, const char *description);
+	virtual void keyboardEvent(int& key, int& scancode, int& action, int& mods);
+	virtual void mouseScrollCallback(double& x, double& y);
+	virtual void mouseButtonEvent(int& button, int& action, int& mods);
+	virtual void mouseMovementEvent(double& x, double& y);
+	virtual void windowResizeEvent(int& newWidth, int& newHeight);
 
 void start();
 virtual void init();
